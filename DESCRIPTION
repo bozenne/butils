@@ -1,0 +1,23 @@
+Package: butils
+Type: Package
+Title: Various usefull functions
+Version: 1.0
+Date: 2016-07-01
+Author: Brice Ozenne[aut]
+Maintainer: brice ozenne <brice.ozenne@orange.fr>
+Description: 
+License: GPL-3
+Depends:
+    R (>= 2.10),
+    Rcpp (>= 0.10.5)
+Imports: stats, data.table, tools
+LazyLoad: yes
+LinkingTo: Rcpp, RcppArmadillo
+Collate:
+    'RcppExports.R'
+    'FCT_preparePackage.R'
+	'FCT_detectOutliers.R'
+	'FCT_Valid.R'
+	'FCT_Batch.R'
+NeedsCompilation: yes
+RoxygenNote: 5.0.1
