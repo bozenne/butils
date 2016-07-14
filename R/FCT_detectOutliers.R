@@ -1,5 +1,69 @@
 #### main ####
 
+#' @export
+scaleOutlier <- function(x, center = "median", scale = "mad", method, 
+                         na.rm = FALSE, noScaleIf0 = FALSE, ...){
+  
+  if(na.rm == TRUE){
+    xx <- na.omit(x)
+  }else{
+    xx <- x
+  }
+  
+  if(is.null(center) && is.null(scale) && !missing(method)){
+    
+    res.method <- method(xx, ...)
+    centerR <- res.method[1]
+    scaleR <- res.method[2]
+    
+  }else{
+    
+    if(is.character(center)){
+      centerR <- do.call(center, args = list(xx, ...))
+    }else if(is.numeric(center)){
+      centerR <- center
+    }else if(identical(center, FALSE)){
+      centerR <- FALSE
+    }else{
+      stop("scaleOutlier: unknown type of center parameter \n")
+    }
+    
+    if(is.character(scale)){
+      scaleR <- do.call(scale, args = list(xx, ...))
+    }else if(is.numeric(scale)){
+      scaleR <- scale
+    }else if(identical(scale, FALSE)){
+      scaleR <- FALSE
+    }else{
+      stop("scaleOutlier: unknown type of scale parameter \n")
+    }
+    
+  }
+  
+  if(is.infinite(centerR)){ 
+    stop("scaleOutlier: infinite center parameter \n")
+  }
+  if(is.infinite(scaleR)){ 
+    stop("scaleOutlier: infinite scale parameter \n")
+  }
+  if(is.na(centerR)){ 
+    stop("scaleOutlier: center parameter is NA \n")
+  }
+  if(is.na(scaleR)){ 
+    stop("scaleOutlier: scale parameter is NA \n")
+  }
+  if(scaleR == 0){ 
+    if(noScaleIf0){
+      scaleR <- FALSE
+    }else{
+      stop("scaleOutlier: scale parameter is 0 \n")
+    }
+  }
+  
+  return( scale(x, center = centerR, scale = scaleR) )
+  
+}
+
 #' @title Search potential outliers in a dataset
 #' 
 #' @examples 
@@ -24,7 +88,6 @@ scanOutlier <- function(data, id,
       return(do.call(checkDuplicated, args = list(x)))
       
     }else if(is.numeric(x)){
-      
       res <- checkUnique(x, test = TRUE)
       if(class(res)[1] == "detectOutlier"){
         return(res)
@@ -66,7 +129,8 @@ scanOutlier <- function(data, id,
 #' @examples 
 #' detectOutlier(rnorm(1e3))
 #' @export
-numOutlier <- function(x, threshold = NULL, type = "auto",
+numOutlier <- function(x, type = "auto",
+                       th.gaussian = 3, th.hampel = 3, th.boxplot = 1.5, 
                        na.rm = FALSE){
   
   validCharacter(type, validValues = c("gaussian", "hampel", "boxplot", "auto"), validLength = 1)
@@ -85,33 +149,31 @@ numOutlier <- function(x, threshold = NULL, type = "auto",
     return(output)
   }
   
-  if(is.null(threshold)){
-    threshold <- switch(type,
-                        "gaussian" = 3,
-                        "hampel" = 3,
-                        "boxplot" = 1.5)
-  }
+  threshold <- switch(type,
+                      "gaussian" = th.gaussian,
+                      "hampel" = th.gaussian,
+                      "boxplot" = th.gaussian)
   
   if(type == "gaussian"){
-    center <- mean(x, na.rm = na.rm)
-    scale <- rep(sd(x, na.rm = na.rm), 2)
+    center <- rep(mean(x, na.rm = na.rm), 2)
+    scale <- sd(x, na.rm = na.rm)
   }else if(type == "hampel"){
-    center <- median(x, na.rm = na.rm)
-    scale <- rep(stats::mad(x, na.rm = na.rm), 2)
+    center <- rep(median(x, na.rm = na.rm), 2)
+    scale <- stats::mad(x, na.rm = na.rm)
   }else if(type == "boxplot"){
-    center <- stats::IQR(x, na.rm = na.rm)
-    scale <- quantile(x, probs = c(0.25,0.75), na.rm = na.rm)
+    center <- quantile(x, probs = c(0.25,0.75), na.rm = na.rm)
+    scale <- stats::IQR(x, na.rm = na.rm)
   }
   
-  limitInf <- center - threshold*scale[1]
-  limitSup <- center + threshold*scale[2]
+  limitInf <- center[1] - threshold*scale
+  limitSup <- center[2] + threshold*scale
   if(is.na(limitInf) || is.na(limitSup)){
     stop("detectOutlier: \"x\" contains NA values or insufficient number of values \n")
   }
   
   outliers <- union(which(x < limitInf),
                     which(x > limitSup))
-  outliers.th <- apply(cbind((center-x[outliers])/scale[1],-(center-x[outliers])/scale[2]), 1, 
+  outliers.th <- apply(cbind((center[1]-x[outliers])/scale,-(center[2]-x[outliers])/scale), 1, 
                        function(x){x[x>0]})
   
   
@@ -240,8 +302,8 @@ print.detectOutlier <- function(x, type = "value"){
 #' @export
 print.ls_detectOutlier <- function(x, only.outlier = TRUE, ...){
   
- names.x <- names(x)
- 
+  names.x <- names(x)
+  
   res <- lapply(names.x, function(name){
     if(length(x[[name]]$index)>0 || only.outlier == FALSE){
       cat("# ",name," (",x[[name]]$type,") - ", sep = "")
