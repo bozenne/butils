@@ -9,8 +9,10 @@ Description:
 License: GPL-3
 Depends:
     R (>= 2.10),
-    Rcpp (>= 0.10.5)
-Imports: stats, data.table, tools
+    Rcpp (>= 0.10.5),
+	data.table,
+	ggplot2
+Imports: stats, tools, corrplot, reshape2
 LazyLoad: yes
 LinkingTo: Rcpp, RcppArmadillo
 Collate:
@@ -19,5 +21,6 @@ Collate:
 	'FCT_detectOutliers.R'
 	'FCT_Valid.R'
 	'FCT_Batch.R'
+	'FCT_correlationMatrix.R'
 NeedsCompilation: yes
 RoxygenNote: 5.0.1

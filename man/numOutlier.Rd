@@ -4,7 +4,8 @@
 \alias{numOutlier}
 \title{Identify outlier}
 \usage{
-numOutlier(x, threshold = NULL, type = "auto", na.rm = FALSE)
+numOutlier(x, type = "auto", th.gaussian = 3, th.hampel = 3,
+  th.boxplot = 1.5, na.rm = FALSE)
 }
 \examples{
 detectOutlier(rnorm(1e3))
