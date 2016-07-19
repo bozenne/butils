@@ -23,7 +23,7 @@ validCharacter <- function(value, name = as.character(substitute(value)), validL
                            method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   if(is.null(value)){
@@ -88,7 +88,7 @@ validClass <- function(value, name = as.character(substitute(value)), validClass
                        superClasses = TRUE, method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   if(superClasses == TRUE){
@@ -120,7 +120,7 @@ validDimension <- function(value1, value2 = NULL, name1 = as.character(substitut
                            type = c("NROW","NCOL"), method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   n.type <- length(type)
@@ -181,7 +181,7 @@ validInteger <- function(value, name = as.character(substitute(value)), validLen
                          method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   validNumeric(value = value, name = name, validLength = validLength, min = min, max = max, 
@@ -204,7 +204,7 @@ validLogical <- function(value, name = as.character(substitute(value)), validLen
                          method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   if(is.null(value)){
@@ -248,7 +248,7 @@ validNames <- function(value, name = as.character(substitute(value)), refuse.NUL
                        method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   ## type
@@ -325,7 +325,7 @@ validNumeric <- function(value, name = as.character(substitute(value)), validLen
                          method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   if(is.null(value)){
@@ -395,10 +395,10 @@ validNumeric <- function(value, name = as.character(substitute(value)), validLen
 #' @rdname validFCTs
 #' @export
 validPath <- function(value, name = as.character(substitute(value)), type,
-                      method = NULL, addPP = TRUE, extension = NULL){
+                      method = NULL, addPP = TRUE, extension = NULL, checkFsep = FALSE){
   
   if(!is.null(method) && addPP){
-    paste0(method, ": ")
+    method <- paste0(method, ": ")
   }
   
   validCharacter(type, validLength = 1, validValues = c("file", "dir"))
@@ -415,9 +415,8 @@ validPath <- function(value, name = as.character(substitute(value)), type,
   }
   
   
-  tools::file_ext("xx.R") 
   if(type == "dir"){ 
-    if(substr(value, start = nchar(value), stop = nchar(value)) != "/"){
+    if(checkFsep == TRUE && substr(value, start = nchar(value), stop = nchar(value)) != "/"){
     warning(method, "possible bad specification of \'", name, "\' \n", 
             "\'", name, "\' should end with a fsep (e.g. \"/\") \n", 
             "proposed ", type, " : ", value, "\n")
