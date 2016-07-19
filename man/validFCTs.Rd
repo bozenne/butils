@@ -43,6 +43,6 @@ validNumeric(value, name = as.character(substitute(value)), validLength,
   addPP = TRUE)
 
 validPath(value, name = as.character(substitute(value)), type,
-  method = NULL, addPP = TRUE, extension = NULL)
+  method = NULL, addPP = TRUE, extension = NULL, checkFsep = FALSE)
 }
 
