@@ -1,6 +1,8 @@
 ._github_path <- "C:/Users/hpl802/Documents/GitHub/"
 
-
+#' @title Source a package directory
+#'
+#' @export
 package.source <- function(name, path = ._github_path, Rcode = TRUE, Ccode = FALSE){
   
   validPath(path, type = "dir", method = "package.source")
@@ -8,7 +10,7 @@ package.source <- function(name, path = ._github_path, Rcode = TRUE, Ccode = FAL
   
   if(Rcode){
     validPath(file.path(path, name, "R"), type = "dir", method = "package.source")
-    R.utils::sourceDirectory(file.path(path, name, "R"), modifiedOnly = FALSE)
+    R.utils::sourceDirectory(file.path(path, name, "R"), modifiedOnly = FALSE, envir = globalenv())
   }
   
   if(Ccode){
@@ -16,7 +18,7 @@ package.source <- function(name, path = ._github_path, Rcode = TRUE, Ccode = FAL
     fileNames <- list.files(file.path(path, name, "src"))
     fileExts <- tools::file_path_sans_ext(file)
     indexC <- grep(".cpp|.c", x = tools::file_ext(lsFiles), fixed = FALSE)
-    lapply(fileNames[indexC], Rcpp11::source.cpp)
+    lapply(fileNames[indexC], Rcpp::source.cpp, envir = globalenv(), rebuild = TRUE)
   }
   
 }

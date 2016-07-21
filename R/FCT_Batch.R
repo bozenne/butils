@@ -1,5 +1,6 @@
 #' @title Launching batch 
 #'
+#' @export
 launchBatch <- function(path = ".", file, dirBatch = NULL, txt.options, 
                         operator = "start R CMD BATCH", add.Rout = TRUE, add.lis = TRUE, add.options = "",
                         rm.newfile = FALSE){
