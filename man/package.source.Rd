@@ -4,6 +4,6 @@
 \alias{package.source}
 \title{Source a package directory}
 \usage{
-package.source(name, path = ._github_path, Rcode = TRUE, Ccode = FALSE)
+package.source(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALSE)
 }
 
