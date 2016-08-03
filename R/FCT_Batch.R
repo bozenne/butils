@@ -1,7 +1,27 @@
 #' @title Launching batch 
-#'
+#' 
+#' @description This function is a convenient way to launch an R file in batch mode.
+#' 
+#' @param the name of the file. \emph{character}.
+#' @param path the path to the directory containing the file. \emph{character}.
+#' @param dirBatch If no \code{NULL}, the name of a directory where to store the .lis and .Rout. \emph{character}.  
+#' @param operator the command used to launch the batch. \emph{character}.
+#' @param add.Rout Should a file .Rout be generated. \emph{character}.  
+#' @param add.lis Should a file .liss be generated.\emph{character}.  
+#' @param add.options Additional options to be used to launch the batch. \emph{character}.  
+#' @param rm.newfile Should the copy of the original file be removed after completion of the function? \emph{character}.  
+#' @param
+#' 
+#' @details 
+#' If the directory specified for argument \code{dirBatch} does not exist, it will be automatically generated (provided it corresponds to a valid path).
+#' Before launching the batch, first a copy of the file is made. It is named with the prefix \code{launchBatch-} and, if any, will automatically overwrite the existing file.
+#' Then the command for generating the .lis is added to the file and the batch is launched.
+#'   
+#' @return the output of the shell when lauching the batch. \emph{character}.  
+#' 
+#' @keywords function batch
 #' @export
-launchBatch <- function(path = ".", file, dirBatch = NULL, txt.options, 
+launchBatch <- function(file, path = ".", dirBatch = NULL,  
                         operator = "start R CMD BATCH", add.Rout = TRUE, add.lis = TRUE, add.options = "",
                         rm.newfile = FALSE){
   

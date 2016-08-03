@@ -1,16 +1,50 @@
 #' @title Perform pairwise correlation tests between matrix columns
 #' 
+#' @description Compute pairwise correlation between multiple outcomes. Can reorder the outcomes according to a clustering of the obtained correlations.
+#' 
+#' @param data the dataset. 
+#' @param format the format of data. Can be \code{"wide"} or \code{"long"} 
+#' @param names the names of the column in the dataset to be analysed. If \code{NULL}, all the columns will be used.
+#' @param method.cor the method used to compute the correlation. 
+#' @param use.pairwiseNA If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
+#' @param reorder argument order of corrMatOrder.
+#' @param imput.value the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median). 
+#' @param hclust.method argument hclust.method of corrMatOrder.
+#' @param trace should the progression of the computation of the correlation be displayed. \emph{logical}.
+#' @param plot should the correlation matrix be displayed. \emph{logical}.
+#' @param args.plot a list of arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed
+#' @param output how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.
+#' @param ... additional arguments to be passed to method.cor
+#' 
+#' @details 
+#' data must be coercible to data.table. \cr
+#' \cr
+#' If \code{data="wide"} each column correspond to a different outcomes, indicated by argument names. \cr
+#' If \code{data="long"} then the first value of names is used to define the outcomes and the seconde is used to define their values. \cr
+#' \cr
+#' method.cor can be any method but its first two arguments, named x and y, will be given the values of the outcomes. 
+#' \cr
+#' If imput.value is an operator then it is applied on the values in the same line or column.
+#' \cr 
+#' This function uses the function \code{ggHeatmap} to display the correlation matrix.
+#' 
+#' @return An object determined by the output argument
+#' 
+#' @example 
+#' M <- matrix(rnorm(1e3),100,10)
+#' cor.testDT(M, format = "wide")
+#' 
 #' @export
-cor.testDT <- function(data, names = NULL, format, lower.tri = TRUE,
+cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
                        method.cor = "cor.test", use.pairwiseNNA = TRUE, 
-                       reorder = "AOE", imput.value = 0, hclus.method = "complete",
+                       reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
   
   validCharacter(format, validValues = c("wide","long"), validLength = 1, method = "cor.test.data.table")
   validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "cor.test.data.table")
   
   ## data format
-  if(is.data.table(data)){
+  if(is.data.table(data) == FALSE){
     data <- as.data.table(data)
   }else{
     data <- copy(data)
@@ -27,7 +61,7 @@ cor.testDT <- function(data, names = NULL, format, lower.tri = TRUE,
   ## reshape data
   n <- nrow(data)
   if(format == "wide"){
-    dataL <- melt(data, id.vars = NULL, measure.vars = names, value.name = "value", variable.name = "variable")
+    dataL <- data.table::melt(data, id.vars = NULL, measure.vars = names, value.name = "value", variable.name = "variable")
     name.variable <- "variable"
     name.value <- "value"
   }else{
@@ -87,7 +121,7 @@ cor.testDT <- function(data, names = NULL, format, lower.tri = TRUE,
         Wcorr[index.NA] <- value.NA
       }
     }  
-    order <- corrplot::corrMatOrder(Wcorr, order = reorder, hclust.method = hclus.method)
+    order <- corrplot::corrMatOrder(Wcorr, order = reorder, hclust.method = hclust.method)
     cor.array <- cor.array[order,order,]
   }
   
@@ -128,6 +162,34 @@ cor.testDT <- function(data, names = NULL, format, lower.tri = TRUE,
   
 }
 
+#' @title Display pairwise correlation
+#' 
+#' @description Display a correlation matrix (or heatmap) using ggplot2
+#' 
+#' @param data the dataset containing the correlation values.
+#' @param name.x name of the column containing the label of the first outcome involved in the correlation
+#' @param name.y name of the column containing the label of the second outcome involved in the correlation
+#' @param name.fill name of the column containing the value of the correlation
+#' @param add.text additional information to be displayed above the squares representing the correlation. Must name a column in data.
+#' @param round if not \code{NULL}, the number of digit used to round add.text using signif. Can also be \code{p.value} to indicates with the usual convention the significance level.
+#' @param title the title of the plot
+#' @param xlab the name of the x axis
+#' @param ylab the name of the y axis
+#' @param legend_title the name of the legend
+#' @param na.value the color used to display missing values (NA).
+#' @param col_low the color used to diplay low correlation values
+#' @param col_midpoint the color used to diplay intermediate correlation values
+#' @param col_high the color used to diplay high correlation values
+#' @param midpoint the value corresponding to intermediate correlation value.
+#' @param limits the minimum and maximum correlation values used to build the color panel
+#' @param textSize the size of the text in the plot
+#' @param angle.x the inclination of the x labels
+#' 
+#' @details 
+#' data must be coercible to data.table. \cr
+#' 
+#' @return a ggplot object
+#' 
 #' @export
 ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
                       title = "", xlab = "", ylab = "",  legend_title = "correlation",
