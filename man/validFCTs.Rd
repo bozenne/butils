@@ -12,11 +12,11 @@
 \alias{validPath}
 \title{check the validity of the arguments given by the user}
 \usage{
-validCharacter(value, name = as.character(substitute(value)), validLength,
+validCharacter(value1, name1 = as.character(substitute(value1)), validLength,
   validValues = "character", refuse.NULL = TRUE,
   refuse.duplicates = FALSE, method = NULL, addPP = TRUE)
 
-validClass(value, name = as.character(substitute(value)), validClass,
+validClass(value1, name1 = as.character(substitute(value1)), validClass,
   superClasses = TRUE, method = NULL, addPP = TRUE)
 
 validDimension(value1, value2 = NULL,
@@ -24,25 +24,28 @@ validDimension(value1, value2 = NULL,
   name2 = as.character(substitute(value2)), validDimension = NULL,
   type = c("NROW", "NCOL"), method = NULL, addPP = TRUE)
 
-validInteger(value, name = as.character(substitute(value)), validLength,
+validInteger(value1, name1 = as.character(substitute(value1)), validLength,
   validValues = NULL, min = NULL, max = NULL, refuse.NA = TRUE,
   refuse.NULL = TRUE, refuse.duplicates = FALSE, method = NULL,
   addPP = TRUE)
 
-validLogical(value, name = as.character(substitute(value)), validLength,
+validLogical(value1, name1 = as.character(substitute(value1)), validLength,
   refuse.NULL = TRUE, refuse.NA = TRUE, method = NULL, addPP = TRUE)
 
-validNames(value, name = as.character(substitute(value)),
+validNames(value1, name1 = as.character(substitute(value1)),
   refuse.NULL = TRUE, validLength = NULL, validValues = NULL,
   requiredValues = NULL, forbiddenValues = NULL, method = NULL,
   addPP = TRUE)
 
-validNumeric(value, name = as.character(substitute(value)), validLength,
+validNumeric(value1, name1 = as.character(substitute(value1)), validLength,
   validValues = NULL, min = NULL, max = NULL, refuse.NA = TRUE,
   refuse.NULL = TRUE, refuse.duplicates = FALSE, method = NULL,
   addPP = TRUE)
 
-validPath(value, name = as.character(substitute(value)), type,
+validPath(value1, name1 = as.character(substitute(value1)), type,
   method = NULL, addPP = TRUE, extension = NULL, checkFsep = FALSE)
+}
+\arguments{
+\item{addPP}{}
 }
 
