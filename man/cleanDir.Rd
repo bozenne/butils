@@ -6,4 +6,9 @@
 \usage{
 cleanDir(dirname, test = TRUE)
 }
+\arguments{
+\item{dirname}{the path leading to the directory}
+
+\item{test}{should the user be asked whether he really wants to remove the directory}
+}
 

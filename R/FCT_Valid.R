@@ -16,9 +16,24 @@
 #' 
 #' @title check the validity of the arguments given by the user
 #' 
+#' @param value1
+#' @param value2
+#' @param name1
+#' @param name2
+#' @param validClass
+#' @param validDimension
+#' @param validLength
+#' @param validValues
+#' @param refuse.NULL
+#' @param refuse.duplicates
+#' @param superClasses
+#' @param type
+#' @param method
+#' @param addPP
+#' 
 #' @rdname validFCTs
 #' @export
-validCharacter <- function(value, name = as.character(substitute(value)), validLength, 
+validCharacter <- function(value1, name1 = as.character(substitute(value1)), validLength, 
                            validValues = "character", refuse.NULL = TRUE, refuse.duplicates = FALSE, 
                            method = NULL, addPP = TRUE){
   
@@ -26,53 +41,53 @@ validCharacter <- function(value, name = as.character(substitute(value)), validL
     method <- paste0(method, ": ")
   }
   
-  if(is.null(value)){
+  if(is.null(value1)){
     
     if(refuse.NULL == TRUE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must not be NULL \n")
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must not be NULL \n")
     }
     
   }else{
     
     #### check size
-    n.value <- length(value)
+    n.value1 <- length(value1)
     
-    if(!is.null(validLength) && n.value %in% validLength == FALSE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must have length ", paste(validLength, collapse = " or "), "  \n", 
-           "length(", name, ") : ", n.value, "\n")
+    if(!is.null(validLength) && n.value1 %in% validLength == FALSE){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must have length ", paste(validLength, collapse = " or "), "  \n", 
+           "length(", name1, ") : ", n.value1, "\n")
     }
     
     #### check duplicates
-    if(refuse.duplicates == TRUE && any(duplicated(value))){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' contains duplicated values : \n",        
-           "\"",paste(unique(value[duplicated(value)]), collapse = "\" \""), "\" \n")
+    if(refuse.duplicates == TRUE && any(duplicated(value1))){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' contains duplicated values : \n",        
+           "\"",paste(unique(value1[duplicated(value1)]), collapse = "\" \""), "\" \n")
     }
     
     #### check values
     if(identical(validValues,"character")){
       
-      if(any(is.character(value) == FALSE)){
-        stop(method, "wrong specification of \'", name, "\' \n", 
-             "\'", name, "\' must be a ", if(n.value == 1){"character"}else{"vector of characters"}," \n", 
-             "is(", name, ") : ", paste(is(value), collapse = " "), "\n")
+      if(any(is.character(value1) == FALSE)){
+        stop(method, "wrong specification of \'", name1, "\' \n", 
+             "\'", name1, "\' must be a ", if(n.value1 == 1){"character"}else{"vector of characters"}," \n", 
+             "is(", name1, ") : ", paste(is(value1), collapse = " "), "\n")
       }
       
     } else if(identical(validValues,"character_or_logical")){
       
-      if(any( (is.character(value) == FALSE) * (is.logical(value) == FALSE) > 0 )){
-        stop(method, "wrong specification of \'", name, "\' \n", 
-             "\'", name, "\' must be a ", if(n.value == 1){"character or logical"}else{"vector of characters or logicals"}," \n", 
-             "is(", name, ") : ", paste(is(value), collapse = " "), "\n")
+      if(any( (is.character(value1) == FALSE) * (is.logical(value1) == FALSE) > 0 )){
+        stop(method, "wrong specification of \'", name1, "\' \n", 
+             "\'", name1, "\' must be a ", if(n.value1 == 1){"character or logical"}else{"vector of characters or logicals"}," \n", 
+             "is(", name1, ") : ", paste(is(value1), collapse = " "), "\n")
       }
       
-    } else if(!is.null(validValues) && any(value %in% validValues == FALSE)){
+    } else if(!is.null(validValues) && any(value1 %in% validValues == FALSE)){
       
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "valid values for \'", name, "\' : ", if(refuse.NULL == FALSE){"NULL"}, " \"", paste(validValues, collapse = "\" \""), "\" \n", 
-           "refused value",if(sum(value %in% validValues == FALSE)>1){"s"}," for \'", name, "\' : \"", paste(value[value %in% validValues == FALSE], collapse = "\" \""), "\"\n")
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "valid values for \'", name1, "\' : ", if(refuse.NULL == FALSE){"NULL"}, " \"", paste(validValues, collapse = "\" \""), "\" \n", 
+           "refused value",if(sum(value1 %in% validValues == FALSE)>1){"s"}," for \'", name1, "\' : \"", paste(value1[value1 %in% validValues == FALSE], collapse = "\" \""), "\"\n")
       
     }
     
@@ -84,7 +99,7 @@ validCharacter <- function(value, name = as.character(substitute(value)), validL
 
 #' @rdname validFCTs
 #' @export
-validClass <- function(value, name = as.character(substitute(value)), validClass, 
+validClass <- function(value1, name1 = as.character(substitute(value1)), validClass, 
                        superClasses = TRUE, method = NULL, addPP = TRUE){
   
   if(!is.null(method) && addPP){
@@ -93,18 +108,18 @@ validClass <- function(value, name = as.character(substitute(value)), validClass
   
   if(superClasses == TRUE){
     
-    if( all(is(value) %in% validClass == FALSE) ){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "superclass of \'", name, "\' must be one of the following \"", paste(validClass,collapse="\" \""), "\"  \n", 
-           "proposed superclass : \"", paste(is(value),collapse="\" \""), "\" \n")
+    if( all(is(value1) %in% validClass == FALSE) ){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "superclass of \'", name1, "\' must be one of the following \"", paste(validClass,collapse="\" \""), "\"  \n", 
+           "proposed superclass : \"", paste(is(value1),collapse="\" \""), "\" \n")
     }  
     
   }else{
  
-    if( class(value) %in% validClass == FALSE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "class of \'", name, "\' must be \"", paste(validClass,collapse="\" \""),"\"  \n", 
-           "proposed class : ", class(value)[[1]], "\n")
+    if( class(value1) %in% validClass == FALSE){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "class of \'", name1, "\' must be \"", paste(validClass,collapse="\" \""),"\"  \n", 
+           "proposed class : ", class(value1)[[1]], "\n")
     }  
     
   }
@@ -175,7 +190,7 @@ validDimension <- function(value1, value2 = NULL, name1 = as.character(substitut
   
 #' @rdname validFCTs
 #' @export
-validInteger <- function(value, name = as.character(substitute(value)), validLength, 
+validInteger <- function(value1, name1 = as.character(substitute(value1)), validLength, 
                          validValues = NULL, min = NULL, max = NULL, 
                          refuse.NA = TRUE, refuse.NULL = TRUE, refuse.duplicates = FALSE, 
                          method = NULL, addPP = TRUE){
@@ -184,14 +199,14 @@ validInteger <- function(value, name = as.character(substitute(value)), validLen
     method <- paste0(method, ": ")
   }
   
-  validNumeric(value = value, name = name, validLength = validLength, min = min, max = max, 
+  validNumeric(value1 = value1, name1 = name1, validLength = validLength, min = min, max = max, 
                refuse.NA = refuse.NA, refuse.NULL = refuse.NULL, refuse.duplicates = refuse.duplicates, method = method)
   
   #### check integer
-  if(!is.null(value) && any(value %% 1 > 0)){
-    stop(method, "wrong specification of \'", name, "\' \n", 
-         "\'", name, "\' must contain integers not doubles \n",        
-         "invalid value(s) in ", name, " : ", paste(value[value %% 1 > 0], collapse = " "), "\n")
+  if(!is.null(value1) && any(value1 %% 1 > 0)){
+    stop(method, "wrong specification of \'", name1, "\' \n", 
+         "\'", name1, "\' must contain integers not doubles \n",        
+         "invalid value(s) in ", name1, " : ", paste(value1[value1 %% 1 > 0], collapse = " "), "\n")
   }
   
   return(invisible(TRUE))
@@ -199,7 +214,7 @@ validInteger <- function(value, name = as.character(substitute(value)), validLen
 
 #' @rdname validFCTs
 #' @export
-validLogical <- function(value, name = as.character(substitute(value)), validLength, 
+validLogical <- function(value1, name1 = as.character(substitute(value1)), validLength, 
                          refuse.NULL = TRUE, refuse.NA = TRUE, 
                          method = NULL, addPP = TRUE){
   
@@ -207,33 +222,33 @@ validLogical <- function(value, name = as.character(substitute(value)), validLen
     method <- paste0(method, ": ")
   }
   
-  if(is.null(value)){
+  if(is.null(value1)){
     
     #### NULL
     if(refuse.NULL == TRUE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must be logical ",if(refuse.NA == FALSE){"or NA"}," and not NULL \n")
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must be logical ",if(refuse.NA == FALSE){"or NA"}," and not NULL \n")
     }
     
   }else{ 
     
     #### Size
-    if(!is.null(validLength) && length(value) %in% validLength == FALSE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must have length ", paste(validLength, collapse = " or "), "  \n", 
-           "length(", name, ") : ", length(value), "\n")
+    if(!is.null(validLength) && length(value1) %in% validLength == FALSE){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must have length ", paste(validLength, collapse = " or "), "  \n", 
+           "length(", name1, ") : ", length(value1), "\n")
     } 
     
     #### Type
-    if(any(is.logical(value) == FALSE)){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must be ", if(refuse.NULL == FALSE){"NULL or "}, if(refuse.NA == FALSE){"NA or "},"TRUE or FALSE \n",        
-           "is(", name, ") : ", paste(is(value), collapse = " "), "\n")
+    if(any(is.logical(value1) == FALSE)){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must be ", if(refuse.NULL == FALSE){"NULL or "}, if(refuse.NA == FALSE){"NA or "},"TRUE or FALSE \n",        
+           "is(", name1, ") : ", paste(is(value1), collapse = " "), "\n")
     }
     
-    if(refuse.NA == TRUE && any(is.na(value)) ){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must be logical ",if(refuse.NULL == FALSE){"or NULL"}," and not NA \n")
+    if(refuse.NA == TRUE && any(is.na(value1)) ){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must be logical ",if(refuse.NULL == FALSE){"or NULL"}," and not NA \n")
     }
     
   }
@@ -243,7 +258,7 @@ validLogical <- function(value, name = as.character(substitute(value)), validLen
 
 #' @rdname validFCTs
 #' @export
-validNames <- function(value, name = as.character(substitute(value)), refuse.NULL = TRUE,
+validNames <- function(value1, name1 = as.character(substitute(value1)), refuse.NULL = TRUE,
                        validLength = NULL, validValues = NULL, requiredValues = NULL, forbiddenValues = NULL,
                        method = NULL, addPP = TRUE){
   
@@ -252,64 +267,64 @@ validNames <- function(value, name = as.character(substitute(value)), refuse.NUL
   }
   
   ## type
-  if(is.matrix(value)){
-    value <- colnames(value)
+  if(is.matrix(value1)){
+    value1 <- colnames(value1)
   }
   
-  if(is.data.table(value) || is.data.frame(value) || is.list(value)){
-    value <- names(value)
+  if(is.data.table(value1) || is.data.frame(value1) || is.list(value1)){
+    value1 <- names(value1)
   }
   
   ## tests
-  if(is.null(value)){
+  if(is.null(value1)){
     
     if(refuse.NULL == TRUE){
-    stop(method, "wrong specification of \'", name, "\' \n", 
-         "names of \'", name, "\' must not be NULL \n")
+    stop(method, "wrong specification of \'", name1, "\' \n", 
+         "names of \'", name1, "\' must not be NULL \n")
     }
     
   }else{
     
     #### check size
-    n.value <- length(value)
+    n.value1 <- length(value1)
     
-    if(!is.null(validLength) && n.value %in% validLength == FALSE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must have ", paste(validLength, collapse = " or ")," names  \n", 
-           "length(names(", name, ")) : ", n.value, "\n")
+    if(!is.null(validLength) && n.value1 %in% validLength == FALSE){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must have ", paste(validLength, collapse = " or ")," names  \n", 
+           "length(names(", name1, ")) : ", n.value1, "\n")
     }
     
     #### check content
     
-    if(!is.null(requiredValues) && any(requiredValues %in% value == FALSE)){
+    if(!is.null(requiredValues) && any(requiredValues %in% value1 == FALSE)){
       
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must contains specific names \n",
-           "missing names : \"",paste(requiredValues[requiredValues %in% value == FALSE], collapse = "\" \""),"\" \n", 
-           "proposed names : \"", paste(value, collapse = "\" \""), "\"\n")  
-      
-    }
-    
-    if(!is.null(validValues) && any(value %in% validValues == FALSE)){
-      
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "valid names for \'", name, "\' : \"",paste(validValues, collapse = "\" \""),"\" \n", 
-           "refused names : \"", paste(value[value %in% validValues == FALSE], collapse = " "), "\"\n")  
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must contains specific names \n",
+           "missing names : \"",paste(requiredValues[requiredValues %in% value1 == FALSE], collapse = "\" \""),"\" \n", 
+           "proposed names : \"", paste(value1, collapse = "\" \""), "\"\n")  
       
     }
     
-    if(!is.null(forbiddenValues) && any(value %in% forbiddenValues)){
+    if(!is.null(validValues) && any(value1 %in% validValues == FALSE)){
       
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "forbidden names for \'", name, "\' : \"",paste(forbiddenValues, collapse = "\" \""),"\" \n", 
-           "refused names : \"", paste(value[value %in% forbiddenValues], collapse = " "), "\"\n")  
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "valid names for \'", name1, "\' : \"",paste(validValues, collapse = "\" \""),"\" \n", 
+           "refused names : \"", paste(value1[value1 %in% validValues == FALSE], collapse = " "), "\"\n")  
       
     }
     
-    if(any(duplicated(value))){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           name, " must not contain duplicated names \n", 
-           "duplicated names : \"", paste(value[duplicated(value)], collapse = " "), "\"\n")  
+    if(!is.null(forbiddenValues) && any(value1 %in% forbiddenValues)){
+      
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "forbidden names for \'", name1, "\' : \"",paste(forbiddenValues, collapse = "\" \""),"\" \n", 
+           "refused names : \"", paste(value1[value1 %in% forbiddenValues], collapse = " "), "\"\n")  
+      
+    }
+    
+    if(any(duplicated(value1))){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           name1, " must not contain duplicated names \n", 
+           "duplicated names : \"", paste(value1[duplicated(value1)], collapse = " "), "\"\n")  
     }
     
   }
@@ -319,7 +334,7 @@ validNames <- function(value, name = as.character(substitute(value)), refuse.NUL
 }
 #' @rdname validFCTs
 #' @export
-validNumeric <- function(value, name = as.character(substitute(value)), validLength,
+validNumeric <- function(value1, name1 = as.character(substitute(value1)), validLength,
                          validValues = NULL , min = NULL, max = NULL,
                          refuse.NA = TRUE, refuse.NULL = TRUE, refuse.duplicates = FALSE, 
                          method = NULL, addPP = TRUE){
@@ -328,63 +343,63 @@ validNumeric <- function(value, name = as.character(substitute(value)), validLen
     method <- paste0(method, ": ")
   }
   
-  if(is.null(value)){
+  if(is.null(value1)){
     
     if(refuse.NULL == TRUE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must not be NULL \n")
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must not be NULL \n")
     }
     
   }else{
     
     #### check length
-    if(!is.null(validLength) && length(value) %in% validLength == FALSE){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must have length ", paste(validLength, collapse = " or "), "  \n", 
-           "length(", name, ") : ", length(value), "\n")
+    if(!is.null(validLength) && length(value1) %in% validLength == FALSE){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must have length ", paste(validLength, collapse = " or "), "  \n", 
+           "length(", name1, ") : ", length(value1), "\n")
     }
     
     #### check NA
-    if(refuse.NA == TRUE && any(is.na(value))){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must not contain NA \n", 
-           "index of NA values : ", which(paste(is.na(value), collapse = " ")), "\n")
+    if(refuse.NA == TRUE && any(is.na(value1))){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must not contain NA \n", 
+           "index of NA values : ", which(paste(is.na(value1), collapse = " ")), "\n")
     }
     
     #### check numeric
-    if(any( (is.numeric(value) == FALSE) * (is.na(value) == FALSE) )){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must be a numeric \n",        
-           "is(", name, ") : ", paste(is(value), collapse = " "), "\n")
+    if(any( (is.numeric(value1) == FALSE) * (is.na(value1) == FALSE) )){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must be a numeric \n",        
+           "is(", name1, ") : ", paste(is(value1), collapse = " "), "\n")
     }
     
     #### check duplicates
-    if(refuse.duplicates == TRUE && any(duplicated(value))){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' contains duplicated values : \n",        
-           paste(unique(value[duplicated(value)]), collapse = " "), "\n")
+    if(refuse.duplicates == TRUE && any(duplicated(value1))){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' contains duplicated values : \n",        
+           paste(unique(value1[duplicated(value1)]), collapse = " "), "\n")
     }
     
     #### check min value
-    if(!is.null(min) && any(stats::na.omit(value) < min)){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must be bigger than ", min, " \n",        
-           "invalid value(s) in ", name, " : ", paste(value[stats::na.omit(value) < min], collapse = " "), "\n")
+    if(!is.null(min) && any(stats::na.omit(value1) < min)){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must be bigger than ", min, " \n",        
+           "invalid value(s) in ", name1, " : ", paste(value1[stats::na.omit(value1) < min], collapse = " "), "\n")
     }
     
     #### check max value
-    if(!is.null(max) && any(stats::na.omit(value) > max)){
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "\'", name, "\' must be smaller than ", max, " \n",        
-           "invalid value(s) in ", name, " : ", paste(value[stats::na.omit(value) > max], collapse = " "), "\n")
+    if(!is.null(max) && any(stats::na.omit(value1) > max)){
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "\'", name1, "\' must be smaller than ", max, " \n",        
+           "invalid value(s) in ", name1, " : ", paste(value1[stats::na.omit(value1) > max], collapse = " "), "\n")
     }
     
     #### check valid values
-    if(!is.null(validValues) && any(value %in% validValues == FALSE)){
+    if(!is.null(validValues) && any(value1 %in% validValues == FALSE)){
       
-      stop(method, "wrong specification of \'", name, "\' \n", 
-           "valid values for \'", name, "\' : ", if(refuse.NULL == FALSE){"NULL"}, " \"", paste(validValues, collapse = "\" \""), "\" \n", 
-           "refused value",if(sum(value %in% validValues == FALSE)>1){"s"}," for \'", name, "\' : \"", paste(value[value %in% validValues == FALSE], collapse = " "), "\"\n")
+      stop(method, "wrong specification of \'", name1, "\' \n", 
+           "valid values for \'", name1, "\' : ", if(refuse.NULL == FALSE){"NULL"}, " \"", paste(validValues, collapse = "\" \""), "\" \n", 
+           "refused value",if(sum(value1 %in% validValues == FALSE)>1){"s"}," for \'", name1, "\' : \"", paste(value1[value1 %in% validValues == FALSE], collapse = " "), "\"\n")
       
     }
   }
@@ -394,7 +409,7 @@ validNumeric <- function(value, name = as.character(substitute(value)), validLen
 
 #' @rdname validFCTs
 #' @export
-validPath <- function(value, name = as.character(substitute(value)), type,
+validPath <- function(value1, name1 = as.character(substitute(value1)), type,
                       method = NULL, addPP = TRUE, extension = NULL, checkFsep = FALSE){
   
   if(!is.null(method) && addPP){
@@ -404,27 +419,27 @@ validPath <- function(value, name = as.character(substitute(value)), type,
   validCharacter(type, validLength = 1, validValues = c("file", "dir"))
   
   try_path <- switch(type,
-                     file = file.exists(value),
-                     dir = dir.exists(value)
+                     file = file.exists(value1),
+                     dir = dir.exists(value1)
   )
   
   if(try_path == FALSE){
-    stop(method, "wrong specification of \'", name, "\' \n", 
-         "proposed ",type,": \"", value, "\" is not valid \n", 
+    stop(method, "wrong specification of \'", name1, "\' \n", 
+         "proposed ",type,": \"", value1, "\" is not valid \n", 
          "current path: ", getwd(), "\n")
   }
   
   
   if(type == "dir"){ 
-    if(checkFsep == TRUE && substr(value, start = nchar(value), stop = nchar(value)) != "/"){
-    warning(method, "possible bad specification of \'", name, "\' \n", 
-            "\'", name, "\' should end with a fsep (e.g. \"/\") \n", 
-            "proposed ", type, " : ", value, "\n")
+    if(checkFsep == TRUE && substr(value1, start = nchar(value1), stop = nchar(value1)) != "/"){
+    warning(method, "possible bad specification of \'", name1, "\' \n", 
+            "\'", name1, "\' should end with a fsep (e.g. \"/\") \n", 
+            "proposed ", type, " : ", value1, "\n")
     }
   }else if(type == "file" && !is.null(extension)){
-    fileExtension <- tools::file_ext(value) 
+    fileExtension <- tools::file_ext(value1) 
     if(fileExtension %in% extension == FALSE){
-      stop(method, "\'", name, "\' has not the expected extension \n", 
+      stop(method, "\'", name1, "\' has not the expected extension \n", 
            "proposed extension: \"", fileExtension, "\" \n", 
            "expected extension: \"", paste(extension, collapse = "\" \""), "\"\n")
     }

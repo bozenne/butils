@@ -10,4 +10,40 @@ buildPackage(package, version = NULL, path.package = NULL,
   options.check = NULL, install = TRUE, options.install = "--build",
   trace = 2, clearAfter = TRUE)
 }
+\arguments{
+\item{package}{the name of the package}
+
+\item{version}{the version of the package}
+
+\item{path.package}{the position of the directory containing the package}
+
+\item{compileAttributes}{should the function \code{compileAttributes} be used to enerates the bindings required to call C++ functions from R for functions adorned with the Rcpp::export attribute.}
+
+\item{clearDir}{should the temporary directory used to unzip the package be removed}
+
+\item{roxygenise}{should the documentation be generated using \code{roxygenise}}
+
+\item{build}{should the package be build}
+
+\item{options.build}{additional options used to build the package}
+
+\item{untar}{should the package be unzipped}
+
+\item{check}{should the CRAN test be applied to the package}
+
+\item{options.check}{additional options used to check the package}
+
+\item{install}{should the package be installed on the computer.}
+
+\item{options.install}{additional options used to install the package}
+
+\item{trace}{How the execution of the function should be traced. If 2, also display the execution of compileAttributes.}
+
+\item{clearAfter}{Should the directory where the package has been unzipped or tested be removed at the end of the execution.}
+}
+\description{
+Convenient way to compile, test or install a package
+}
+\keyword{function}
+\keyword{package}
 

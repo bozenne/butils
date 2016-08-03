@@ -21,7 +21,6 @@ Imports:
 LazyLoad: yes
 LinkingTo: Rcpp, RcppArmadillo
 Collate:
-    'RcppExports.R'
     'FCT_Batch.R'
     'FCT_CorrelationMatrix.R'
     'FCT_DetectOutliers.R'
@@ -29,5 +28,6 @@ Collate:
     'FCT_Profile.R'
     'FCT_Source.R'
     'FCT_Valid.R'
+    'RcppExports.R'
 NeedsCompilation: yes
 RoxygenNote: 5.0.0

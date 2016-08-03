@@ -1,6 +1,6 @@
 #' @title Launching batch 
 #' 
-#' @description This function is a convenient way to launch an R file in batch mode.
+#' @description Convenient way to launch an R file in batch mode.
 #' 
 #' @param the name of the file. \emph{character}.
 #' @param path the path to the directory containing the file. \emph{character}.
@@ -10,7 +10,6 @@
 #' @param add.lis Should a file .liss be generated.\emph{character}.  
 #' @param add.options Additional options to be used to launch the batch. \emph{character}.  
 #' @param rm.newfile Should the copy of the original file be removed after completion of the function? \emph{character}.  
-#' @param
 #' 
 #' @details 
 #' If the directory specified for argument \code{dirBatch} does not exist, it will be automatically generated (provided it corresponds to a valid path).

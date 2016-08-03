@@ -6,4 +6,19 @@
 \usage{
 package.source(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALSE)
 }
+\arguments{
+\item{name}{the name of the package}
+
+\item{path}{the path to the directory containing the package}
+
+\item{Rcode}{should all the .R be sourced}
+
+\item{Ccode}{should all the .cpp file be source (using Rcpp::sourceCpp)}
+}
+\description{
+Source all the R and Cpp file contain in a package
+}
+\seealso{
+\code{\link{dir.gitHub}}
+}
 

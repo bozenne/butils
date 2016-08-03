@@ -1,6 +1,103 @@
-# exportPattern("^[^\\.]") : exporte toutes les fonctions ne commencant pas par un point
-# exportPattern("^[[:alpha:]]+") : exporte toutes les fonctions commencant par une lettre 
-# "The "Writing R Extensions" manual suggests "the directive exportPattern("^[^\\.]") exports all variables that do not start with a period."
+### exportPattern("^[^\\.]") : exporte toutes les fonctions ne commencant pas par un point
+### exportPattern("^[[:alpha:]]+") : exporte toutes les fonctions commencant par une lettre 
+### "The "Writing R Extensions" manual suggests "the directive exportPattern("^[^\\.]") exports all variables that do not start with a period."
+
+#' @title Integrative function for building packages
+#' @description  Convenient way to compile, test or install a package
+#' 
+#' @param package the name of the package
+#' @param version the version of the package
+#' @param path.package the position of the directory containing the package
+#' @param compileAttributes should the function \code{compileAttributes} be used to enerates the bindings required to call C++ functions from R for functions adorned with the Rcpp::export attribute.
+#' @param clearDir should the temporary directory used to unzip the package be removed
+#' @param roxygenise should the documentation be generated using \code{roxygenise}
+#' @param build should the package be build
+#' @param options.build additional options used to build the package
+#' @param untar should the package be unzipped
+#' @param check should the CRAN test be applied to the package
+#' @param options.check additional options used to check the package
+#' @param install should the package be installed on the computer.
+#' @param options.install additional options used to install the package
+#' @param trace How the execution of the function should be traced. If 2, also display the execution of compileAttributes.
+#' @param clearAfter Should the directory where the package has been unzipped or tested be removed at the end of the execution.
+#' 
+#' 
+#' @keywords function package
+#' 
+#' @export
+buildPackage <- function(package, version = NULL, path.package = NULL, 
+                         compileAttributes = TRUE, clearDir = TRUE, roxygenise = TRUE,
+                         build = TRUE, options.build = NULL, 
+                         untar = TRUE, 
+                         check = FALSE, options.check = NULL, 
+                         install = TRUE, options.install = "--build", 
+                         trace = 2, clearAfter = TRUE){
+  require(Rcpp)
+  require(RcppArmadillo)
+  require(roxygen2)
+  
+  if(!is.null(path.package)){
+    oldWD <- getwd()
+    setwd(path.package)
+    on.exit(setwd(oldWD))
+  }
+  
+  if(is.null(version)){
+    fieldVersion <- grep("Version", readLines(file.path(path.package, package,"DESCRIPTION")), value = TRUE)
+    version <- gsub("Version: ", replacement = "", x = fieldVersion)
+  }
+  
+  packageVersion <- paste(package, version, sep = "_")
+  path.Wpackage <- package
+  path.WpackageVersion <- packageVersion
+  
+  if(compileAttributes){
+    if(trace)cat(">> compileAttributes \n")
+    Rcpp::compileAttributes(pkgdir = path.Wpackage, verbose = (trace>=2))
+  } 
+  # crlf2lf("testCpp")
+  # pdf2qpdf("MRIaggr")
+  
+  if(clearDir){ 
+    if(trace)cat(">> clearDir \n")
+    cleanDir(path.WpackageVersion)
+    if(trace)cat("\n")
+  }
+  if(roxygenise){
+    if(trace)cat(">> roxygenise \n")
+    roxygen2::roxygenise(package)
+    if(trace)cat("\n")
+  } 
+  
+  if(build){
+    if(trace)cat(">> build \n")
+    system(paste0("R CMD build ",options.build," ",package))
+    if(trace)cat("\n")
+  } 
+  
+  if(untar){
+    if(trace)cat(">> untar \n")
+    untar(paste0(packageVersion,".tar.gz"), exdir = paste0(packageVersion))  
+    if(trace)cat("\n")
+  }
+  
+  if(check){
+    if(trace)cat(">> CRAN check \n")
+    system(paste0("R CMD check ",options.check," ",packageVersion,"/",package))
+    if(clearAfter){cleanDir(paste0(path.Wpackage,".Rcheck"), test = FALSE)}
+    if(trace)cat("\n")
+  }
+  
+  if(install){
+    if(trace)cat("* install package \n")
+    system(paste0("R CMD INSTALL ",options.check," ",packageVersion,"/",package))
+    if(clearAfter){cleanDir(path.WpackageVersion, test = FALSE)}
+    if(trace)cat("\n")
+  }
+  
+  
+}
+
 
 #' @title Convert .cpp files with CRLF line ending in LF line ending
 #'
@@ -60,6 +157,8 @@ crlf2lf <- function(dirname){
 
 #' @title Remove all files from a given directory
 #'
+#' @param dirname the path leading to the directory
+#' @param test should the user be asked whether he really wants to remove the directory
 cleanDir <- function(dirname,test=TRUE){
   
   dirname_split <- strsplit(dirname,split="/")[[1]]
@@ -255,77 +354,3 @@ printLsArgs <- function(dir,write.file=FALSE,filename="List_of_arguments",trace=
 
 
 
-#' @title Integrative function for building packages
-#'
-buildPackage <- function(package, version = NULL, path.package = NULL, 
-                         compileAttributes = TRUE, clearDir = TRUE, roxygenise = TRUE,
-                         build = TRUE, options.build = NULL, 
-                         untar = TRUE, 
-                         check = FALSE, options.check = NULL, 
-                         install = TRUE, options.install = "--build", 
-                         trace = 2, clearAfter = TRUE){
-  require(Rcpp)
-  require(RcppArmadillo)
-  require(roxygen2)
-  
-  if(!is.null(path.package)){
-    oldWD <- getwd()
-    setwd(path.package)
-    on.exit(setwd(oldWD))
-  }
-    
-  if(is.null(version)){
-    fieldVersion <- grep("Version", readLines(file.path(path.package, package,"DESCRIPTION")), value = TRUE)
-    version <- gsub("Version: ", replacement = "", x = fieldVersion)
-  }
-  
-  packageVersion <- paste(package, version, sep = "_")
-  path.Wpackage <- package
-  path.WpackageVersion <- packageVersion
-  
-   if(compileAttributes){
-    if(trace)cat(">> compileAttributes \n")
-    Rcpp::compileAttributes(pkgdir = path.Wpackage, verbose = (trace>=2))
-  } 
-  # crlf2lf("testCpp")
-  # pdf2qpdf("MRIaggr")
-  
-  if(clearDir){ 
-    if(trace)cat(">> clearDir \n")
-    cleanDir(path.WpackageVersion)
-    if(trace)cat("\n")
-  }
-  if(roxygenise){
-    if(trace)cat(">> roxygenise \n")
-    roxygen2::roxygenise(package)
-    if(trace)cat("\n")
-  } 
-  
-  if(build){
-    if(trace)cat(">> build \n")
-    system(paste0("R CMD build ",options.build," ",package))
-    if(trace)cat("\n")
-  } 
-  
-  if(untar){
-    if(trace)cat(">> untar \n")
-    untar(paste0(packageVersion,".tar.gz"), exdir = paste0(packageVersion))  
-    if(trace)cat("\n")
-  }
-  
-  if(check){
-    if(trace)cat(">> CRAN check \n")
-    system(paste0("R CMD check ",options.check," ",packageVersion,"/",package))
-    if(clearAfter){cleanDir(paste0(path.Wpackage,".Rcheck"), test = FALSE)}
-    if(trace)cat("\n")
-  }
-  
-  if(install){
-    if(trace)cat("* install package \n")
-    system(paste0("R CMD INSTALL ",options.check," ",packageVersion,"/",package))
-    if(clearAfter){cleanDir(path.WpackageVersion, test = FALSE)}
-    if(trace)cat("\n")
-  }
-  
-  
-}

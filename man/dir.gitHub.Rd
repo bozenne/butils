@@ -2,8 +2,14 @@
 % Please edit documentation in R/FCT_Source.R
 \name{dir.gitHub}
 \alias{dir.gitHub}
-\title{localise the GitHub directory}
+\title{Find GitHub directory}
 \usage{
 dir.gitHub(user = NULL)
+}
+\arguments{
+\item{user}{the name corresponding to the cession.}
+}
+\description{
+Localise the github directory on linux or windows OS.
 }
 

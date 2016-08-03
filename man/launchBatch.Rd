@@ -4,8 +4,38 @@
 \alias{launchBatch}
 \title{Launching batch}
 \usage{
-launchBatch(path = ".", file, dirBatch = NULL, txt.options,
+launchBatch(file, path = ".", dirBatch = NULL,
   operator = "start R CMD BATCH", add.Rout = TRUE, add.lis = TRUE,
   add.options = "", rm.newfile = FALSE)
 }
+\arguments{
+\item{path}{the path to the directory containing the file. \emph{character}.}
+
+\item{dirBatch}{If no \code{NULL}, the name of a directory where to store the .lis and .Rout. \emph{character}.}
+
+\item{operator}{the command used to launch the batch. \emph{character}.}
+
+\item{add.Rout}{Should a file .Rout be generated. \emph{character}.}
+
+\item{add.lis}{Should a file .liss be generated.\emph{character}.}
+
+\item{add.options}{Additional options to be used to launch the batch. \emph{character}.}
+
+\item{rm.newfile}{Should the copy of the original file be removed after completion of the function? \emph{character}.}
+
+\item{the}{name of the file. \emph{character}.}
+}
+\value{
+the output of the shell when lauching the batch. \emph{character}.
+}
+\description{
+Convenient way to launch an R file in batch mode.
+}
+\details{
+If the directory specified for argument \code{dirBatch} does not exist, it will be automatically generated (provided it corresponds to a valid path).
+Before launching the batch, first a copy of the file is made. It is named with the prefix \code{launchBatch-} and, if any, will automatically overwrite the existing file.
+Then the command for generating the .lis is added to the file and the batch is launched.
+}
+\keyword{batch}
+\keyword{function}
 

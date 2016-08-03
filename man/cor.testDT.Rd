@@ -4,9 +4,62 @@
 \alias{cor.testDT}
 \title{Perform pairwise correlation tests between matrix columns}
 \usage{
-cor.testDT(data, names = NULL, format, lower.tri = TRUE,
+cor.testDT(data, format, names = NULL, lower.tri = TRUE,
   method.cor = "cor.test", use.pairwiseNNA = TRUE, reorder = "AOE",
-  imput.value = 0, hclus.method = "complete", trace = TRUE, plot = TRUE,
-  args.plot = list(), output = "data.table", ...)
+  imput.value = 0, hclust.method = "complete", trace = TRUE,
+  plot = TRUE, args.plot = list(), output = "data.table", ...)
 }
+\arguments{
+\item{data}{the dataset.}
+
+\item{format}{the format of data. Can be \code{"wide"} or \code{"long"}}
+
+\item{names}{the names of the column in the dataset to be analysed. If \code{NULL}, all the columns will be used.}
+
+\item{method.cor}{the method used to compute the correlation.}
+
+\item{reorder}{argument order of corrMatOrder.}
+
+\item{imput.value}{the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median).}
+
+\item{hclust.method}{argument hclust.method of corrMatOrder.}
+
+\item{trace}{should the progression of the computation of the correlation be displayed. \emph{logical}.}
+
+\item{plot}{should the correlation matrix be displayed. \emph{logical}.}
+
+\item{args.plot}{a list of arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed}
+
+\item{output}{how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.}
+
+\item{...}{additional arguments to be passed to method.cor}
+
+\item{use.pairwiseNA}{If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
+}
+\value{
+An object determined by the output argument
+}
+\description{
+Compute pairwise correlation between multiple outcomes. Can reorder the outcomes according to a clustering of the obtained correlations.
+}
+\details{
+data must be coercible to data.table. \cr
+\cr
+If \code{data="wide"} each column correspond to a different outcomes, indicated by argument names. \cr
+If \code{data="long"} then the first value of names is used to define the outcomes and the seconde is used to define their values. \cr
+\cr
+method.cor can be any method but its first two arguments, named x and y, will be given the values of the outcomes. 
+\cr
+If imput.value is an operator then it is applied on the values in the same line or column.
+\cr 
+This function uses the function \code{ggHeatmap} to display the correlation matrix.
+}
+\examples{
+M <- matrix(rnorm(1e3),100,10)
+cor.testDT(M, format = "wide")
+
+}
+\keyword{correlation}
+\keyword{function}
+\keyword{test}
 

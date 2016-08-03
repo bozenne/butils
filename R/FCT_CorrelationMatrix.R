@@ -30,9 +30,11 @@
 #' 
 #' @return An object determined by the output argument
 #' 
-#' @example 
+#' @examples 
 #' M <- matrix(rnorm(1e3),100,10)
 #' cor.testDT(M, format = "wide")
+#' 
+#' @keywords function correlation test
 #' 
 #' @export
 cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
@@ -190,6 +192,7 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
 #' 
 #' @return a ggplot object
 #' 
+#' @keywords function correlation display
 #' @export
 ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
                       title = "", xlab = "", ylab = "",  legend_title = "correlation",
