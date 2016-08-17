@@ -8,7 +8,7 @@ numOutlier(x, type = "auto", th.gaussian = 3, th.hampel = 3,
   th.boxplot = 1.5, na.rm = FALSE)
 }
 \examples{
-detectOutlier(rnorm(1e3))
+numOutlier(rnorm(1e3))
 }
 \references{
 idea from http://www.r-bloggers.com/finding-outliers-in-numerical-data/

@@ -90,7 +90,7 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
   
   if(install){
     if(trace)cat("* install package \n")
-    system(paste0("R CMD INSTALL ",options.check," ",packageVersion,"/",package))
+    system(paste0("R CMD INSTALL ",options.install," ",packageVersion,"/",package))
     if(clearAfter){cleanDir(path.WpackageVersion, test = FALSE)}
     if(trace)cat("\n")
   }

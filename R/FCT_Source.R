@@ -4,6 +4,8 @@
 #'
 #' @param user the name corresponding to the cession.
 #' 
+#' @keywords function package
+#' 
 #' @export
 dir.gitHub <- function(user = NULL){
   
@@ -50,19 +52,26 @@ package.source <- function(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALS
   
   if(Rcode){
     validPath(file.path(path, name, "R"), type = "dir", method = "package.source")
-    R.utils::sourceDirectory(file.path(path, name, "R"), modifiedOnly = FALSE, envir = globalenv())
+    fileNames <- list.files(file.path(path, name, "R"))
+    fileExts <- tools::file_path_sans_ext(fileNames)
+    indexC <- grep("R", x = tools::file_ext(fileNames), 
+                   fixed = FALSE)
+    lapply(file.path(path,name,"R",setdiff(fileNames[indexC],"RcppExports.R")), 
+           source)
   }
   
   if(Ccode){
     validPath(file.path(path, name, "src"), type = "dir", method = "package.source")
-	fileNames <- list.files(file.path(path, name, "src"))
-	fileExts <- tools::file_path_sans_ext(fileNames)
-	indexC <- grep("cpp", x = tools::file_ext(fileNames), 
-					fixed = FALSE)
-	lapply(file.path(path,name,"src",setdiff(fileNames[indexC],"RcppExports.cpp")), 
-		   Rcpp::sourceCpp, 
-		   rebuild = TRUE)
-
+    fileNames <- list.files(file.path(path, name, "src"))
+    fileExts <- tools::file_path_sans_ext(fileNames)
+    indexC <- grep("cpp", x = tools::file_ext(fileNames), 
+                   fixed = FALSE)
+    lapply(file.path(path,name,"src",setdiff(fileNames[indexC],"RcppExports.cpp")), 
+           Rcpp::sourceCpp, 
+           rebuild = TRUE)
+    
   }
+  
+  invisible(return(TRUE))
   
 }

@@ -12,4 +12,6 @@ dir.gitHub(user = NULL)
 \description{
 Localise the github directory on linux or windows OS.
 }
+\keyword{function}
+\keyword{package}
 

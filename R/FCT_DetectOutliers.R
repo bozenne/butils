@@ -1,5 +1,19 @@
-#### main ####
-
+#' @title Robust scaling of a numeric vector 
+#' 
+#' @param x a numeric vector
+#' @param center the method used to assess the "average" value
+#' @param scale the method used to assess the dispersion of the data
+#' @param method a method taking the dataset as its first argument and returning first the center and then the scale value. Disregarded if arguments center and scale are not null.
+#' @param na.rm should missing values be omitted
+#' @param noScaleIf0 If \code{TRUE} the variable will not be scaled if its dispersion is null.
+#' @param ... additional arguments passed to method
+#' 
+#' @return the scaled vector
+#' 
+#' @examples 
+#' n <- 1e3
+#' scaleOutlier(rnorm(n))
+#' 
 #' @export
 scaleOutlier <- function(x, center = "median", scale = "mad", method, 
                          na.rm = FALSE, noScaleIf0 = FALSE, ...){
@@ -127,8 +141,7 @@ scanOutlier <- function(data, id,
 #' @references idea from http://www.r-bloggers.com/finding-outliers-in-numerical-data/
 #'
 #' @examples 
-#' detectOutlier(rnorm(1e3))
-#' @export
+#' numOutlier(rnorm(1e3))
 numOutlier <- function(x, type = "auto",
                        th.gaussian = 3, th.hampel = 3, th.boxplot = 1.5, 
                        na.rm = FALSE){

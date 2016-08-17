@@ -10,7 +10,7 @@
 \alias{validNames}
 \alias{validNumeric}
 \alias{validPath}
-\title{check the validity of the arguments given by the user}
+\title{Check argument in functions}
 \usage{
 validCharacter(value1, name1 = as.character(substitute(value1)), validLength,
   validValues = "character", refuse.NULL = TRUE,
@@ -34,7 +34,7 @@ validLogical(value1, name1 = as.character(substitute(value1)), validLength,
 
 validNames(value1, name1 = as.character(substitute(value1)),
   refuse.NULL = TRUE, validLength = NULL, validValues = NULL,
-  requiredValues = NULL, forbiddenValues = NULL, method = NULL,
+  requiredValues = NULL, refuse.values = NULL, method = NULL,
   addPP = TRUE)
 
 validNumeric(value1, name1 = as.character(substitute(value1)), validLength,
@@ -46,6 +46,50 @@ validPath(value1, name1 = as.character(substitute(value1)), type,
   method = NULL, addPP = TRUE, extension = NULL, checkFsep = FALSE)
 }
 \arguments{
-\item{addPP}{}
+\item{value1}{the value of the (first) argument to be checked}
+
+\item{name1}{the name of the (first) argument.}
+
+\item{validLength}{the acceptable length(s) for the argument. If \code{NULL} no test is performed.}
+
+\item{validValues}{the acceptable value(s) for the argument. If \code{NULL} no test is performed. Can also be "character" or "character_or_logical".}
+
+\item{refuse.NULL}{should an error be output if value is \code{NULL}.}
+
+\item{refuse.duplicates}{should an error be output if value contains duplicated values.}
+
+\item{method}{the name of the function using the argument.}
+
+\item{addPP}{add ": " after the name of the function in the error message.}
+
+\item{validClass}{the acceptable classes(s) for the argument.}
+
+\item{superClasses}{uses the \code{is} function instead of \code{class} to test the class of the object.}
+
+\item{value2}{the second value of a second argument whose dimensions should be consistent with the first one}
+
+\item{name2}{the name of the second argument.}
+
+\item{validDimension}{the acceptable dimension for the argument. If \code{NULL} then name2 is used as a reference.}
+
+\item{type}{For \code{validDimension}: the type of operator used to check the dimensions. For \code{validPath} either "dir" or "file" to check whether to path points to an existing directory or file.}
+
+\item{min}{the minimum acceptable value}
+
+\item{max}{the maximum acceptable value}
+
+\item{refuse.NA}{should an error be output if value contains \code{NA}.}
+
+\item{requiredValues}{values that must appear in the argument}
+
+\item{refuse.values}{values that must not appear in the argument}
 }
+\value{
+An invisible \code{TRUE} or an error message.
+}
+\description{
+Check the validity of the arguments in functions
+}
+\keyword{check}
+\keyword{function}
 
