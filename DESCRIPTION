@@ -11,13 +11,19 @@ Depends:
     R (>= 2.10),
     Rcpp (>= 0.10.5),
     data.table,
-    ggplot2
+    ggplot2,
+    pipeR
 Imports:
     stats,
     tools,
     corrplot,
     reshape2,
-    R.utils
+    R.utils,
+    rvest,
+    devtools,
+    xml2,
+    utils,
+    zoo
 LazyLoad: yes
 LinkingTo: Rcpp, RcppArmadillo
 Collate:
@@ -27,6 +33,7 @@ Collate:
     'FCT_PreparePackage.R'
     'FCT_Profile.R'
     'FCT_Source.R'
+    'FCT_SourceGitHub.R'
     'FCT_Valid.R'
     'RcppExports.R'
 NeedsCompilation: yes
