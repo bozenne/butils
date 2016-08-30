@@ -75,3 +75,6 @@ package.source <- function(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALS
   invisible(return(TRUE))
   
 }
+
+
+

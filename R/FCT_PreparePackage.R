@@ -26,16 +26,13 @@
 #' 
 #' @export
 buildPackage <- function(package, version = NULL, path.package = NULL, 
-                         compileAttributes = TRUE, clearDir = TRUE, roxygenise = TRUE,
+                         compileAttributes = TRUE, updateCollate = TRUE, clearDir = TRUE, roxygenise = TRUE,
                          build = TRUE, options.build = NULL, 
                          untar = TRUE, 
                          check = FALSE, options.check = NULL, 
                          install = TRUE, options.install = "--build", 
                          trace = 2, clearAfter = TRUE){
-  require(Rcpp)
-  require(RcppArmadillo)
-  require(roxygen2)
-  
+
   if(!is.null(path.package)){
     oldWD <- getwd()
     setwd(path.package)
@@ -55,6 +52,10 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
     if(trace)cat(">> compileAttributes \n")
     Rcpp::compileAttributes(pkgdir = path.Wpackage, verbose = (trace>=2))
   } 
+  if(updateCollate){
+    writeCollate_package(package, path.package = path.package, trace = (trace>=2))
+  }
+  
   # crlf2lf("testCpp")
   # pdf2qpdf("MRIaggr")
   
@@ -78,7 +79,6 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
   if(untar){
     if(trace)cat(">> untar \n")
     untar(paste0(packageVersion,".tar.gz"), exdir = paste0(packageVersion))  
-    if(trace)cat("\n")
   }
   
   if(check){
@@ -89,7 +89,7 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
   }
   
   if(install){
-    if(trace)cat("* install package \n")
+    if(trace)cat(">> install package \n")
     system(paste0("R CMD INSTALL ",options.install," ",packageVersion,"/",package))
     if(clearAfter){cleanDir(path.WpackageVersion, test = FALSE)}
     if(trace)cat("\n")
@@ -98,6 +98,79 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
   
 }
 
+#' @title Remove all files from a given directory
+#'
+#' @param dirname the path leading to the directory
+#' @param test should the user be asked whether he really wants to remove the directory
+cleanDir <- function(dirname,test=TRUE){
+  
+  dirname_split <- strsplit(dirname,split="/")[[1]]
+  if(length(dirname_split)>1){
+    path <- paste(dirname_split[-length(dirname_split)],collapse="/")
+    dirname_1 <- dirname_split[length(dirname_split)]
+  }else{
+    path <- "."
+    dirname_1 <- dirname_split
+  }
+  
+  list_files <- list.files(dirname,recursive = TRUE)
+  n.files <- length(list_files)
+  if(dirname_1 %in% list.files(path)){
+    if(test==TRUE){
+      test <- readline(paste("should the directory \'",dirname,"\' be removed ? (1/0) : \n",
+                             "(",n.files," files )",sep=""))
+    }else{
+      test <- 1
+    }
+    
+    if(test==1){
+      unlink(dirname,recursive=TRUE)
+      cat("done \n") 
+    }
+  }else{cat("directory not in the current working directory \n")}
+  
+  return(invisible(list_files))
+}
+
+#' @title write the collate field
+#' 
+#' @param package the name of the package
+#' @param path.package the position of the directory containing the package
+writeCollate_package <- function(package, path.package = NULL, space = "    ", trace = TRUE){
+  
+  ## check
+  validPath(file.path(path.package,package), type = "dir")
+  validPath(file.path(path.package,package,"DESCRIPTION"), type = "file")
+  validPath(file.path(path.package,package,"R"), type = "dir")
+  
+  file.description <- readLines(file.path(path.package,package,"DESCRIPTION"))
+  Rfiles <- list.files(file.path(path.package,package,"R"), pattern = c(".R$",".r$"))
+  TOadd <- c("Collate:",paste0(space,"'",Rfiles,"'"))
+  
+  indexLine <- grep("Collate:",file.description)
+  test.change  <- FALSE 
+  
+  if(length(indexLine) == 0){
+    if(trace){cat(">> add \'collate\' field")}
+    file.description <- c(file.description, TOadd)
+    test.change <- TRUE
+  }else{
+    indexLine_end <-  min(grep(":",file.description,fixed=TRUE)[grep(":",file.description,fixed=TRUE)>indexLine])-1
+    if(!identical(TOadd,file.description[indexLine:indexLine_end])){
+      if(trace){cat(">> update description file")}
+      file.description <- c(file.description[1:(indexLine-1)],TOadd,file.description[(indexLine_end+1):length(file.description)])
+      test.change <- TRUE
+    }
+  }
+
+  if(test.change){
+    con <- file(file.path(path.package,package,"DESCRIPTION")) 
+    writeLines(text = file.description, con = con) 
+    close(con)
+    if(trace){cat("\n \n")}
+  }
+  invisible(return(TRUE))
+}
 
 #' @title Convert .cpp files with CRLF line ending in LF line ending
 #'
@@ -155,39 +228,6 @@ crlf2lf <- function(dirname){
   }
 }
 
-#' @title Remove all files from a given directory
-#'
-#' @param dirname the path leading to the directory
-#' @param test should the user be asked whether he really wants to remove the directory
-cleanDir <- function(dirname,test=TRUE){
-  
-  dirname_split <- strsplit(dirname,split="/")[[1]]
-  if(length(dirname_split)>1){
-    path <- paste(dirname_split[-length(dirname_split)],collapse="/")
-    dirname_1 <- dirname_split[length(dirname_split)]
-  }else{
-    path <- "."
-    dirname_1 <- dirname_split
-  }
-  
-  list_files <- list.files(dirname,recursive = TRUE)
-  n.files <- length(list_files)
-  if(dirname_1 %in% list.files(path)){
-    if(test==TRUE){
-      test <- readline(paste("should the directory \'",dirname,"\' be removed ? (1/0) : \n",
-                             "(",n.files," files )",sep=""))
-    }else{
-      test <- 1
-    }
-    
-    if(test==1){
-      unlink(dirname,recursive=TRUE)
-      cat("done \n") 
-    }
-  }else{cat("directory not in the current working directory \n")}
-  
-  return(invisible(list_files))
-}
 
 #' @title Convert from pdf to qpdf
 #'

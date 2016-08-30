@@ -113,6 +113,13 @@ read_githubCommit <- function(repo, seq.commit = 1:5, rev.commit = FALSE,
 #' @description Install a specific commit of a package, possibly under a temporary name
 #'
 #' @param repo Repository address in the format username/repo
+#' @param ref Desired git reference. See the documentation of \code{devtools::install_github}.
+#' @param subdir Subdirectory within repo that contains the R package.  See the documentation of \code{devtools::install_github}.
+#' @param host GitHub API host to use. See the documentation of \code{devtools::install_github}.
+#' @param temporary Should the package be installed under a newname, i.e. adding \code{Tempo} to the name of the package
+#' @param force Not sure what it is !!!
+#' @param quiet Not sure what it is !!!
+#' @param ... additional arguments to be passed to \code{devtools::install_packages} or \code{devtools:::install}
 #' 
 #' @details 
 #' 
@@ -122,11 +129,11 @@ read_githubCommit <- function(repo, seq.commit = 1:5, rev.commit = FALSE,
 #' 
 #' 
 #' @export
-install_githubCommit <- function (repo, username = NULL, ref = "master", subdir = NULL, host = "https://api.github.com",
+install_githubCommit <- function (repo, ref = "master", subdir = NULL, host = "https://api.github.com",
                                   temporary = TRUE, force = FALSE, quiet = FALSE, ...) 
 {
   remote <- lapply(repo, devtools:::github_remote, ref = ref, host = host,
-                   username = username, subdir = subdir)[[1]]
+                   username = NULL, subdir = subdir)[[1]]
   
   stopifnot(devtools:::is.remote(remote))
   remote_sha <- devtools:::remote_sha(remote)

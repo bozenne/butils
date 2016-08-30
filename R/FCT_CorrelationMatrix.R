@@ -137,7 +137,7 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
   #### convert to data.table
   cor.dt <- Reduce(cbind, lapply(1:6, 
                                  function(x){
-                                   dt <- as.data.table(reshape2::melt(cor.array[,,x], value.name = dimnames(cor.array)[[3]][x]))
+                                   dt <- as.data.table(data.table::melt(cor.array[,,x], value.name = dimnames(cor.array)[[3]][x]))
                                    if(x>1){dt[, c("Var1","Var2") := NULL]}
                                    return(dt)
                                  }))

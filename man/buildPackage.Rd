@@ -5,10 +5,10 @@
 \title{Integrative function for building packages}
 \usage{
 buildPackage(package, version = NULL, path.package = NULL,
-  compileAttributes = TRUE, clearDir = TRUE, roxygenise = TRUE,
-  build = TRUE, options.build = NULL, untar = TRUE, check = FALSE,
-  options.check = NULL, install = TRUE, options.install = "--build",
-  trace = 2, clearAfter = TRUE)
+  compileAttributes = TRUE, updateCollate = TRUE, clearDir = TRUE,
+  roxygenise = TRUE, build = TRUE, options.build = NULL, untar = TRUE,
+  check = FALSE, options.check = NULL, install = TRUE,
+  options.install = "--build", trace = 2, clearAfter = TRUE)
 }
 \arguments{
 \item{package}{the name of the package}
