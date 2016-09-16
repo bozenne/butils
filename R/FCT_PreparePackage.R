@@ -9,7 +9,6 @@
 #' @param version the version of the package
 #' @param path.package the position of the directory containing the package
 #' @param compileAttributes should the function \code{compileAttributes} be used to enerates the bindings required to call C++ functions from R for functions adorned with the Rcpp::export attribute.
-#' @param clearDir should the temporary directory used to unzip the package be removed
 #' @param roxygenise should the documentation be generated using \code{roxygenise}
 #' @param build should the package be build
 #' @param options.build additional options used to build the package
@@ -19,19 +18,21 @@
 #' @param install should the package be installed on the computer.
 #' @param options.install additional options used to install the package
 #' @param trace How the execution of the function should be traced. If 2, also display the execution of compileAttributes.
-#' @param clearAfter Should the directory where the package has been unzipped or tested be removed at the end of the execution.
+#' @param clearExisting should the existing directories containing the tests, the unziped package or the archive file be removed.
+#' @param clearRcheck Should the directory where the package has been tested be removed at the end of the execution.
+#' @param clearInstall Should the directory where the package has been unzipped be removed at the end of the execution.
 #' 
 #' 
 #' @keywords function package
 #' 
 #' @export
 buildPackage <- function(package, version = NULL, path.package = NULL, 
-                         compileAttributes = TRUE, updateCollate = TRUE, clearDir = TRUE, roxygenise = TRUE,
+                         compileAttributes = TRUE, updateCollate = TRUE, roxygenise = TRUE,
                          build = TRUE, options.build = NULL, 
                          untar = TRUE, 
                          check = FALSE, options.check = NULL, 
                          install = TRUE, options.install = "--build", 
-                         trace = 2, clearAfter = TRUE){
+                         trace = 2,  clearExisting = TRUE, clearRcheck = TRUE, clearInstall = TRUE){
 
   if(!is.null(path.package)){
     oldWD <- getwd()
@@ -49,50 +50,49 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
   path.WpackageVersion <- packageVersion
   
   if(compileAttributes){
-    if(trace)cat(">> compileAttributes \n")
-    Rcpp::compileAttributes(pkgdir = path.Wpackage, verbose = (trace>=2))
+    if(trace>=2)cat(">> compileAttributes \n")
+    Rcpp::compileAttributes(pkgdir = path.Wpackage, verbose = (trace>=3))
   } 
   if(updateCollate){
     writeCollate_package(package, path.package = path.package, trace = (trace>=2))
   }
-  
   # crlf2lf("testCpp")
   # pdf2qpdf("MRIaggr")
   
-  if(clearDir){ 
-    if(trace)cat(">> clearDir \n")
-    cleanDir(path.WpackageVersion)
-    if(trace)cat("\n")
+  if(clearExisting){ 
+    if(trace>=2)cat(">> clearDir \n")
+    cleanDir(path.WpackageVersion, test = FALSE, trace = (trace>=2))
+    if(trace>=2)cat("\n")
   }
   if(roxygenise){
-    if(trace)cat(">> roxygenise \n")
+    if(trace>=2)cat(">> roxygenise \n")
     roxygen2::roxygenise(package)
-    if(trace)cat("\n")
+    if(trace>=2)cat("\n")
   } 
   
   if(build){
-    if(trace)cat(">> build \n")
+    if(trace>=2)cat(">> build \n")
     system(paste0("R CMD build ",options.build," ",package))
-    if(trace)cat("\n")
+    if(trace>=2)cat("\n")
   } 
   
   if(untar){
-    if(trace)cat(">> untar \n")
+    if(trace>=2)cat(">> untar \n")
     untar(paste0(packageVersion,".tar.gz"), exdir = paste0(packageVersion))  
   }
   
   if(check){
-    if(trace)cat(">> CRAN check \n")
+    if(trace>=2)cat(">> CRAN check \n")
     system(paste0("R CMD check ",options.check," ",packageVersion,"/",package))
-    if(clearAfter){cleanDir(paste0(path.Wpackage,".Rcheck"), test = FALSE)}
-    if(trace)cat("\n")
+    if(clearRcheck){cleanDir(paste0(path.Wpackage,".Rcheck"), test = FALSE)}
+    if(trace>=2)cat("\n")
   }
   
   if(install){
-    if(trace)cat(">> install package \n")
+    if(trace>=2)cat(">> install package \n")
     system(paste0("R CMD INSTALL ",options.install," ",packageVersion,"/",package))
-    if(clearAfter){cleanDir(path.WpackageVersion, test = FALSE)}
-    if(trace)cat("\n")
+    if(clearInstall){cleanDir(path.WpackageVersion, test = FALSE, trace = (trace>=2))}
+    if(trace>=2)cat("\n")
   }
   
   
@@ -102,7 +102,8 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
 #'
 #' @param dirname the path leading to the directory
 #' @param test should the user be asked whether he really wants to remove the directory
-cleanDir <- function(dirname,test=TRUE){
+#' @param trace should the execution of the function be traced
+cleanDir <- function(dirname,test=TRUE, trace = TRUE){
   
   dirname_split <- strsplit(dirname,split="/")[[1]]
   if(length(dirname_split)>1){
@@ -125,9 +126,9 @@ cleanDir <- function(dirname,test=TRUE){
     
     if(test==1){
       unlink(dirname,recursive=TRUE)
-      cat("done \n") 
+      if(trace){cat("directory ",dirname," removed \n",sep = "")}
     }
-  }else{cat("directory not in the current working directory \n")}
+  }else if(trace){cat("directory not in the current working directory \n")}
   
   return(invisible(list_files))
 }

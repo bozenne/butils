@@ -5,10 +5,11 @@
 \title{Integrative function for building packages}
 \usage{
 buildPackage(package, version = NULL, path.package = NULL,
-  compileAttributes = TRUE, updateCollate = TRUE, clearDir = TRUE,
-  roxygenise = TRUE, build = TRUE, options.build = NULL, untar = TRUE,
-  check = FALSE, options.check = NULL, install = TRUE,
-  options.install = "--build", trace = 2, clearAfter = TRUE)
+  compileAttributes = TRUE, updateCollate = TRUE, roxygenise = TRUE,
+  build = TRUE, options.build = NULL, untar = TRUE, check = FALSE,
+  options.check = NULL, install = TRUE, options.install = "--build",
+  trace = 2, clearExisting = TRUE, clearRcheck = TRUE,
+  clearInstall = TRUE)
 }
 \arguments{
 \item{package}{the name of the package}
@@ -18,8 +19,6 @@ buildPackage(package, version = NULL, path.package = NULL,
 \item{path.package}{the position of the directory containing the package}
 
 \item{compileAttributes}{should the function \code{compileAttributes} be used to enerates the bindings required to call C++ functions from R for functions adorned with the Rcpp::export attribute.}
-
-\item{clearDir}{should the temporary directory used to unzip the package be removed}
 
 \item{roxygenise}{should the documentation be generated using \code{roxygenise}}
 
@@ -39,7 +38,11 @@ buildPackage(package, version = NULL, path.package = NULL,
 
 \item{trace}{How the execution of the function should be traced. If 2, also display the execution of compileAttributes.}
 
-\item{clearAfter}{Should the directory where the package has been unzipped or tested be removed at the end of the execution.}
+\item{clearExisting}{should the existing directories containing the tests, the unziped package or the archive file be removed.}
+
+\item{clearRcheck}{Should the directory where the package has been tested be removed at the end of the execution.}
+
+\item{clearInstall}{Should the directory where the package has been unzipped be removed at the end of the execution.}
 }
 \description{
 Convenient way to compile, test or install a package

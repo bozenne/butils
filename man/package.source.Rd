@@ -4,7 +4,9 @@
 \alias{package.source}
 \title{Source a package directory}
 \usage{
-package.source(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALSE)
+package.source(name, path = dir.gitHub(), Rcode = TRUE,
+  RorderDescription = TRUE, .onAttach = TRUE, Ccode = FALSE,
+  rebuild = FALSE, warning = TRUE)
 }
 \arguments{
 \item{name}{the name of the package}
@@ -13,7 +15,15 @@ package.source(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALSE)
 
 \item{Rcode}{should all the .R be sourced}
 
+\item{RorderDescription}{should the R files be sourced in the order indicate by collate}
+
+\item{.onAttach}{source the .onAttach function if it is present in the current environment}
+
 \item{Ccode}{should all the .cpp file be source (using Rcpp::sourceCpp)}
+
+\item{rebuild}{Force a rebuild of the shared library (from Rcpp:::sourceCpp).}
+
+\item{warning}{should a warning be displayed if some of the R files are not sourced}
 }
 \description{
 Source all the R and Cpp file contain in a package

@@ -4,11 +4,13 @@
 \alias{cleanDir}
 \title{Remove all files from a given directory}
 \usage{
-cleanDir(dirname, test = TRUE)
+cleanDir(dirname, test = TRUE, trace = TRUE)
 }
 \arguments{
 \item{dirname}{the path leading to the directory}
 
 \item{test}{should the user be asked whether he really wants to remove the directory}
+
+\item{trace}{should the execution of the function be traced}
 }
 

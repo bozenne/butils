@@ -40,24 +40,68 @@ dir.gitHub <- function(user = NULL){
 #' @param name the name of the package
 #' @param path the path to the directory containing the package
 #' @param Rcode should all the .R be sourced
+#' @param RorderDescription should the R files be sourced in the order indicate by collate
+#' @param .onAttach source the .onAttach function if it is present in the current environment
 #' @param Ccode should all the .cpp file be source (using Rcpp::sourceCpp)
-#'
+#' @param rebuild Force a rebuild of the shared library (from Rcpp:::sourceCpp).
+#' @param warning should a warning be displayed if some of the R files are not sourced
+#' 
 #' @seealso \code{\link{dir.gitHub}}
 #'
 #' @export
-package.source <- function(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALSE){
+package.source <- function(name, path = dir.gitHub(), 
+                           Rcode = TRUE, RorderDescription = TRUE, .onAttach = TRUE,
+                           Ccode = FALSE, rebuild = FALSE,
+                           warning = TRUE){
   
   validPath(path, type = "dir", method = "package.source")
   validPath(file.path(path, name), type = "dir", method = "package.source")
   
   if(Rcode){
     validPath(file.path(path, name, "R"), type = "dir", method = "package.source")
-    fileNames <- list.files(file.path(path, name, "R"))
+    
+    ## find files
+    fileNames <- setdiff(list.files(file.path(path, name, "R")),
+                         "RcppExports.R")
     fileExts <- tools::file_path_sans_ext(fileNames)
     indexC <- grep("R", x = tools::file_ext(fileNames), 
                    fixed = FALSE)
-    lapply(file.path(path,name,"R",setdiff(fileNames[indexC],"RcppExports.R")), 
-           source)
+    fileNames <- fileNames[indexC]
+      
+    if(RorderDescription){ ## reorder according DESCRIPTION
+      
+      if(file.exists(file.path(path,name,"DESCRIPTION")) == FALSE){
+        warning("package.source: no DESCRIPTION file founded \n",
+                "set \'RorderDescription\' to FALSE to source all the files that are present in the directory R \n")  
+      }
+      
+      file.description <- readLines(file.path(path,name,"DESCRIPTION"))
+      indexLine <- grep("Collate:",file.description)+1
+      indexLine_end <-  min(grep(":",file.description,fixed=TRUE)[grep(":",file.description,fixed=TRUE)>indexLine])-1
+      filesR.description <- file.description[indexLine:indexLine_end]
+      filesR.description <- gsub("[[:blank:]]|'", "", filesR.description)
+      
+      test.missing <- is.na(match(fileNames, filesR.description))
+      if(warning && any(test.missing)){
+        warning("package.source: did not find files: ",paste(fileNames[which(test.missing)], collapse = " ")," in DESCRIPTION \n",
+                "set \'RorderDescription\' to FALSE to source all the files that are present in the directory R \n")  
+      }
+      fileNames <- filesR.description[filesR.description %in% fileNames]
+    }
+    
+    if(exists(".onAttach")){
+      .onAttach_save <- .onAttach
+    }else{
+      .onAttach_save <- NULL
+    }
+    
+    ## SOURCE
+    lapply(file.path(path,name,"R",fileNames), source)
+    
+    ## mimic .onload
+    if(exists(".onAttach") && identical(.onAttach_save,.onAttach)){
+      .onAttach()
+    }
   }
   
   if(Ccode){
@@ -68,11 +112,11 @@ package.source <- function(name, path = dir.gitHub(), Rcode = TRUE, Ccode = FALS
                    fixed = FALSE)
     lapply(file.path(path,name,"src",setdiff(fileNames[indexC],"RcppExports.cpp")), 
            Rcpp::sourceCpp, 
-           rebuild = TRUE)
+           rebuild = rebuild)
     
   }
   
-  invisible(return(TRUE))
+  return(invisible(TRUE))
   
 }
 
