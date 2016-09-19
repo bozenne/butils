@@ -58,6 +58,13 @@ read_githubCommit <- function(repo, seq.commit = 1:5, rev.commit = FALSE,
   #### get all commits
   pathURL <- file.path("https://github.com",meta$username,meta$repo,"commits")
   links <- read_htmlLinks(pathURL, ...)
+  
+  # rm travis
+  index.travis <- grep("https://travis-ci.org/",links)
+  if(length(index.travis)>0){
+    links <- links[-index.travis]
+  }
+  
   pathURL <- file.path(meta$username,meta$repo,"tree")
   index.commits <- grep(pathURL,links, value = FALSE)
   author.commits <- links[index.commits - 2]

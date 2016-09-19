@@ -9,6 +9,8 @@
 #' @param version the version of the package
 #' @param path.package the position of the directory containing the package
 #' @param compileAttributes should the function \code{compileAttributes} be used to enerates the bindings required to call C++ functions from R for functions adorned with the Rcpp::export attribute.
+#' @param updateCollate should the collate field of the DESCRIPTION file be updated according the content of the R directory.
+#' @param updateDate should the date field of the DESCRIPTION file be updated with the date of the date.
 #' @param roxygenise should the documentation be generated using \code{roxygenise}
 #' @param build should the package be build
 #' @param options.build additional options used to build the package
@@ -27,7 +29,7 @@
 #' 
 #' @export
 buildPackage <- function(package, version = NULL, path.package = NULL, 
-                         compileAttributes = TRUE, updateCollate = TRUE, roxygenise = TRUE,
+                         compileAttributes = TRUE, updateCollate = TRUE, updateDate = TRUE, roxygenise = TRUE,
                          build = TRUE, options.build = NULL, 
                          untar = TRUE, 
                          check = FALSE, options.check = NULL, 
@@ -55,6 +57,9 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
   } 
   if(updateCollate){
     writeCollate_package(package, path.package = path.package, trace = (trace>=2))
+  }
+  if(updateDate){
+    writeDate_package(package, path.package = path.package, trace = (trace>=2))
   }
   # crlf2lf("testCpp")
   # pdf2qpdf("MRIaggr")
@@ -152,13 +157,13 @@ writeCollate_package <- function(package, path.package = NULL, space = "    ", t
   test.change  <- FALSE 
   
   if(length(indexLine) == 0){
-    if(trace){cat(">> add \'collate\' field")}
+    if(trace){cat(">> add \'collate\' field to the DESCRIPTION file")}
     file.description <- c(file.description, TOadd)
     test.change <- TRUE
   }else{
     indexLine_end <-  min(grep(":",file.description,fixed=TRUE)[grep(":",file.description,fixed=TRUE)>indexLine])-1
     if(!identical(TOadd,file.description[indexLine:indexLine_end])){
-      if(trace){cat(">> update description file")}
+      if(trace){cat(">> update \'collate\' field in the DESCRIPTION file")}
       file.description <- c(file.description[1:(indexLine-1)],TOadd,file.description[(indexLine_end+1):length(file.description)])
       test.change <- TRUE
     }
@@ -168,8 +173,35 @@ writeCollate_package <- function(package, path.package = NULL, space = "    ", t
     con <- file(file.path(path.package,package,"DESCRIPTION")) 
     writeLines(text = file.description, con = con) 
     close(con)
-    if(trace){cat("\n \n")}
+    if(trace){cat("\n")}
   }
+  invisible(return(TRUE))
+}
+
+
+writeDate_package <- function(package, path.package = NULL, trace = TRUE){
+  
+  ## check
+  validPath(file.path(path.package,package), type = "dir")
+  validPath(file.path(path.package,package,"DESCRIPTION"), type = "file")
+  validPath(file.path(path.package,package,"R"), type = "dir")
+  
+  newDate <- paste0("Date: ",format(Sys.time(), "%Y-%M-%d"))
+  
+  file.description <- readLines(file.path(path.package,package,"DESCRIPTION"))
+  indexLine <- grep("Date:",file.description)
+  
+  if(length(indexLine) == 0){
+    stop("writeDate_package: \'Date\' field is missing in DESCRIPTION \n")
+  }else if(file.description[indexLine] != newDate){
+    if(trace){cat(">> update \'Date\' field in the DESCRIPTION file")}
+    file.description[indexLine] <- paste0("Date: ",format(Sys.time(), "%Y-%M-%d"))
+    con <- file(file.path(path.package,package,"DESCRIPTION")) 
+    writeLines(text = file.description, con = con) 
+    close(con)
+    if(trace){cat("\n")}
+  }
+  
   invisible(return(TRUE))
 }
 

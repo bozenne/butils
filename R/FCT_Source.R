@@ -50,7 +50,7 @@ dir.gitHub <- function(user = NULL){
 #'
 #' @export
 package.source <- function(name, path = dir.gitHub(), 
-                           Rcode = TRUE, RorderDescription = TRUE, .onAttach = TRUE,
+                           Rcode = TRUE, RorderDescription = TRUE, attach = TRUE,
                            Ccode = FALSE, rebuild = FALSE,
                            warning = TRUE){
   
@@ -89,17 +89,13 @@ package.source <- function(name, path = dir.gitHub(),
       fileNames <- filesR.description[filesR.description %in% fileNames]
     }
     
-    if(exists(".onAttach")){
-      .onAttach_save <- .onAttach
-    }else{
-      .onAttach_save <- NULL
-    }
+    .onAttach_save <- NULL
     
     ## SOURCE
     lapply(file.path(path,name,"R",fileNames), source)
     
     ## mimic .onload
-    if(exists(".onAttach") && identical(.onAttach_save,.onAttach)){
+    if(attach && exists(".onAttach") && !is.null(.onAttach)){
       .onAttach()
     }
   }
