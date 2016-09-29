@@ -161,7 +161,13 @@ writeCollate_package <- function(package, path.package = NULL, space = "    ", t
     file.description <- c(file.description, TOadd)
     test.change <- TRUE
   }else{
-    indexLine_end <-  min(grep(":",file.description,fixed=TRUE)[grep(":",file.description,fixed=TRUE)>indexLine])-1
+    testPP <- grep(":",file.description,fixed=TRUE)>indexLine
+    if(any(testPP)){
+      indexLine_end <- min(grep(":",file.description,fixed=TRUE)[testPP])-1
+    }else{
+      indexLine_end <-  length(file.description)
+    }
+    
     if(!identical(TOadd,file.description[indexLine:indexLine_end])){
       if(trace){cat(">> update \'collate\' field in the DESCRIPTION file")}
       file.description <- c(file.description[1:(indexLine-1)],TOadd,file.description[(indexLine_end+1):length(file.description)])
@@ -192,7 +198,7 @@ writeDate_package <- function(package, path.package = NULL, trace = TRUE){
   indexLine <- grep("Date:",file.description)
   
   if(length(indexLine) == 0){
-    stop("writeDate_package: \'Date\' field is missing in DESCRIPTION \n")
+    warning("writeDate_package: \'Date\' field is missing in DESCRIPTION \n")
   }else if(file.description[indexLine] != newDate){
     if(trace){cat(">> update \'Date\' field in the DESCRIPTION file")}
     file.description[indexLine] <- paste0("Date: ",format(Sys.time(), "%Y-%M-%d"))

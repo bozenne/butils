@@ -199,24 +199,13 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
                       na.value = "grey50", col_low = "blue", col_midpoint = "white", col_high = "red", midpoint = 0, limits = NULL, 
                       textSize = 15, angle.x = 90){
   
-  if(is.data.table(data)){
+  if(!is.data.table(data)){
     data <- as.data.table(data)
   }else{
     data <- copy(data)
   }
   
-  if(is.null(limits)){
-    limits <- range(data[[name.fill]], na.rm = TRUE)
-  }
-  
-  gg <- ggplot(data, aes_string(x = name.x, y = name.y, fill = name.fill)) + geom_tile()
-  gg <- gg + ggtitle(title)
-  gg <- gg + xlab(xlab) + ylab(ylab)
-  gg <- gg + scale_fill_gradient2(low = col_low, mid = col_midpoint, high = col_high, 
-                                  name = legend_title, 
-                                  midpoint = midpoint, na.value = na.value, limits = limits)
-  gg <- gg + theme(text = element_text(size=textSize), axis.text.x = element_text(angle = angle.x, hjust = 1))
-  
+  #### prepare
   if(!missing(add.text)){
     
     if(!is.null(round)){
@@ -225,14 +214,205 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
       }else if(round == "p.value"){
         type <- findInterval(data[["p.value"]], vec = c(0.001,0.01,0.05,0.1))
         type <- factor(type, levels = 0:4, labels = c("***","**","*",".",""))
-        data[, p.value := type]
+        data[, add.text := type]
       }else{
         stop("ggHeatmap: non valid value for argument \'round\' \n")
       }
     }
     
-    gg <- gg +  geom_text(aes_string(fill = name.fill, label = add.text))  
+  }
+  
+  data[[name.x]] <- factor(data[[name.x]], levels = unique(data[[name.x]]))
+  data[[name.y]] <- factor(data[[name.y]], levels = unique(data[[name.y]]))
+  
+  if(is.null(limits)){
+    limits <- range(data[[name.fill]], na.rm = TRUE)
+  }
+  
+  #### plot
+  gg <- ggplot(data, aes_string(x = name.x, y = name.y, fill = name.fill)) + geom_tile()
+  gg <- gg + ggtitle(title)
+  gg <- gg + xlab(xlab) + ylab(ylab) +  scale_y_discrete(limits = rev(levels(data[[name.x]])))
+  gg <- gg + scale_fill_gradient2(low = col_low, mid = col_midpoint, high = col_high, 
+                                  name = legend_title, 
+                                  midpoint = midpoint, na.value = na.value, limits = limits)
+  gg <- gg + theme(text = element_text(size=textSize), axis.text.x = element_text(angle = angle.x, hjust = 1))
+  
+  if(!missing(add.text)){
+    gg <- gg +  geom_text(aes_string(fill = name.fill, label = "add.text"))  
   }
   
   return(gg)
+}
+
+
+#' @title Variance-covariance of GLS object
+#' 
+#' @description Rebuilt the variance-covariance matrix from a GLS object
+#' 
+#' @param gls the gls object
+#' @param type Can be either "correlation" or "covariance".
+#' @param individual cluster for which the variance covariance matrix should be returned
+#' @param upper logical value indicating whether the upper triangle of the distance matrix should be returned
+#' @param add the id name at the row and col names
+#' @param plot should the correlation matrix be displayed. \emph{logical}.
+#' @param args.plot a list of arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed
+#' @param output how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.
+#' @param trace should the progression of the computation of the correlation be displayed. \emph{logical}.
+#' 
+#' @examples 
+#' if(require(nlme)){
+#' data(Ovary)
+#' Ovary <- Ovary[order(Ovary$Mare),]
+#' fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), 
+#'             data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
+#' getSigmaGLS(fm1)
+#' }
+#' @keywords function correlation display gls
+#' @export
+getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NULL, addId = TRUE,
+                        plot = TRUE, args.plot = list(), output = "matrix", trace = 1){
+  
+  validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "getSigmaGLS")
+  validCharacter(type, validValues = c("correlation","covariance"), validLength = 1, method = "getSigmaGLS")
+  data <- nlme:::getData.gls(gls)
+  
+  #### rebuilt the matrix of correlation
+  if (!is.null(gls$modelStruct$corStruct)) {
+    
+    ## check the ordering of the data
+    corObj <- eval(gls$call$correlation)
+    formulaCor <- nlme:::formula.corStruct(corObj)
+    variableCor <- all.vars(getGroupsFormula(formulaCor))
+    
+    if(any(order(data[[variableCor]]) != seq_len(NROW(data)))){
+      stop("getSigmaGLS: the dataset used to fit the model must be sort by \"",paste(variableCor, collapse = "\" \""),"\"",
+           " to ensure valid extraction of the variance covariance matrix \n")
+    }
+    if(is.numeric(data[[variableCor]])){
+      stop("getSigmaGLS: the cluster variable \"",paste(variableCor, collapse = "\" \""),"\"",
+           " must be a character/factor vector to ensure valid extraction of the variance covariance matrix \n")
+    }
+    
+    ## find the cluster for which the varCov should be returned
+    ls.Sigma <- nlme::corMatrix(gls$modelStruct$corStruct)
+    Id <- names(ls.Sigma)
+    if(is.null(individual)){
+      if(!is.list(ls.Sigma)){
+        individual <- Id[1]
+      }else if(all(unlist(lapply(ls.Sigma, identical, ls.Sigma[[1]])) == TRUE)){
+        individual <- Id[1]
+      }else {
+        seqRow <- unlist(lapply(ls.Sigma, nrow))
+        individual <- Id[which.max(seqRow)]
+        
+        if(trace>0){
+          cat("getSigmaGLS: variance-covariance matrices differ between clusters \n",
+              "return the first largest matrix (\"",paste(variableCor, collapse = "\" \""),"\"=",individual,")\n",sep = "")
+        }
+      }
+      
+    }else if(is.numeric(individual)){
+      individual <- Id[individual]
+    }
+    
+    ## correlation matrix
+    Sigma <- corMatrix(gls$modelStruct$corStruct)[individual]
+    Sigma <- as.matrix(Matrix::bdiag(Sigma))
+    
+  } else {
+    n.rep <- length(coef(gls$modelStruct$varStruct, unconstrained = FALSE, allCoef = TRUE))
+    Sigma <- diag(1,n.rep)
+  }
+  
+  #### name matrix
+  if (!is.null(individual) && !is.null(gls$modelStruct$corStruct)) {
+    index.individual <- which(gls$groups %in% individual)
+    nameCluster <- gls$groups[index.individual]
+  }else{
+    nameCluster <- NULL
+  }
+  
+  if(!is.null(gls$modelStruct$varStruct)) {
+    varObj <- eval(gls$call$weights)
+    formulaVar <- nlme:::formula.varFunc(varObj)
+    variableVar <- paste(all.vars(getGroupsFormula(formulaVar)), collapse = " ")
+    
+    if(!is.null(individual) && !is.null(gls$modelStruct$corStruct)){
+      nameRep <- names(varWeights(gls$modelStruct$varStruct)[index.individual])
+    }else{
+      nameRep <- names(coef(gls$modelStruct$varStruct, unconstrained = FALSE, allCoef = TRUE))  
+    }
+  }else{
+    names.time <- as.character(1:nrow(Sigma))
+    variableVar <- "repetition"
+    nameRep <- NULL
+  }
+  names.time <- paste(nameRep," (",nameCluster,")",sep="")
+  colnames(Sigma) <- names.time
+  rownames(Sigma) <- names.time
+  
+  #### add the variance terms
+  if (type == "covariance"){
+    if(!is.null(gls$modelStruct$varStruct)) {
+      if(is.null(gls$groups)){
+        vw <- 1/varWeights(gls$modelStruct$varStruct)[names.time]
+      }else{
+        ind <- gls$groups %in% individual ### need data to be sorted by individual
+        vw <- 1/varWeights(gls$modelStruct$varStruct)[ind]
+        names.time <- names(vw)
+      }
+      
+    } else{ 
+      vw <- rep(1, nrow(Sigma))
+    }
+    vars <- (gls$sigma * vw)^2
+    Sigma <- t(Sigma * sqrt(vars)) * sqrt(vars)
+  }
+  
+  ## manage matrix
+  if(!is.null(upper)){
+    if(upper){
+      gdata:::lowerTriangle(Sigma) <- NA
+    }else{
+      gdata:::upperTriangle(Sigma) <- NA
+    }
+  }
+  
+  #### convert to data table
+  index <- expand.grid(1:nrow(Sigma),1:nrow(Sigma))
+  dt.Sigma <- data.table(covariance = as.numeric(t(Sigma)),
+                         var1 = rownames(Sigma)[index[,1]],
+                         var2 = colnames(Sigma)[index[,2]],
+                         rep = cumsum(duplicated(rownames(Sigma)))
+  )
+  setnames(dt.Sigma, c("covariance","var1","var2"), c(type,paste0(variableVar,1),paste0(variableVar,2)))
+  
+  if(plot || output == "plot"){
+    if("xlab" %in% names(args.plot) == FALSE){args.plot$xlab <- variableVar}
+    if("ylab" %in% names(args.plot) == FALSE){args.plot$ylab <- variableVar}
+    if("legend_title" %in% names(args.plot) == FALSE){args.plot$legend_title <- type}
+    
+  
+    dt.Sigma2 <- copy(dt.Sigma)
+    dt.Sigma2[[paste0(variableVar,1)]] <- make.unique(rownames(Sigma))[index[,1]]
+    dt.Sigma2[[paste0(variableVar,2)]] <- make.unique(rownames(Sigma))[index[,2]]
+    
+    gg <- do.call("ggHeatmap", args = c(list(data = dt.Sigma2), 
+                                        list(name.x = paste0(variableVar,1), 
+                                             name.y = paste0(variableVar,2),
+                                             name.fill = type), 
+                                        args.plot))
+    if(output != "plot"){print(gg)}
+  }
+  
+  #### export
+  if(output == "data.table"){
+    return(dt.Sigma)
+  }else if(output == "matrix"){
+    return(Sigma)
+  }else if(output == "plot"){
+    return(gg)
+  }
+  
 }
