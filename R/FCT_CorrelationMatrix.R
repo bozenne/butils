@@ -69,6 +69,7 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
   }else{
     name.variable <- names[1]
     name.value <- names[2]
+    dataL <- data
   }
   setkeyv(dataL, name.variable)
   
@@ -208,6 +209,11 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
   #### prepare
   if(!missing(add.text)){
     
+    if(add.text %in% names(data) == FALSE){
+      stop("ggHeatmap: variable ",add.text," not found \n",
+           "add.text should be one of \"",paste(names(data), collapse = "\" \""),"\"\n")
+    }
+    
     if(!is.null(round)){
       if(is.numeric(round)){
         data[, add.text := round(.SD[[1]], digit = round), .SDcols = add.text]
@@ -218,6 +224,8 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
       }else{
         stop("ggHeatmap: non valid value for argument \'round\' \n")
       }
+    }else{
+      data[, add.text := .SD[[1]], .SDcols = add.text]
     }
     
   }
