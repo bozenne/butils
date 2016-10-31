@@ -2,9 +2,12 @@
 % Please edit documentation in R/FCT_PreparePackage.R
 \name{printLsArgs}
 \alias{printLsArgs}
-\title{Print all the arguments from the Rd file}
+\title{@title Print all the arguments from the Rd file}
 \usage{
 printLsArgs(dir, write.file = FALSE, filename = "List_of_arguments",
   trace = TRUE, path = NULL)
+}
+\description{
+@title Print all the arguments from the Rd file
 }
 

@@ -1,26 +1,3 @@
-#' @title links of a url page
-#' 
-#' @description Get the links of a url page.
-#'
-#' @param x the url page. Character.
-#' @param ... additional arguments to be passed to \code{read_html}.
-#' 
-#' @details inspired from http://stackoverflow.com/questions/27297484/r-using-rvest-package-instead-of-xml-package-to-get-links-from-url 
-#' 
-#' @keywords function url
-#' @examples 
-#' read_htmlLinks("https://cran.r-project.org/")
-#' read_htmlLinks("https://github.com/bozenne/BuyseTest")
-#' 
-#' @export
-read_htmlLinks <- function(x, ...){
-  # pipeR:::`%>>%` will be faster than rvest:::`%>%`
-  
-  content <- xml2:::read_html(x,...)
-  links <- content %>>% rvest:::html_nodes("a") %>>% rvest:::html_attr("href")
-  return(links)
-}
-
 #' @title Existing commits
 #' 
 #' @description Get the existing commits corresponding to a repo on Github
@@ -33,9 +10,7 @@ read_htmlLinks <- function(x, ...){
 #' @param rev.commit shouidl the order of the commit be reverested (last becomes first).
 #' @param trace should the progression in geting the name/time of the commit be displayed
 #' @param ... additional arguments to be passed to \code{read_html}.
-#' 
-#' @details 
-#' 
+#'  
 #' @keywords function github
 #' @examples 
 #' read_githubCommit("bozenne/BuyseTest")
@@ -127,9 +102,7 @@ read_githubCommit <- function(repo, seq.commit = 1:5, rev.commit = FALSE,
 #' @param force Not sure what it is !!!
 #' @param quiet Not sure what it is !!!
 #' @param ... additional arguments to be passed to \code{devtools::install_packages} or \code{devtools:::install}
-#' 
-#' @details 
-#' 
+#'  
 #' @keywords function github package
 #' @examples 
 #' install_githubCommit("bozenne/BuyseTest", ref = "70e5ef6c3c66d44f9227297225e2b9d2fe6acc06")
@@ -137,8 +110,7 @@ read_githubCommit <- function(repo, seq.commit = 1:5, rev.commit = FALSE,
 #' 
 #' @export
 install_githubCommit <- function (repo, ref = "master", subdir = NULL, host = "https://api.github.com",
-                                  temporary = TRUE, force = FALSE, quiet = FALSE, ...) 
-{
+                                  temporary = TRUE, force = FALSE, quiet = FALSE, ...){
   remote <- lapply(repo, devtools:::github_remote, ref = ref, host = host,
                    username = NULL, subdir = subdir)[[1]]
   

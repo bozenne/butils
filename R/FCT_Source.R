@@ -1,61 +1,61 @@
-#' @title Find GitHub directory
-#' 
-#' @description Localise the github directory on linux or windows OS.
-#'
-#' @param user the name corresponding to the cession.
-#' 
-#' @keywords function package
-#' 
-#' @export
-dir.gitHub <- function(user = NULL){
-  
-  if(is.null(user)){
-    if(Sys.info()["user"] != "unknown"){
-      user <- Sys.info()["user"]
-    }else if(Sys.info()["login"] != "unknown"){
-      user <- Sys.info()["login"]
-    }else stop("dir.gitHub: please specify the user \n")
-  }
-  
-  if(Sys.info()["sysname"] == "Linux"){
-    dir <- file.path("/home",user,"GitHub")
-  }else if(Sys.info()["sysname"] == "Windows"){
-    dir <- file.path("C:/Users",user,"Documents","GitHub")
-  }else{
-    stop("only implemented for linux and windows")
-  }
-  
-  if(dir.exists(dir)){
-    return(dir) 
-  }else{
-    stop("dir.gitHub: no GitHub directory found")
-  }
-  
-}
-
 #' @title Source a package directory
 #' 
 #' @description Source all the R and Cpp file contain in a package
 #' 
 #' @param name the name of the package
 #' @param path the path to the directory containing the package
+#' @param Rpackage should the related R package be loaded
 #' @param Rcode should all the .R be sourced
 #' @param RorderDescription should the R files be sourced in the order indicate by collate
-#' @param .onAttach source the .onAttach function if it is present in the current environment
+#' @param attach source the .onAttach function if it is present in the current environment
 #' @param Ccode should all the .cpp file be source (using Rcpp::sourceCpp)
 #' @param rebuild Force a rebuild of the shared library (from Rcpp:::sourceCpp).
 #' @param warning should a warning be displayed if some of the R files are not sourced
 #' 
-#' @seealso \code{\link{dir.gitHub}}
+#' @seealso \code{\link{path_gitHub}}
+#'
+#' @examples 
+#' package.source("butils")
 #'
 #' @export
-package.source <- function(name, path = dir.gitHub(), 
+package.source <- function(name, path = path_gitHub(), 
+                           Rpackage = TRUE,
                            Rcode = TRUE, RorderDescription = TRUE, attach = TRUE,
                            Ccode = FALSE, rebuild = FALSE,
                            warning = TRUE){
   
   validPath(path, type = "dir", method = "package.source")
   validPath(file.path(path, name), type = "dir", method = "package.source")
+  if(Rpackage){
+    
+    if(identical(Rpackage,TRUE)){Rpackage <- c("Import","Depends","Suggest")}
+    
+    validCharacter(Rpackage, validLength = NULL, validValues = c("Import","Depends","Suggest"))
+    
+    packageToLoad <- NULL
+    if("Import" %in% Rpackage){
+      packageToLoad <- c(packageToLoad,
+                         read_description(name, path = path, field = "Imports", rmComma = TRUE, rmBlanck = TRUE)
+      )
+    }
+    if("Depends" %in% Rpackage){
+      packageToLoad <- c(packageToLoad,
+                         read_description(name, path = path, field = "Depends", rmComma = TRUE, rmBlanck = TRUE)
+      )
+    }
+    if("Suggest" %in% Rpackage){
+      packageToLoad <- c(packageToLoad,
+                         read_description(name, path = path, field = "Suggest", rmComma = TRUE, rmBlanck = TRUE)
+      )
+    }
+    
+    ## remove version in parenthesis
+    packageToLoad <- gsub( " *\\(.*?\\) *", "", packageToLoad)
+    
+    packageToLoad <- setdiff(packageToLoad, "R")
+    
+    lapply(packageToLoad, require, character.only = TRUE)
+  }
   
   if(Rcode){
     validPath(file.path(path, name, "R"), type = "dir", method = "package.source")

@@ -27,7 +27,9 @@
 #' @param requiredValues values that must appear in the argument
 #' @param min the minimum acceptable value
 #' @param max the maximum acceptable value
+#' @param extension filter the files by the type of extention. 
 #' @param method the name of the function using the argument.
+#' @param checkFsep display a warning when the separator is not correctly specified in 
 #' @param addPP add ": " after the name of the function in the error message.
 #' 
 #' @return An invisible \code{TRUE} or an error message.

@@ -9,6 +9,8 @@ launchBatch(file, path = ".", dirBatch = NULL,
   add.options = "", rm.newfile = FALSE)
 }
 \arguments{
+\item{file}{the name of the file. \emph{character}.}
+
 \item{path}{the path to the directory containing the file. \emph{character}.}
 
 \item{dirBatch}{If no \code{NULL}, the name of a directory where to store the .lis and .Rout. \emph{character}.}
@@ -22,8 +24,6 @@ launchBatch(file, path = ".", dirBatch = NULL,
 \item{add.options}{Additional options to be used to launch the batch. \emph{character}.}
 
 \item{rm.newfile}{Should the copy of the original file be removed after completion of the function? \emph{character}.}
-
-\item{the}{name of the file. \emph{character}.}
 }
 \value{
 the output of the shell when lauching the batch. \emph{character}.

@@ -16,6 +16,8 @@ cor.testDT(data, format, names = NULL, lower.tri = TRUE,
 
 \item{names}{the names of the column in the dataset to be analysed. If \code{NULL}, all the columns will be used.}
 
+\item{lower.tri}{should only the lower traingle of the matrix be filled?}
+
 \item{method.cor}{the method used to compute the correlation.}
 
 \item{reorder}{argument order of corrMatOrder.}
@@ -34,7 +36,7 @@ cor.testDT(data, format, names = NULL, lower.tri = TRUE,
 
 \item{...}{additional arguments to be passed to method.cor}
 
-\item{use.pairwiseNA}{If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
+\item{use.use.pairwiseNNA}{If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
 }
 \value{
 An object determined by the output argument

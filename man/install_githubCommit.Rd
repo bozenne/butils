@@ -28,9 +28,6 @@ install_githubCommit(repo, ref = "master", subdir = NULL,
 \description{
 Install a specific commit of a package, possibly under a temporary name
 }
-\details{
-
-}
 \examples{
 install_githubCommit("bozenne/BuyseTest", ref = "70e5ef6c3c66d44f9227297225e2b9d2fe6acc06")
 

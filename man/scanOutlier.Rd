@@ -2,11 +2,14 @@
 % Please edit documentation in R/FCT_DetectOutliers.R
 \name{scanOutlier}
 \alias{scanOutlier}
-\title{Search potential outliers in a dataset}
+\title{Search potential outliers}
 \usage{
 scanOutlier(data, id, method.numeric = "numOutlier",
   method.factor = "factorOutlier", method.id = "checkId", args.num = NULL,
   args.factor = NULL)
+}
+\description{
+Search potential outliers in a dataset
 }
 \examples{
 

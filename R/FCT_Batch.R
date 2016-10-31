@@ -2,7 +2,7 @@
 #' 
 #' @description Convenient way to launch an R file in batch mode.
 #' 
-#' @param the name of the file. \emph{character}.
+#' @param file the name of the file. \emph{character}.
 #' @param path the path to the directory containing the file. \emph{character}.
 #' @param dirBatch If no \code{NULL}, the name of a directory where to store the .lis and .Rout. \emph{character}.  
 #' @param operator the command used to launch the batch. \emph{character}.

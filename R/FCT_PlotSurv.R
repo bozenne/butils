@@ -1,8 +1,18 @@
-#'constSurvdf_ggplot
-#'@title display a survival curve estimated using KM (i.e. step function). Handle one strata variable.
-#'@param survfit: output from surfit
-#'
-#'@example 
+#' @title Survival curve using ggplot2
+#' @description Display a non-parametric or semi-parametric survival curve. Can handle one strata variable.
+#' @name ggSurv
+#' 
+#' @param x a coxph object or a survfit object or a data.table object.
+#' @param timeVar the name of the column in the data.table object containing the time variable
+#' @param survivalVar the name of the column in the data.table object containing the survival at each time
+#' @param ciInfVar the name of the column in the data.table object containing the lower bound of the confidence interval 
+#' @param ciSupVar the name of the column in the data.table object containing the upper bound of the confidence interval 
+#' @param eventVar the name of the column in the data.table object containing the number of events at each time
+#' @param censorVar the name of the column in the data.table object containing the number of censored patients at each time
+#' @param strataVar the name of the column in the data.table object containing the strata variable
+#' 
+#' 
+#' @examples
 #' library(survival)
 #' dt <- as.data.table(aml)
 #' dt[,x:=as.factor(x)]
@@ -12,12 +22,11 @@
 #' Cox <- coxph(Surv(time, status) ~ x, data = dt)
 #' ggSurv(Cox)
 #' 
-#' 
-
-
+#' @export
 `ggSurv` <-
   function(x,...) UseMethod("ggSurv")
 
+#' @rdname ggSurv
 ggSurv.survfit <- function(x, ...){
   
   #### packages
@@ -57,6 +66,7 @@ ggSurv.survfit <- function(x, ...){
   return(invisible(res))
 }
 
+#' @rdname ggSurv
 ggSurv.coxph <- function(x, ...){
   
   #### packages
@@ -65,7 +75,7 @@ ggSurv.coxph <- function(x, ...){
   data <- eval(x$call$data)
   time <- unique(data$time)
   
-  resPred <- predictCox(x, newdata = data, times = data$time, type = "survival")
+  resPred <- riskRegression::predictCox(x, newdata = data, times = data$time, type = "survival")
   predC <- data.table(time = resPred$time,
                       survival = diag(resPred$survival)
                       )
@@ -79,7 +89,7 @@ ggSurv.coxph <- function(x, ...){
       strataVar <- cov
       predC[, cov := as.factor(data[[cov]]), with = FALSE]
     }else if(length(cov)>1){
-      predC[,strata = apply(data[cov],1,interaction)]
+      predC[,strata := apply(data[cov],1,interaction)]
       strataVar <- "strata"
     }else{
       strataVar <- NULL
@@ -100,6 +110,7 @@ ggSurv.coxph <- function(x, ...){
   
 }
 
+#' @rdname ggSurv
 ggSurv.dt <- function(x, format = "data.table",
                       timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, 
                       eventVar = NULL, censorVar = NULL,  strataVar = NULL, 
@@ -111,15 +122,14 @@ ggSurv.dt <- function(x, format = "data.table",
   
   x <- copy(x)
  
-   #### names
-  
-  MRIaggr:::validCharacter(value = timeVar, name = "timeVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
-  MRIaggr:::validCharacter(value = survivalVar, name = "survivalVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
-  MRIaggr:::validCharacter(value = ciInfVar, name = "ciInfVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
-  MRIaggr:::validCharacter(value = ciSupVar, name = "ciSupVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
-  MRIaggr:::validCharacter(value = eventVar, name = "eventVar", validLength = 1, refuse.NULL = events, validValues = names(x), method = "ggSurv.dt")
-  MRIaggr:::validCharacter(value = censorVar, name = "censorVar", validLength = 1, refuse.NULL = censoring, validValues = names(x), method = "ggSurv.dt")
-  MRIaggr:::validCharacter(value = strataVar, name = "strataVar", validLength = 1, refuse.NULL = FALSE, validValues = names(x), method = "ggSurv.dt")
+  #### names
+  validCharacter(value1 = timeVar, name1 = "timeVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
+  validCharacter(value1 = survivalVar, name1 = "survivalVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
+  validCharacter(value1 = ciInfVar, name1 = "ciInfVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
+  validCharacter(value1 = ciSupVar, name1 = "ciSupVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
+  validCharacter(value1 = eventVar, name1 = "eventVar", validLength = 1, refuse.NULL = events, validValues = names(x), method = "ggSurv.dt")
+  validCharacter(value1 = censorVar, name1 = "censorVar", validLength = 1, refuse.NULL = censoring, validValues = names(x), method = "ggSurv.dt")
+  validCharacter(value1 = strataVar, name1 = "strataVar", validLength = 1, refuse.NULL = FALSE, validValues = names(x), method = "ggSurv.dt")
   
   x[,.SD, .SDcols = c(timeVar,survivalVar,ciInfVar,ciSupVar, eventVar, censorVar, strataVar)]
   setnames(x, old = c(timeVar,survivalVar), new = c("time","survival"))

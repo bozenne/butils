@@ -2,7 +2,7 @@
 % Please edit documentation in R/FCT_DetectOutliers.R
 \name{scaleOutlier}
 \alias{scaleOutlier}
-\title{Robust scaling of a numeric vector}
+\title{Robust scaling}
 \usage{
 scaleOutlier(x, center = "median", scale = "mad", method, na.rm = FALSE,
   noScaleIf0 = FALSE, ...)
@@ -24,6 +24,9 @@ scaleOutlier(x, center = "median", scale = "mad", method, na.rm = FALSE,
 }
 \value{
 the scaled vector
+}
+\description{
+Robust scaling of a numeric vector
 }
 \examples{
 n <- 1e3

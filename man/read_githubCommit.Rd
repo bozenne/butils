@@ -28,9 +28,6 @@ read_githubCommit(repo, seq.commit = 1:5, rev.commit = FALSE,
 \description{
 Get the existing commits corresponding to a repo on Github
 }
-\details{
-
-}
 \examples{
 read_githubCommit("bozenne/BuyseTest")
 read_githubCommit("bozenne/BuyseTest",rev.commit = TRUE)

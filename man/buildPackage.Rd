@@ -4,21 +4,25 @@
 \alias{buildPackage}
 \title{Integrative function for building packages}
 \usage{
-buildPackage(package, version = NULL, path.package = NULL,
-  compileAttributes = TRUE, updateCollate = TRUE, roxygenise = TRUE,
-  build = TRUE, options.build = NULL, untar = TRUE, check = FALSE,
-  options.check = NULL, install = TRUE, options.install = "--build",
-  trace = 2, clearExisting = TRUE, clearRcheck = TRUE,
-  clearInstall = TRUE)
+buildPackage(package, version = NULL, path = path_gitHub(),
+  compileAttributes = TRUE, updateCollate = TRUE, updateDate = TRUE,
+  roxygenise = TRUE, build = TRUE, options.build = NULL, untar = TRUE,
+  check = FALSE, options.check = NULL, install = TRUE,
+  options.install = "--build", trace = 2, clearExisting = TRUE,
+  clearRcheck = TRUE, clearInstall = TRUE)
 }
 \arguments{
 \item{package}{the name of the package}
 
 \item{version}{the version of the package}
 
-\item{path.package}{the position of the directory containing the package}
+\item{path}{the position of the directory containing the package}
 
 \item{compileAttributes}{should the function \code{compileAttributes} be used to enerates the bindings required to call C++ functions from R for functions adorned with the Rcpp::export attribute.}
+
+\item{updateCollate}{should the collate field of the DESCRIPTION file be updated according the content of the R directory.}
+
+\item{updateDate}{should the date field of the DESCRIPTION file be updated with the date of the date.}
 
 \item{roxygenise}{should the documentation be generated using \code{roxygenise}}
 
@@ -46,6 +50,10 @@ buildPackage(package, version = NULL, path.package = NULL,
 }
 \description{
 Convenient way to compile, test or install a package
+}
+\examples{
+buildPackage("butils")
+
 }
 \keyword{function}
 \keyword{package}

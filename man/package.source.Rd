@@ -4,8 +4,8 @@
 \alias{package.source}
 \title{Source a package directory}
 \usage{
-package.source(name, path = dir.gitHub(), Rcode = TRUE,
-  RorderDescription = TRUE, .onAttach = TRUE, Ccode = FALSE,
+package.source(name, path = path_gitHub(), Rpackage = TRUE, Rcode = TRUE,
+  RorderDescription = TRUE, attach = TRUE, Ccode = FALSE,
   rebuild = FALSE, warning = TRUE)
 }
 \arguments{
@@ -13,11 +13,13 @@ package.source(name, path = dir.gitHub(), Rcode = TRUE,
 
 \item{path}{the path to the directory containing the package}
 
+\item{Rpackage}{should the related R package be loaded}
+
 \item{Rcode}{should all the .R be sourced}
 
 \item{RorderDescription}{should the R files be sourced in the order indicate by collate}
 
-\item{.onAttach}{source the .onAttach function if it is present in the current environment}
+\item{attach}{source the .onAttach function if it is present in the current environment}
 
 \item{Ccode}{should all the .cpp file be source (using Rcpp::sourceCpp)}
 
@@ -28,7 +30,11 @@ package.source(name, path = dir.gitHub(), Rcode = TRUE,
 \description{
 Source all the R and Cpp file contain in a package
 }
+\examples{
+package.source("butils")
+
+}
 \seealso{
-\code{\link{dir.gitHub}}
+\code{\link{path_gitHub}}
 }
 

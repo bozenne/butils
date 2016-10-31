@@ -2,9 +2,15 @@
 % Please edit documentation in R/FCT_PreparePackage.R
 \name{crlf2lf}
 \alias{crlf2lf}
-\title{Convert .cpp files with CRLF line ending in LF line ending}
+\title{Normalize .cpp files}
 \usage{
 crlf2lf(dirname)
+}
+\arguments{
+\item{the}{path to the directory containing the cpp files}
+}
+\description{
+Convert .cpp files with CRLF line ending in LF line ending
 }
 \references{
 http://lists.r-forge.r-project.org/pipermail/rcpp-devel/2012-April/003731.html Dirk Eddelbuettel edd at debian.org (Mon Apr 23 18:53:37 CEST 2012)

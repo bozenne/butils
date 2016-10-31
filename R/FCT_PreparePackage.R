@@ -7,7 +7,7 @@
 #' 
 #' @param package the name of the package
 #' @param version the version of the package
-#' @param path.package the position of the directory containing the package
+#' @param path the position of the directory containing the package
 #' @param compileAttributes should the function \code{compileAttributes} be used to enerates the bindings required to call C++ functions from R for functions adorned with the Rcpp::export attribute.
 #' @param updateCollate should the collate field of the DESCRIPTION file be updated according the content of the R directory.
 #' @param updateDate should the date field of the DESCRIPTION file be updated with the date of the date.
@@ -27,8 +27,11 @@
 #' 
 #' @keywords function package
 #' 
+#' @examples 
+#' buildPackage("butils")
+#' 
 #' @export
-buildPackage <- function(package, version = NULL, path.package = NULL, 
+buildPackage <- function(package, version = NULL, path = path_gitHub(), 
                          compileAttributes = TRUE, updateCollate = TRUE, updateDate = TRUE, roxygenise = TRUE,
                          build = TRUE, options.build = NULL, 
                          untar = TRUE, 
@@ -36,15 +39,14 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
                          install = TRUE, options.install = "--build", 
                          trace = 2,  clearExisting = TRUE, clearRcheck = TRUE, clearInstall = TRUE){
 
-  if(!is.null(path.package)){
+  if(!is.null(path)){
     oldWD <- getwd()
-    setwd(path.package)
+    setwd(path)
     on.exit(setwd(oldWD))
   }
-  
+ 
   if(is.null(version)){
-    fieldVersion <- grep("Version", readLines(file.path(path.package, package,"DESCRIPTION")), value = TRUE)
-    version <- gsub("Version: ", replacement = "", x = fieldVersion)
+    version <- read_description(package, path = path_gitHub(), field = "Version")
   }
   
   packageVersion <- paste(package, version, sep = "_")
@@ -56,10 +58,10 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
     Rcpp::compileAttributes(pkgdir = path.Wpackage, verbose = (trace>=3))
   } 
   if(updateCollate){
-    writeCollate_package(package, path.package = path.package, trace = (trace>=2))
+    write_collate(package, path = path, trace = (trace>=2))
   }
   if(updateDate){
-    writeDate_package(package, path.package = path.package, trace = (trace>=2))
+    write_date(package, path = path, trace = (trace>=2))
   }
   # crlf2lf("testCpp")
   # pdf2qpdf("MRIaggr")
@@ -103,115 +105,16 @@ buildPackage <- function(package, version = NULL, path.package = NULL,
   
 }
 
-#' @title Remove all files from a given directory
+
+
+
+
+
+
+#' @title Normalize .cpp files
+#' @description Convert .cpp files with CRLF line ending in LF line ending
 #'
-#' @param dirname the path leading to the directory
-#' @param test should the user be asked whether he really wants to remove the directory
-#' @param trace should the execution of the function be traced
-cleanDir <- function(dirname,test=TRUE, trace = TRUE){
-  
-  dirname_split <- strsplit(dirname,split="/")[[1]]
-  if(length(dirname_split)>1){
-    path <- paste(dirname_split[-length(dirname_split)],collapse="/")
-    dirname_1 <- dirname_split[length(dirname_split)]
-  }else{
-    path <- "."
-    dirname_1 <- dirname_split
-  }
-  
-  list_files <- list.files(dirname,recursive = TRUE)
-  n.files <- length(list_files)
-  if(dirname_1 %in% list.files(path)){
-    if(test==TRUE){
-      test <- readline(paste("should the directory \'",dirname,"\' be removed ? (1/0) : \n",
-                             "(",n.files," files )",sep=""))
-    }else{
-      test <- 1
-    }
-    
-    if(test==1){
-      unlink(dirname,recursive=TRUE)
-      if(trace){cat("directory ",dirname," removed \n",sep = "")}
-    }
-  }else if(trace){cat("directory not in the current working directory \n")}
-  
-  return(invisible(list_files))
-}
-
-#' @title write the collate field
-#' 
-#' @param package the name of the package
-#' @param path.package the position of the directory containing the package
-writeCollate_package <- function(package, path.package = NULL, space = "    ", trace = TRUE){
-  
-  ## check
-  validPath(file.path(path.package,package), type = "dir")
-  validPath(file.path(path.package,package,"DESCRIPTION"), type = "file")
-  validPath(file.path(path.package,package,"R"), type = "dir")
-  
-  file.description <- readLines(file.path(path.package,package,"DESCRIPTION"))
-  Rfiles <- list.files(file.path(path.package,package,"R"), pattern = c(".R$",".r$"))
-  TOadd <- c("Collate:",paste0(space,"'",Rfiles,"'"))
-  
-  indexLine <- grep("Collate:",file.description)
-  test.change  <- FALSE 
-  
-  if(length(indexLine) == 0){
-    if(trace){cat(">> add \'collate\' field to the DESCRIPTION file")}
-    file.description <- c(file.description, TOadd)
-    test.change <- TRUE
-  }else{
-    testPP <- grep(":",file.description,fixed=TRUE)>indexLine
-    if(any(testPP)){
-      indexLine_end <- min(grep(":",file.description,fixed=TRUE)[testPP])-1
-    }else{
-      indexLine_end <-  length(file.description)
-    }
-    
-    if(!identical(TOadd,file.description[indexLine:indexLine_end])){
-      if(trace){cat(">> update \'collate\' field in the DESCRIPTION file")}
-      file.description <- c(file.description[1:(indexLine-1)],TOadd,file.description[(indexLine_end+1):length(file.description)])
-      test.change <- TRUE
-    }
-  }
-
-  if(test.change){
-    con <- file(file.path(path.package,package,"DESCRIPTION")) 
-    writeLines(text = file.description, con = con) 
-    close(con)
-    if(trace){cat("\n")}
-  }
-  invisible(return(TRUE))
-}
-
-
-writeDate_package <- function(package, path.package = NULL, trace = TRUE){
-  
-  ## check
-  validPath(file.path(path.package,package), type = "dir")
-  validPath(file.path(path.package,package,"DESCRIPTION"), type = "file")
-  validPath(file.path(path.package,package,"R"), type = "dir")
-  
-  newDate <- paste0("Date: ",format(Sys.time(), "%Y-%M-%d"))
-  
-  file.description <- readLines(file.path(path.package,package,"DESCRIPTION"))
-  indexLine <- grep("Date:",file.description)
-  
-  if(length(indexLine) == 0){
-    warning("writeDate_package: \'Date\' field is missing in DESCRIPTION \n")
-  }else if(file.description[indexLine] != newDate){
-    if(trace){cat(">> update \'Date\' field in the DESCRIPTION file")}
-    file.description[indexLine] <- paste0("Date: ",format(Sys.time(), "%Y-%M-%d"))
-    con <- file(file.path(path.package,package,"DESCRIPTION")) 
-    writeLines(text = file.description, con = con) 
-    close(con)
-    if(trace){cat("\n")}
-  }
-  
-  invisible(return(TRUE))
-}
-
-#' @title Convert .cpp files with CRLF line ending in LF line ending
+#' @param the path to the directory containing the cpp files
 #'
 #' @references  http://lists.r-forge.r-project.org/pipermail/rcpp-devel/2012-April/003731.html Dirk Eddelbuettel edd at debian.org (Mon Apr 23 18:53:37 CEST 2012)
 crlf2lf <- function(dirname){ 
@@ -267,44 +170,7 @@ crlf2lf <- function(dirname){
   }
 }
 
-
-#' @title Convert from pdf to qpdf
-#'
-pdf2qpdf <- function(dirname,path_qpdf="../qpdf-5.1.2-bin-mingw32/qpdf-5.1.2/bin/qpdf"){
-  cat("Convert pdf to qpdf (dir : ",dirname,") \n")
-  
-  if("doc" %in% list.files(dirname) == FALSE){
-    cat("\'doc\' directory not found \n")
-    return(invisible(NULL))
-  }
-  
-  file_pdf <- list.files(paste(dirname,"/doc",sep=""))
-  file_pdf <- file_pdf[grep(file_pdf,pattern=".pdf",fixed=TRUE)]
-  
-  if(length(file_pdf)==0){
-    cat("no \'.pdf\' files founded in the \'doc\' directory \n")
-    return(invisible(NULL))
-  }
-  
-  n.files <- length(file_pdf)
-  cat(n.files,"files founded \n")
-  test <- 0
-  
-  for(iter_file in file_pdf){
-    if(test<=1){
-      test <- readline(paste("should the file \'",iter_file,"\' be converted ? (1/0) : ",sep=""))
-    }
-    if(test>=1){
-      system(paste(path_qpdf," ",dirname,"/doc/",iter_file," ",dirname,"/doc/",iter_file,sep=""))
-      cat("done \n") 
-    }
-    if(test<0){
-      cat("exit \n") 
-      break}
-  }
-}
-
-#' @title Print all the arguments from the Rd file
+#'  @title Print all the arguments from the Rd file
 #'
 printLsArgs <- function(dir,write.file=FALSE,filename="List_of_arguments",trace=TRUE,path=NULL){
   

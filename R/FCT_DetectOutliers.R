@@ -1,5 +1,6 @@
-#' @title Robust scaling of a numeric vector 
-#' 
+#' @title Robust scaling
+#' @description Robust scaling of a numeric vector 
+#'
 #' @param x a numeric vector
 #' @param center the method used to assess the "average" value
 #' @param scale the method used to assess the dispersion of the data
@@ -78,8 +79,8 @@ scaleOutlier <- function(x, center = "median", scale = "mad", method,
   
 }
 
-#' @title Search potential outliers in a dataset
-#' 
+#' @title Search potential outliers
+#' @description Search potential outliers in a dataset
 #' @examples 
 #' 
 #' @export
@@ -137,11 +138,24 @@ scanOutlier <- function(data, id,
 #### check functions ####
 
 #' @title Identify outlier
+#' @name identifyOutlier
+#' @description Identify numeric or factor outliers
+#'
+#' @param x a vector of numeric
+#' @param type the type of robust metric for assessing the "average" value
+#' @param th.gaussian the threshold for defining an outlier when using the mean
+#' @param th.hampel the threshold for defining an outlier when mad
+#' @param th.boxplot the threshold for defining the IQR
+#' @param na.rm should na be removed.
 #' 
 #' @references idea from http://www.r-bloggers.com/finding-outliers-in-numerical-data/
 #'
 #' @examples 
+#' \dontrun{
 #' numOutlier(rnorm(1e3))
+#' }
+
+#' @rdname identifyOutlier
 numOutlier <- function(x, type = "auto",
                        th.gaussian = 3, th.hampel = 3, th.boxplot = 1.5, 
                        na.rm = FALSE){
@@ -164,8 +178,8 @@ numOutlier <- function(x, type = "auto",
   
   threshold <- switch(type,
                       "gaussian" = th.gaussian,
-                      "hampel" = th.gaussian,
-                      "boxplot" = th.gaussian)
+                      "hampel" = th.hampel,
+                      "boxplot" = th.boxplot)
   
   if(type == "gaussian"){
     center <- rep(mean(x, na.rm = na.rm), 2)
@@ -204,6 +218,7 @@ numOutlier <- function(x, type = "auto",
   return(output)
 }
 
+#' @rdname identifyOutlier
 factorOutlier <- function(x, threshold = 0.01, useNA = "ifany"){
   
   groups <- unique(x)
@@ -283,7 +298,7 @@ checkUnique <- function(x, test = FALSE){
 #### print ####
 
 #' @export
-print.detectOutlier <- function(x, type = "value"){
+print.detectOutlier <- function(x, type = "value", ...){
   
   validCharacter(type, validLength = 1, validValues = c("value","index"), method = "print.detectOutlier")
   
@@ -332,7 +347,7 @@ print.ls_detectOutlier <- function(x, only.outlier = TRUE, ...){
 #### plot ####
 
 #' @export
-plot.detectOutlier <- function(x){
+plot.detectOutlier <- function(x, ...){
   
   if(length(x$display)>0){
     do.call(x$display$method, args = x$display$args)

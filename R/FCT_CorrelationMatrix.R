@@ -5,8 +5,9 @@
 #' @param data the dataset. 
 #' @param format the format of data. Can be \code{"wide"} or \code{"long"} 
 #' @param names the names of the column in the dataset to be analysed. If \code{NULL}, all the columns will be used.
+#' @param lower.tri should only the lower traingle of the matrix be filled?
 #' @param method.cor the method used to compute the correlation. 
-#' @param use.pairwiseNA If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
+#' @param use.use.pairwiseNNA If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
 #' @param reorder argument order of corrMatOrder.
 #' @param imput.value the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median). 
 #' @param hclust.method argument hclust.method of corrMatOrder.
@@ -262,7 +263,7 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
 #' @param type Can be either "correlation" or "covariance".
 #' @param individual cluster for which the variance covariance matrix should be returned
 #' @param upper logical value indicating whether the upper triangle of the distance matrix should be returned
-#' @param add the id name at the row and col names
+#' @param addId the id name at the row and col names
 #' @param plot should the correlation matrix be displayed. \emph{logical}.
 #' @param args.plot a list of arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed
 #' @param output how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.
@@ -291,7 +292,7 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
     ## check the ordering of the data
     corObj <- eval(gls$call$correlation)
     formulaCor <- nlme:::formula.corStruct(corObj)
-    variableCor <- all.vars(getGroupsFormula(formulaCor))
+    variableCor <- all.vars(nlme::getGroupsFormula(formulaCor))
     
     if(any(order(data[[variableCor]]) != seq_len(NROW(data)))){
       stop("getSigmaGLS: the dataset used to fit the model must be sort by \"",paste(variableCor, collapse = "\" \""),"\"",
@@ -344,7 +345,7 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
   if(!is.null(gls$modelStruct$varStruct)) {
     varObj <- eval(gls$call$weights)
     formulaVar <- nlme:::formula.varFunc(varObj)
-    variableVar <- paste(all.vars(getGroupsFormula(formulaVar)), collapse = " ")
+    variableVar <- paste(all.vars(nlme::getGroupsFormula(formulaVar)), collapse = " ")
     
     if(!is.null(individual) && !is.null(gls$modelStruct$corStruct)){
       nameRep <- names(varWeights(gls$modelStruct$varStruct)[index.individual])

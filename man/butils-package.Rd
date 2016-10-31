@@ -3,5 +3,8 @@
 \docType{package}
 \name{butils-package}
 \alias{butils-package}
-\title{butils package:}
+\title{butils package}
+\description{
+Miscellaneous function for working in R
+}
 

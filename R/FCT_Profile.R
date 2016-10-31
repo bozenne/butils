@@ -32,7 +32,7 @@ profileCode <- function(FUN, filename = NULL, type = "Rprof", plot = TRUE){
     }
     
   }else if(type == "lineprof"){
-    sProfile <- lineprof::lineprof(fctTest())
+    sProfile <- lineprof::lineprof(FUN())
     if(plot){lineprof::shine(sProfile)}
   }
   
