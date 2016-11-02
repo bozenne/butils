@@ -28,12 +28,12 @@ package.source <- function(name, path = path_gitHub(),
   validPath(file.path(path, name), type = "dir", method = "package.source")
   if(Rpackage){
     
-    if(identical(Rpackage,TRUE)){Rpackage <- c("Import","Depends","Suggest")}
+    if(identical(Rpackage,TRUE)){Rpackage <- c("Imports","Depends","Suggests")}
     
-    validCharacter(Rpackage, validLength = NULL, validValues = c("Import","Depends","Suggest"))
+    validCharacter(Rpackage, validLength = NULL, validValues = c("Imports","Depends","Suggests"))
     
     packageToLoad <- NULL
-    if("Import" %in% Rpackage){
+    if("Imports" %in% Rpackage){
       packageToLoad <- c(packageToLoad,
                          read_description(name, path = path, field = "Imports", rmComma = TRUE, rmBlanck = TRUE)
       )
@@ -43,9 +43,9 @@ package.source <- function(name, path = path_gitHub(),
                          read_description(name, path = path, field = "Depends", rmComma = TRUE, rmBlanck = TRUE)
       )
     }
-    if("Suggest" %in% Rpackage){
+    if("Suggests" %in% Rpackage){
       packageToLoad <- c(packageToLoad,
-                         read_description(name, path = path, field = "Suggest", rmComma = TRUE, rmBlanck = TRUE)
+                         read_description(name, path = path, field = "Suggests", rmComma = TRUE, rmBlanck = TRUE)
       )
     }
     

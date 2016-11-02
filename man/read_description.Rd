@@ -23,12 +23,16 @@ Extract the description file of a package
 }
 \examples{
 \dontrun{
+read_description <- butils:::read_description
 read_description("butils", path = path_gitHub())
 read_description("butils", path = path_gitHub(), field = "Collate")
 read_description("butils", path = path_gitHub(), field = "Collate", rmBlanck = FALSE)
 
 read_description("butils", path = path_gitHub(), field = "Version")
 read_description("butils", path = path_gitHub(), field = "Imports")
+
+read_description("riskRegression", path = path_gitHub(), field = "Collate")
+read_description("lava.penalty", path = path_gitHub(), field = "Suggests")
 }
 }
 

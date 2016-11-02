@@ -41,6 +41,9 @@ ggSurv(x, ...)
 
 \item{strataVar}{the name of the column in the data.table object containing the strata variable}
 }
+\description{
+Display a non-parametric or semi-parametric survival curve. Can handle one strata variable.
+}
 \examples{
 library(survival)
 dt <- as.data.table(aml)

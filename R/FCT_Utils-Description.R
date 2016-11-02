@@ -9,12 +9,16 @@
 #'
 #' @examples 
 #' \dontrun{
+#' read_description <- butils:::read_description
 #' read_description("butils", path = path_gitHub())
 #' read_description("butils", path = path_gitHub(), field = "Collate")
 #' read_description("butils", path = path_gitHub(), field = "Collate", rmBlanck = FALSE)
 #' 
 #' read_description("butils", path = path_gitHub(), field = "Version")
 #' read_description("butils", path = path_gitHub(), field = "Imports")
+#' 
+#' read_description("riskRegression", path = path_gitHub(), field = "Collate")
+#' read_description("lava.penalty", path = path_gitHub(), field = "Suggests")
 #' }
 read_description <- function(package, path, field = NULL,
                              rmBlanck = TRUE, rmComma = TRUE){
@@ -29,7 +33,12 @@ read_description <- function(package, path, field = NULL,
   # select field
   if(length(grep(field,file.description))==0){return(NULL)}
   indexLine <- grep(field,file.description)
-  indexLine_end <-  min(grep(":",file.description,fixed=TRUE)[grep(":",file.description,fixed=TRUE)>indexLine])-1
+  indexPP <- grep(":",file.description,fixed=TRUE)
+  if(indexLine == tail(indexPP, 1)){ # if field is the last one in the description file go to the end
+    indexLine_end <-  length(file.description)
+  }else{ # else go just before the next field
+    indexLine_end <-  min(indexPP[indexPP>indexLine])-1
+  }
   file.description <- file.description[seq(indexLine, indexLine_end)]
   
   # remove initial blanck
@@ -119,7 +128,14 @@ write_collate <- function(package, path, trace = TRUE){
     
     if(!identical(TOadd,file.description[indexLine:indexLine_end])){
       if(trace){cat(">> update \'collate\' field in the DESCRIPTION file")}
-      file.description <- c(file.description[1:(indexLine-1)],TOadd,file.description[(indexLine_end+1):length(file.description)])
+      file.descriptionOLD <- file.description
+      
+      file.description <- c(file.description[1:(indexLine-1)],TOadd)
+      if(indexLine_end<length(file.descriptionOLD)){
+        file.description <- c(file.description,
+                              file.descriptionOLD[(indexLine_end+1):length(file.descriptionOLD)]
+        )
+      }
       test.change <- TRUE
     }
   }
