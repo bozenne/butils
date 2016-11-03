@@ -163,12 +163,12 @@ write_date <- function(package, path, trace = TRUE){
   file.description <- read_description(package, path = path)
   indexLine <- grep("Date:",file.description)
   
-  newDate <- paste0("Date: ",format(Sys.time(), "%Y-%M-%d"))
+  newDate <- paste0("Date: ",format(Sys.time(), "%Y-%m-%d"))
   
   if(length(indexLine) == 0){
     warning("writeDate_package: \'Date\' field is missing in DESCRIPTION \n")
   }else if(file.description[indexLine] != newDate){
-    if(trace){cat(">> update \'Date\' field in the DESCRIPTION file")}
+    if(trace){cat(">> update \'Date\' field in the DESCRIPTION file (",newDate,")")}
     file.description[indexLine] <- paste0("Date: ",format(Sys.time(), "%Y-%M-%d"))
     write_description(package, path = path, newfile = file.description)
     if(trace){cat("\n")}

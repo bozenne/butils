@@ -75,11 +75,8 @@ package.source <- function(name, path = path_gitHub(),
                 "set \'RorderDescription\' to FALSE to source all the files that are present in the directory R \n")  
       }
       
-      file.description <- readLines(file.path(path,name,"DESCRIPTION"))
-      indexLine <- grep("Collate:",file.description)+1
-      indexLine_end <-  min(grep(":",file.description,fixed=TRUE)[grep(":",file.description,fixed=TRUE)>indexLine])-1
-      filesR.description <- file.description[indexLine:indexLine_end]
-      filesR.description <- gsub("[[:blank:]]|'", "", filesR.description)
+      filesR.description <- read_description(name, path = path, field = "Collate", rmBlanck = TRUE, rmComma = TRUE)
+      filesR.description <- gsub("'|\"","",filesR.description)
       
       test.missing <- is.na(match(fileNames, filesR.description))
       if(warning && any(test.missing)){
