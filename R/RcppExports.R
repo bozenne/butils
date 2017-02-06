@@ -15,3 +15,19 @@ colCumSum <- function(x) {
     .Call('butils_colCumSum', PACKAGE = 'butils', x)
 }
 
+hello0 <- function() {
+    invisible(.Call('butils_hello0', PACKAGE = 'butils'))
+}
+
+hello1 <- function(A) {
+    .Call('butils_hello1', PACKAGE = 'butils', A)
+}
+
+hello2 <- function(A, B) {
+    .Call('butils_hello2', PACKAGE = 'butils', A, B)
+}
+
+# Register entry points for exported C++ functions
+methods::setLoadAction(function(ns) {
+    .Call('butils_RcppExport_registerCCallable', PACKAGE = 'butils')
+})

@@ -6,19 +6,11 @@
 #' @useDynLib butils
 #' @import data.table
 #' @import ggplot2
-#' @import pipeR
+#' @import butils.base
 #' @importFrom corrplot corrMatOrder
 #' @importFrom nlme getGroupsFormula
-#' @importFrom roxygen2 roxygenise
-#' @importFrom stringr str_pad
 #' @importFrom riskRegression predictCox
-#' @importFrom rvest html_attr html_nodes
 #' @importFrom stats IQR mad na.omit 
-#' @importFrom tools file_ext file_path_sans_ext list_files_with_exts
+#' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils setTxtProgressBar txtProgressBar  
-#' @importFrom xml2 read_html
-#' @importFrom zoo as.Date
 NULL
-
-
-###

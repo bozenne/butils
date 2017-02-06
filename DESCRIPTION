@@ -2,47 +2,36 @@ Package: butils
 Type: Package
 Title: Various usefull functions
 Version: 1.0
-Date: 2016-11-03
+Date: 2016-11-21
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R
 License: GPL-3
 Depends:
     R (>= 2.10),
-	Rcpp (>= 0.10.5),
+	  Rcpp (>= 0.10.5),
     data.table,
     ggplot2,
-    pipeR
+    butils.base
 Imports:
     corrplot,
     devtools,
     stats,
-	stringr,
+	  stringr,
     R.utils,
     roxygen2,
-    rvest,
     tools,
-    utils,
-    xml2,
-    zoo
+    utils
 LinkingTo: Rcpp, RcppArmadillo
 LazyLoad: yes
 Collate:
-    'butils-package.R'
-    'FCT_Batch.R'
     'FCT_BC.R'
+    'FCT_Batch.R'
     'FCT_CorrelationMatrix.R'
     'FCT_DetectOutliers.R'
     'FCT_PlotSurv.R'
-    'FCT_PreparePackage.R'
     'FCT_Profile.R'
-    'FCT_Source.R'
-    'FCT_SourceGitHub.R'
-    'FCT_Utils-Description.R'
-    'FCT_Utils-Dir.R'
-    'FCT_Utils-File.R'
-    'FCT_Utils-HTML.R'
-    'FCT_Valid.R'
     'RcppExports.R'
+    'butils-package.R'
 NeedsCompilation: yes
 RoxygenNote: 5.0.1

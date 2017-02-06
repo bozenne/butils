@@ -1,6 +1,8 @@
 // [[Rcpp::depends(RcppArmadillo)]]
+
 #include <RcppArmadillo.h>
 using namespace Rcpp;
+
 //' Apply cumsum in each column 
 //'
 //' @description Fast computation of apply(x,2,cumsum)
