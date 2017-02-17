@@ -9,17 +9,6 @@
 
 using namespace Rcpp;
 
-// colCumSum
-NumericMatrix colCumSum(NumericMatrix x);
-RcppExport SEXP butils_colCumSum(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(colCumSum(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 // hello0
 void hello0();
 static SEXP butils_hello0_try() {

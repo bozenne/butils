@@ -28,10 +28,7 @@
 
 #' @rdname ggSurv
 ggSurv.survfit <- function(x, ...){
-  
-  #### packages
-  require(data.table)
-  
+    
   dt.ggplot <- data.table::data.table(time = x$time,
                                       survival = x$surv,
                                       ci.inf = x$lower,
@@ -68,10 +65,7 @@ ggSurv.survfit <- function(x, ...){
 
 #' @rdname ggSurv
 ggSurv.coxph <- function(x, ...){
-  
-  #### packages
-  require(data.table)
-  
+    
   data <- eval(x$call$data)
   time <- unique(data$time)
   

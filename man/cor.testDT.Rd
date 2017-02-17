@@ -20,6 +20,8 @@ cor.testDT(data, format, names = NULL, lower.tri = TRUE,
 
 \item{method.cor}{the method used to compute the correlation.}
 
+\item{use.pairwiseNNA}{If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
+
 \item{reorder}{argument order of corrMatOrder.}
 
 \item{imput.value}{the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median).}
@@ -35,8 +37,6 @@ cor.testDT(data, format, names = NULL, lower.tri = TRUE,
 \item{output}{how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.}
 
 \item{...}{additional arguments to be passed to method.cor}
-
-\item{use.use.pairwiseNNA}{If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
 }
 \value{
 An object determined by the output argument

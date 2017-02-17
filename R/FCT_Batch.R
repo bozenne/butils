@@ -28,8 +28,8 @@ launchBatch <- function(file, path = ".", dirBatch = NULL,
   validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
   
   #### analyse file path
-  fileName <- tools:::file_path_sans_ext(file)
-  fileExtension <- tools:::file_ext(file)
+  fileName <- tools::file_path_sans_ext(file)
+  fileExtension <- tools::file_ext(file)
   
   #### directory for the batch file
   if(!is.null(dirBatch)){

@@ -11,7 +11,4 @@ scanOutlier(data, id, method.numeric = "numOutlier",
 \description{
 Search potential outliers in a dataset
 }
-\examples{
-
-}
 

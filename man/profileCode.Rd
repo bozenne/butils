@@ -4,16 +4,18 @@
 \alias{profileCode}
 \title{Profile a function}
 \usage{
-profileCode(FUN, filename = NULL, type = "Rprof", plot = TRUE)
+profileCode(FUN, filename = NULL, type = "Rprof", plot = FALSE, ...)
 }
 \arguments{
 \item{FUN}{the function to be profiled. Must have no argument}
 
 \item{filename}{the name of the file where to save the profiling. I}
 
-\item{type}{the function used for profiling: can be \code{"Rprof"} or \code{"lineprof"}.}
+\item{type}{the function used for profiling: can be \code{"Rprof"} or \code{"profvis"}.}
 
-\item{plot}{should the result of the profiling be graphically displayed. Only relevant if \code{type="Rprof"}.}
+\item{plot}{should the result of the profiling be graphically displayed.}
+
+\item{...}{additional arguments to be passed to the profiling function}
 }
 \value{
 invisible output of the profiling method.
@@ -23,6 +25,21 @@ This function is a convenient to profile the execution of a function
 }
 \details{
 If \code{filename} is \code{NULL} a temporary file is created and is removed at the end of the execution of the function.
+}
+\examples{
+
+\dontrun{
+library(lava)
+m <- lvm(Y ~ X + G)
+d <- sim(m, 1e2)
+FUN <- function(){
+estimate(m,d)
+}
+profileCode(FUN, type = "Rprof")
+profileCode(FUN, type = "profvis")
+profileCode(FUN, type = "profvis", plot = TRUE)
+}
+
 }
 \keyword{function}
 \keyword{profile}

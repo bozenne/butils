@@ -7,7 +7,7 @@
 #' @param names the names of the column in the dataset to be analysed. If \code{NULL}, all the columns will be used.
 #' @param lower.tri should only the lower traingle of the matrix be filled?
 #' @param method.cor the method used to compute the correlation. 
-#' @param use.use.pairwiseNNA If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
+#' @param use.pairwiseNNA If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
 #' @param reorder argument order of corrMatOrder.
 #' @param imput.value the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median). 
 #' @param hclust.method argument hclust.method of corrMatOrder.
@@ -239,6 +239,7 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
   }
   
   #### plot
+  browser()
   gg <- ggplot(data, aes_string(x = name.x, y = name.y, fill = name.fill)) + geom_tile()
   gg <- gg + ggtitle(title)
   gg <- gg + xlab(xlab) + ylab(ylab) +  scale_y_discrete(limits = rev(levels(data[[name.x]])))
@@ -326,7 +327,7 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
     }
     
     ## correlation matrix
-    Sigma <- corMatrix(gls$modelStruct$corStruct)[individual]
+    Sigma <- nlme::corMatrix(gls$modelStruct$corStruct)[individual]
     Sigma <- as.matrix(Matrix::bdiag(Sigma))
     
   } else {
@@ -348,7 +349,7 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
     variableVar <- paste(all.vars(nlme::getGroupsFormula(formulaVar)), collapse = " ")
     
     if(!is.null(individual) && !is.null(gls$modelStruct$corStruct)){
-      nameRep <- names(varWeights(gls$modelStruct$varStruct)[index.individual])
+      nameRep <- names(nlme::varWeights(gls$modelStruct$varStruct)[index.individual])
     }else{
       nameRep <- names(coef(gls$modelStruct$varStruct, unconstrained = FALSE, allCoef = TRUE))  
     }
@@ -365,10 +366,10 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
   if (type == "covariance"){
     if(!is.null(gls$modelStruct$varStruct)) {
       if(is.null(gls$groups)){
-        vw <- 1/varWeights(gls$modelStruct$varStruct)[names.time]
+        vw <- 1/nlme::varWeights(gls$modelStruct$varStruct)[names.time]
       }else{
         ind <- gls$groups %in% individual ### need data to be sorted by individual
-        vw <- 1/varWeights(gls$modelStruct$varStruct)[ind]
+        vw <- 1/nlme::varWeights(gls$modelStruct$varStruct)[ind]
         names.time <- names(vw)
       }
       
@@ -382,9 +383,9 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
   ## manage matrix
   if(!is.null(upper)){
     if(upper){
-      gdata:::lowerTriangle(Sigma) <- NA
+      gdata::lowerTriangle(Sigma) <- NA
     }else{
-      gdata:::upperTriangle(Sigma) <- NA
+      gdata::upperTriangle(Sigma) <- NA
     }
   }
   
@@ -396,7 +397,7 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
                          rep = cumsum(duplicated(rownames(Sigma)))
   )
   setnames(dt.Sigma, c("covariance","var1","var2"), c(type,paste0(variableVar,1),paste0(variableVar,2)))
-  
+ 
   if(plot || output == "plot"){
     if("xlab" %in% names(args.plot) == FALSE){args.plot$xlab <- variableVar}
     if("ylab" %in% names(args.plot) == FALSE){args.plot$ylab <- variableVar}
