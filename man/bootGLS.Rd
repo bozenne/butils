@@ -77,6 +77,5 @@ bootGLS(fm1, n.boot = 1e4, n.cpus = 2, IDvar = "Mare")
 
 }
 
-
 }
 

@@ -163,6 +163,7 @@ bootGLS <- function(object,
 #' @details
 #' Should have an attribute call that includes a data attribute (i.e. object$call$data must exist).
 #'
+#' @export
 print.glsboot <- function(x, seq_length.out){
 
     rowM <- rbind(estimate = x$e.coef,
