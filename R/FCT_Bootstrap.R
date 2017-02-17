@@ -62,8 +62,7 @@
 #' 
 #' }
 #' 
-#' 
-
+#' @export
 bootGLS <- function(object,
                     n.boot,
                     n.cpus = 1,
