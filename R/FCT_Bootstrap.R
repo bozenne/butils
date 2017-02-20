@@ -14,7 +14,6 @@
 #' Should have an attribute call that includes a data attribute (i.e. object$call$data must exist).
 #'
 #' @examples
-#' 
 #' #### lm ####
 #' set.seed(10)
 #' n <- 100
@@ -136,10 +135,8 @@ bootGLS <- function(object,
     
     #
     M.boot <- do.call(rbind, boots)
-
     CI <- calcCI(M.boot, GROUPvar, e.coef, n.coef)
     p.value <- calcPvalue(M.boot, GROUPvar, e.coef, n.coef)
-
     ## export
     ls.export <- list(all.boot = M.boot,
                       p.value = p.value,
@@ -170,7 +167,8 @@ print.glsboot <- function(x, seq_length.out){
                   x$CI,
                   p.value = x$p.value)    
     print(t(rowM))
-    cat("for ",x$n.boot," replications of the resampling \n", sep = "")
+    n.bootReal <- colSums(!is.na(x$all.boot))
+    cat("for ",as.double(min(n.bootReal))," replications of the resampling \n", sep = "")
 
     if(!missing(seq_length.out)){
         cat("\n")
@@ -195,11 +193,11 @@ print.glsboot <- function(x, seq_length.out){
 
 calcCI <- function(M.boot, GROUPvar, e.coef, n.coef){
 
-    if(!is.null(GROUPvar)){
+      if(!is.null(GROUPvar)){
         names.coef <- names(e.coef)
         CI <- sapply(1:n.coef, function(row){
             if(names.coef[row]==GROUPvar){
-                quantile(M.boot[,row], probs = c(0.025,0.975))+e.coef[row]
+                quantile(M.boot[,row], probs = c(0.025,0.975), na.rm = TRUE)+e.coef[row]
             }else{
                 return(c("2.5%"=NA,"97.5%"=NA))
             }
@@ -208,7 +206,7 @@ calcCI <- function(M.boot, GROUPvar, e.coef, n.coef){
     }else{
 
         CI <- sapply(1:n.coef, function(row){
-            quantile(M.boot[,row], probs = c(0.025,0.975))
+            quantile(M.boot[,row], probs = c(0.025,0.975), na.rm = TRUE)
         })
     }
 
@@ -218,11 +216,11 @@ calcCI <- function(M.boot, GROUPvar, e.coef, n.coef){
 
 calcPvalue <- function(M.boot, GROUPvar, e.coef, n.coef){
 
-    if(!is.null(GROUPvar)){
+  if(!is.null(GROUPvar)){
         names.coef <- names(e.coef)
         p.value <- sapply(1:n.coef, function(row){
             if(names.coef[row]==GROUPvar){
-                mean( abs(M.boot[,row]) >= abs(e.coef[row]) )
+                mean( abs(M.boot[,row]) >= abs(e.coef[row]), na.rm = TRUE)
             }else{
                 return(NA)
             }
@@ -230,7 +228,7 @@ calcPvalue <- function(M.boot, GROUPvar, e.coef, n.coef){
         
     }else{
         p.value <- sapply(1:n.coef, function(row){
-            findP1(M.boot[,row])
+            findP1(na.omit(M.boot[,row]))
         })  
         
     }

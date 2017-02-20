@@ -2,7 +2,7 @@ Package: butils
 Type: Package
 Title: Various usefull functions
 Version: 1.0
-Date: 2017-02-17
+Date: 2017-02-20
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R.
