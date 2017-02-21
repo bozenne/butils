@@ -211,7 +211,7 @@ bootGLS <- function(object,
 print.glsboot <- function(x, seq_length.out){
 
     rowM <- rbind(estimate = x$coef,
-                  estimate = x$coef,
+                  estimate.boot = apply(x$all.boot,2,median,na.rm = TRUE),
                   x$CI,
                   p.value = x$p.value)    
     print(t(rowM))
