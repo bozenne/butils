@@ -4,13 +4,15 @@
 \alias{bootGLS}
 \title{Perform bootstrap computation on an object}
 \usage{
-bootGLS(object, n.boot, n.cpus = 1, IDvar = NULL, GROUPvar = NULL,
-  load.library = "nlme", seed = 10)
+bootGLS(object, n.boot, fctCoef, n.cpus = 1, IDvar = NULL,
+  GROUPvar = NULL, load.library = "nlme", seed = 10)
 }
 \arguments{
 \item{object}{the fitted model.}
 
 \item{n.boot}{the number of replications. Should be a large number.}
+
+\item{fctCoef}{the function used to extract the statistics of interest from the model.}
 
 \item{n.cpus}{the number of cpu to use.}
 
@@ -23,13 +25,17 @@ bootGLS(object, n.boot, n.cpus = 1, IDvar = NULL, GROUPvar = NULL,
 \item{seed}{set the random number generator}
 }
 \description{
-Perform bootstrap computation on an object
+Perform bootstrap computation on an object under H0 or H1. Handle one grouping variable.
 }
 \details{
 Should have an attribute call that includes a data attribute (i.e. object$call$data must exist).
+
+Bootstrap under H1: randomly select observations (or individuals according to argument IDvar) to form a new dataset.
+If the same individual appear several times, a different group value is given for each apparition.
+
+Bootstrap under H0: randomly permute the group label (according to argument GROUPvar) at the observation level (or individuals according to argument IDvar).
 }
 \examples{
-
 #### lm ####
 set.seed(10)
 n <- 100
@@ -53,8 +59,8 @@ resG
 
 
 \dontrun{ 
-res <- bootGLS(m.lm, n.boot = 1e4)
-resG <- bootGLS(m.lm, n.boot = 1e4, GROUPvar = "G")
+res <- bootGLS(m.lm, n.boot = 1e4, n.cpus = 4)
+resG <- bootGLS(m.lm, n.boot = 1e4, GROUPvar = "G", n.cpus = 4)
 
 res
 print(res, seq_length.out = 10)
@@ -69,10 +75,11 @@ fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), Ovary,
 summary(fm1)
 
 \dontshow{
-bootGLS(fm1, n.boot = 1e2, n.cpus = 2, IDvar = "Mare")
+bootGLS(fm1, n.boot = 1e2, IDvar = "Mare")
 }
 \dontrun{
-bootGLS(fm1, n.boot = 1e4, n.cpus = 2, IDvar = "Mare")
+res <- bootGLS(fm1, n.boot = 1e4, n.cpus = 4, IDvar = "Mare")
+apply(res$all.boot, 2, mean)
 }
 
 }

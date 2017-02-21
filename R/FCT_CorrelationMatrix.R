@@ -239,7 +239,6 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
   }
   
   #### plot
-  browser()
   gg <- ggplot(data, aes_string(x = name.x, y = name.y, fill = name.fill)) + geom_tile()
   gg <- gg + ggtitle(title)
   gg <- gg + xlab(xlab) + ylab(ylab) +  scale_y_discrete(limits = rev(levels(data[[name.x]])))

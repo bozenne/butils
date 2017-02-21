@@ -48,3 +48,46 @@ close(pb)
 # {{{ under H1
 
 # }}}
+
+# {{{
+test.sim <- FALSE
+
+if(test.sim){
+  
+  library(lmeresampler)
+  
+  vcmodA <- lme(mathAge11 ~ mathAge8 + gender + class,
+                random = ~1 | school, data = jsp728)
+  
+  ## you can write your own function to return stats, or use something like 'fixef'
+  mySumm <- function(.) { 
+    return(fixef(., "beta")) 
+  }
+  
+  ## running a parametric bootstrap 
+  n.boot <- 1e3
+  system.time(
+    resPackage <- bootstrap(model = vcmodA, fn = mySumm, type = "parametric", B = n.boot)
+  )
+  system.time(
+    resButils <- bootGLS(vcmodA, n.boot = n.boot)
+  )
+  
+  
+  (apply(resButils$all.boot,2,quantile)-apply(resPackage$t,2,quantile))/apply(resPackage$t,2,quantile)
+  
+  
+  fm1 <- lme(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), Ovary,
+              random = ~ 1 | Mare)
+  
+  ## running a parametric bootstrap 
+  n.boot <- 1e3
+  system.time(
+    resPackage <- bootstrap(model = fm1, fn = mySumm, type = "parametric", B = n.boot)
+  )
+  system.time(
+    resButils <- bootGLS(fm1, n.boot = n.boot)
+  )
+  
+}
+# }}}

@@ -1,10 +1,11 @@
 #' @title Perform bootstrap computation on an object
 #' 
-#' @description Perform bootstrap computation on an object
+#' @description Perform bootstrap computation on an object under H0 or H1. Handle one grouping variable.
 #' 
 #' @param object the fitted model.
 #' @param n.boot the number of replications. Should be a large number.
 #' @param n.cpus the number of cpu to use.
+#' @param fctCoef the function used to extract the statistics of interest from the model.
 #' @param IDvar the variable in the dataset indicating the grouping level of the data. 
 #' @param GROUPvar the group variable use to resample under H0. Otherwise resampling is done under H1.
 #' @param load.library additional library to load
@@ -13,6 +14,11 @@
 #' @details
 #' Should have an attribute call that includes a data attribute (i.e. object$call$data must exist).
 #'
+#' Bootstrap under H1: randomly select observations (or individuals according to argument IDvar) to form a new dataset.
+#' If the same individual appear several times, a different group value is given for each apparition.
+#'
+#' Bootstrap under H0: randomly permute the group label (according to argument GROUPvar) at the observation level (or individuals according to argument IDvar).
+#' 
 #' @examples
 #' #### lm ####
 #' set.seed(10)
@@ -37,8 +43,8 @@
 #' 
 #' 
 #' \dontrun{ 
-#' res <- bootGLS(m.lm, n.boot = 1e4)
-#' resG <- bootGLS(m.lm, n.boot = 1e4, GROUPvar = "G")
+#' res <- bootGLS(m.lm, n.boot = 1e4, n.cpus = 4)
+#' resG <- bootGLS(m.lm, n.boot = 1e4, GROUPvar = "G", n.cpus = 4)
 #' 
 #' res
 #' print(res, seq_length.out = 10)
@@ -53,10 +59,11 @@
 #' summary(fm1)
 #' 
 #' \dontshow{
-#' bootGLS(fm1, n.boot = 1e2, n.cpus = 2, IDvar = "Mare")
+#' bootGLS(fm1, n.boot = 1e2, IDvar = "Mare")
 #' }
 #' \dontrun{
-#' bootGLS(fm1, n.boot = 1e4, n.cpus = 2, IDvar = "Mare")
+#' res <- bootGLS(fm1, n.boot = 1e4, n.cpus = 4, IDvar = "Mare")
+#' apply(res$all.boot, 2, mean)
 #' }
 #' 
 #' }
@@ -64,6 +71,7 @@
 #' @export
 bootGLS <- function(object,
                     n.boot,
+                    fctCoef,
                     n.cpus = 1,
                     IDvar = NULL,
                     GROUPvar = NULL,
@@ -91,52 +99,91 @@ bootGLS <- function(object,
     }
     
     ## 
+    setkeyv(data, IDvar)
     vec.id <- unique(data[[IDvar]]) #  all ids
     if(!is.null(GROUPvar)){
         trueGroup <- data[,.SD[[1]][1], by = IDvar, .SDcols = GROUPvar][[2]]
     }else{
         indexId <- lapply(vec.id, function(x){which(data[[IDvar]]==x)})
+        n.obsId <- unlist(lapply(indexId, length))
     }
     
     ##
     e.coef <- coef(object)
     n.coef <- length(e.coef)
     n.id <- length(vec.id)
+      
+    ## 
+    if(missing(fctCoef)){
+      if(class(object) == "lme"){
+        fctCoef <- "fixef"
+      }else{
+        fctCoef <- "coef"
+      }
+    }
     
     ## boot
     if (!missing(seed)) set.seed(seed)
     bootseeds <- sample(1:max(1e6,seed),size=n.boot,replace=FALSE)
-    
-    cl <- parallel::makeCluster(n.cpus)
-    doParallel::registerDoParallel(cl)
 
-    boots <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),.export=NULL), {
+    resampleFCT <- function(){
+      dt.new <- copy(data)
+      index <- sample(n.id,replace=TRUE) # random of ids
+      
+      if(!is.null(GROUPvar)){
+        bootGroup <- trueGroup[index] # permutation of the group label attributing one of a random individual
+        dt.new[, (GROUPvar) := bootGroup[.GRP], by = IDvar] # update of the group label at the individual level
+      }else{
+        dt.new <- dt.new[unlist(indexId[index])] # randomly pick individuals to form the new dataset
+        newID <- unlist(lapply(1:length(index), function(i){ rep(i,n.obsId[index[i]])})) # form unique ID for individuals
+        dt.new[, (IDvar) := newID] # set the new ids
+      }
+      return(dt.new)
+    }
+    
+    if(n.cpus>1){
+      
+      cl <- parallel::makeCluster(n.cpus)
+      doParallel::registerDoParallel(cl)
+      
+      boots <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),.export=NULL), {
         set.seed(bootseeds[b])
         
-        # input dt.Neutral, vec.id, trueGroup, myModel
-        dt.new <- copy(data)
-        index <- sample(n.id,replace=TRUE) # random of ids
+        object$call$data <- resampleFCT()
         
-        if(!is.null(GROUPvar)){
-            bootGroup <- trueGroup[index]
-            dt.new[, (GROUPvar) := bootGroup[.GRP], by = IDvar]
-        }else{
-            dt.new <- dt.new[unlist(indexId[index])]
-        }
-        
-        object$call$data <- dt.new
-        
-        objectBoot <- tryCatch(eval(object$call),
+        objectBoot <- tryCatch(do.call(fctCoef,list(eval(object$call))),
                                error = function(x){return(NULL)})    
-
-        # coef(objectBoot)
-        return(coef(objectBoot))
-    })
+        
+        return(objectBoot)
+      })
+      
+      # perform bootstrap
+      M.boot <- do.call(rbind, boots)
+      
+    }else{
+      
+      M.boot <- matrix(NA, nrow = n.boot, ncol = n.coef)
+      pb <- utils:::txtProgressBar(max = n.boot)
+      for(b in 1:n.boot){
+        set.seed(bootseeds[b])
+        
+        object$call$data <- resampleFCT()
+        
+        objectBoot <- tryCatch(do.call(fctCoef,list(eval(object$call))),
+                               error = function(x){return(NULL)})    
+        
+        M.boot[b,] <- objectBoot
+        utils:::setTxtProgressBar(pb, value = b)
+        
+      }
+      close(pb)
+      
+    }
     
-    #
-    M.boot <- do.call(rbind, boots)
+    ## post treatment
     CI <- calcCI(M.boot, GROUPvar, e.coef, n.coef)
     p.value <- calcPvalue(M.boot, GROUPvar, e.coef, n.coef)
+    
     ## export
     ls.export <- list(all.boot = M.boot,
                       p.value = p.value,
@@ -163,7 +210,8 @@ bootGLS <- function(object,
 #' @export
 print.glsboot <- function(x, seq_length.out){
 
-    rowM <- rbind(estimate = x$e.coef,
+    rowM <- rbind(estimate = x$coef,
+                  estimate = x$coef,
                   x$CI,
                   p.value = x$p.value)    
     print(t(rowM))
@@ -172,17 +220,12 @@ print.glsboot <- function(x, seq_length.out){
 
     if(!missing(seq_length.out)){
         cat("\n")
-       seqIndex <- seq(1,x$n.boot, length.out = seq_length.out)
-        n.Index <- length(seqIndex)
-        n.coef <- length(x$p.value)
-        resSubset <- lapply(1:(n.Index-1), function(i){
-            M.boot_red <- x$all.boot[seqIndex[i]:seqIndex[i+1],,drop = FALSE]
-            CI_tempo <- calcCI(M.boot_red, x$GROUPvar, x$coef, n.coef)
-            p.value_tempo <- calcPvalue(M.boot_red, x$GROUPvar, x$coef, n.coef)
-            return(rbind(CI_tempo,p.value = p.value_tempo))
-        })
-
-        names(resSubset) <- paste0(seqIndex[-n.Index],":",seqIndex[-1])
+      resSubset <- calcStatSubset(all.boot = x$all.boot, 
+                     coef = x$coef, 
+                     GROUPvar = x$GROUPvar, 
+                     length.out = seq_length.out,
+                     n.boot = x$n.boot)
+       
         print(resSubset)
         cat("for subsets \n")
      }
@@ -190,6 +233,24 @@ print.glsboot <- function(x, seq_length.out){
     return(invisible(x))
 }
 
+
+calcStatSubset <- function(all.boot, coef, GROUPvar, length.out, n.boot, n.coef){
+  n.coef <- length(coef)
+  
+  seqIndex <- round(seq(1,n.boot+1, length.out = length.out+1))
+  M.index <- cbind(seqIndex[-length(seqIndex)],(seqIndex-1)[-1])
+  n.Index <- NROW(M.index)
+  
+  resSubset <- lapply(1:n.Index, function(i){
+    M.boot_red <- all.boot[M.index[i,1]:M.index[i,2],,drop = FALSE]
+    CI_tempo <- calcCI(M.boot_red, GROUPvar, coef, n.coef)
+    p.value_tempo <- calcPvalue(M.boot_red, GROUPvar, coef, n.coef)
+    return(rbind(CI_tempo,p.value = p.value_tempo))
+  })
+  
+  names(resSubset) <- paste0(M.index[,1],":",M.index[,2])
+  return(resSubset)
+}
 
 calcCI <- function(M.boot, GROUPvar, e.coef, n.coef){
 
