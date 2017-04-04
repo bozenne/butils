@@ -1,7 +1,6 @@
 # library(butils.base)
 # package.source("butils")
 library(testthat)
-library(butils)
 
 context("#### bootGLS ####")
 
