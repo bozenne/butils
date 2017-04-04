@@ -27,6 +27,10 @@ ggSurv(x, ...)
 \arguments{
 \item{x}{a coxph object or a survfit object or a data.table object.}
 
+\item{...}{arguments to be passed to lower level functions}
+
+\item{format}{the format used to export the data. Can be data.table or data.frame.}
+
 \item{timeVar}{the name of the column in the data.table object containing the time variable}
 
 \item{survivalVar}{the name of the column in the data.table object containing the survival at each time}
@@ -40,6 +44,20 @@ ggSurv(x, ...)
 \item{censorVar}{the name of the column in the data.table object containing the number of censored patients at each time}
 
 \item{strataVar}{the name of the column in the data.table object containing the strata variable}
+
+\item{plot}{should the plot be displayed}
+
+\item{legend.position, title, textSize}{annotations on the plot}
+
+\item{ylim}{y range (survival)}
+
+\item{line.size}{size of the survival curves}
+
+\item{confint, alpha.CIfill, alpha.CIline}{how to display confidence intervals}
+
+\item{censoring, alpha.censoring, colour.censoring, shape.censoring, size.censoring, name.censoring}{how to display censored events}
+
+\item{events, alpha.events, colour.events, shape.events, size.events, name.events}{how to display non-censored events}
 }
 \description{
 Display a non-parametric or semi-parametric survival curve. Can handle one strata variable.
@@ -51,7 +69,7 @@ dt[,x:=as.factor(x)]
 KM <- survfit(Surv(time, status) ~ x, data = dt)
 ggSurv(KM, confint = FALSE)
 
-Cox <- coxph(Surv(time, status) ~ x, data = dt)
+Cox <- coxph(Surv(time, status) ~ x, data = dt, x = TRUE)
 ggSurv(Cox)
 
 }

@@ -284,14 +284,14 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
   
   validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "getSigmaGLS")
   validCharacter(type, validValues = c("correlation","covariance"), validLength = 1, method = "getSigmaGLS")
-  data <- nlme:::getData.gls(gls)
+  data <- nlme::getData(gls)
   
   #### rebuilt the matrix of correlation
   if (!is.null(gls$modelStruct$corStruct)) {
     
     ## check the ordering of the data
     corObj <- eval(gls$call$correlation)
-    formulaCor <- nlme:::formula.corStruct(corObj)
+    formulaCor <- get("formula.corStruct", asNamespace("nlme"))(corObj)
     variableCor <- all.vars(nlme::getGroupsFormula(formulaCor))
     
     if(any(order(data[[variableCor]]) != seq_len(NROW(data)))){
@@ -344,7 +344,7 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
   
   if(!is.null(gls$modelStruct$varStruct)) {
     varObj <- eval(gls$call$weights)
-    formulaVar <- nlme:::formula.varFunc(varObj)
+    formulaVar <- get("formula.varFunc", asNamespace("nlme"))(varObj)
     variableVar <- paste(all.vars(nlme::getGroupsFormula(formulaVar)), collapse = " ")
     
     if(!is.null(individual) && !is.null(gls$modelStruct$corStruct)){

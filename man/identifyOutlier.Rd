@@ -23,6 +23,10 @@ factorOutlier(x, threshold = 0.01, useNA = "ifany")
 \item{th.boxplot}{the threshold for defining the IQR}
 
 \item{na.rm}{should na be removed.}
+
+\item{threshold}{the threshold for defining an outlier regarding the prevalence (categorical variables)}
+
+\item{useNA}{argument passed to \code{table}}
 }
 \description{
 Identify numeric or factor outliers

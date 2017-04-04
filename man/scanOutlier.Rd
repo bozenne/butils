@@ -8,6 +8,21 @@ scanOutlier(data, id, method.numeric = "numOutlier",
   method.factor = "factorOutlier", method.id = "checkId", args.num = NULL,
   args.factor = NULL)
 }
+\arguments{
+\item{data}{the dataset}
+
+\item{id}{the name of the column containg a unique identifier for each observation}
+
+\item{method.numeric}{the method used to detect outliers in a numeric variable}
+
+\item{method.factor}{the method used to detect outliers in a categorical variable}
+
+\item{method.id}{the method used to detect outliers in identifiers}
+
+\item{args.num}{arguments to be passed to the method.numeric}
+
+\item{args.factor}{arguments to be passed to the method.factor}
+}
 \description{
 Search potential outliers in a dataset
 }

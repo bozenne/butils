@@ -19,7 +19,7 @@
 #' @importFrom profvis profvis
 #' @importFrom proftools plotProfileCallGraph readProfileData
 #' @importFrom riskRegression predictCox
-#' @importFrom stats coef delete.response IQR lm mad median na.omit optim quantile sd setNames terms time
+#' @importFrom stats as.formula coef delete.response formula IQR lm mad median model.frame model.matrix na.omit optim qnorm quantile sd setNames terms time update
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils Rprof setTxtProgressBar summaryRprof txtProgressBar  
 NULL

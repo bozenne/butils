@@ -163,7 +163,7 @@ bootGLS <- function(object,
     }else{
       
       M.boot <- matrix(NA, nrow = n.boot, ncol = n.coef)
-      pb <- utils:::txtProgressBar(max = n.boot)
+      pb <- utils::txtProgressBar(max = n.boot)
       for(b in 1:n.boot){
         set.seed(bootseeds[b])
         
@@ -173,7 +173,7 @@ bootGLS <- function(object,
                                error = function(x){return(NULL)})    
         
         M.boot[b,] <- objectBoot
-        utils:::setTxtProgressBar(pb, value = b)
+        utils::setTxtProgressBar(pb, value = b)
         
       }
       close(pb)
@@ -198,17 +198,18 @@ bootGLS <- function(object,
 # {{{ associated functions
 
 #' @title Display the result fo the bootstrap computation
-#' 
 #' @description Display the result fo the bootstrap computation
 #' 
 #' @param x object obtained with the function \code{bootGLS}
 #' @param seq_length.out the number of subsamples on which the results should be computed
-#' 
+#' @param ... not used
+#'
 #' @details
 #' Should have an attribute call that includes a data attribute (i.e. object$call$data must exist).
 #'
+#' @method print glsboot
 #' @export
-print.glsboot <- function(x, seq_length.out){
+print.glsboot <- function(x, seq_length.out, ...){
 
     rowM <- rbind(estimate = x$coef,
                   estimate.boot = apply(x$all.boot,2,median,na.rm = TRUE),

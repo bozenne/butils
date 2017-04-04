@@ -82,6 +82,14 @@ scaleOutlier <- function(x, center = "median", scale = "mad", method,
 #' @title Search potential outliers
 #' @description Search potential outliers in a dataset
 #' 
+#' @param data the dataset
+#' @param id the name of the column containg a unique identifier for each observation
+#' @param method.numeric the method used to detect outliers in a numeric variable
+#' @param method.factor the method used to detect outliers in a categorical variable
+#' @param method.id the method used to detect outliers in identifiers
+#' @param args.num arguments to be passed to the method.numeric 
+#' @param args.factor arguments to be passed to the method.factor 
+#' 
 #' @export
 scanOutlier <- function(data, id, 
                         method.numeric ="numOutlier", method.factor ="factorOutlier", method.id ="checkId",
@@ -142,10 +150,12 @@ scanOutlier <- function(data, id,
 #'
 #' @param x a vector of numeric
 #' @param na.rm should na be removed.
+#' @param threshold the threshold for defining an outlier regarding the prevalence (categorical variables)
 #' @param th.gaussian the threshold for defining an outlier when using the mean
 #' @param th.hampel the threshold for defining an outlier when mad
 #' @param th.boxplot the threshold for defining the IQR
 #' @param type the type of robust metric for assessing the "average" value
+#' @param useNA argument passed to \code{table}
 #' 
 #' @references idea from http://www.r-bloggers.com/finding-outliers-in-numerical-data/
 #'

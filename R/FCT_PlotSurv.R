@@ -10,6 +10,15 @@
 #' @param eventVar the name of the column in the data.table object containing the number of events at each time
 #' @param censorVar the name of the column in the data.table object containing the number of censored patients at each time
 #' @param strataVar the name of the column in the data.table object containing the strata variable
+#' @param format the format used to export the data. Can be data.table or data.frame.
+#' @param plot should the plot be displayed
+#' @param legend.position,title,textSize annotations on the plot
+#' @param ylim y range (survival)
+#' @param line.size size of the survival curves
+#' @param confint,alpha.CIfill,alpha.CIline how to display confidence intervals
+#' @param censoring,alpha.censoring,colour.censoring,shape.censoring,size.censoring,name.censoring how to display censored events
+#' @param events,alpha.events,colour.events,shape.events,size.events,name.events how to display non-censored events
+#' @param ... arguments to be passed to lower level functions
 #' 
 #' 
 #' @examples
@@ -19,7 +28,7 @@
 #' KM <- survfit(Surv(time, status) ~ x, data = dt)
 #' ggSurv(KM, confint = FALSE)
 #' 
-#' Cox <- coxph(Surv(time, status) ~ x, data = dt)
+#' Cox <- coxph(Surv(time, status) ~ x, data = dt, x = TRUE)
 #' ggSurv(Cox)
 #' 
 #' @export
@@ -66,6 +75,11 @@ ggSurv.survfit <- function(x, ...){
 #' @rdname ggSurv
 ggSurv.coxph <- function(x, ...){
     
+  ## for CRAN test
+  strata <- NULL
+  survival <- NULL
+  ##
+  
   data <- eval(x$call$data)
   time <- unique(data$time)
   
@@ -93,7 +107,7 @@ ggSurv.coxph <- function(x, ...){
   predC[, "status" := unname(status)]
   
   #### reduce to unique time
-  predC <- predC[,.(survival = survival[1], n.event = sum(status==1), n.censor = sum(status==0)), by = c("time",strataVar)]  
+  predC <- predC[,list(survival = survival[1], n.event = sum(status==1), n.censor = sum(status==0)), by = c("time",strataVar)]  
   
   res <- ggSurv.dt(x = predC,
                    timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, confint = FALSE,
@@ -113,6 +127,10 @@ ggSurv.dt <- function(x, format = "data.table",
                       confint = TRUE, alpha.CIfill = 0.2, alpha.CIline = 0.5,
                       censoring = TRUE, alpha.censoring = 1, colour.censoring = rgb(0.2,0.2,0.2), shape.censoring = 3, size.censoring = 2, name.censoring = "censoring",
                       events = FALSE, alpha.events = 1, colour.events = rgb(0.2,0.2,0.2), shape.events = 8, size.events = 2, name.events = "event", ...){
+  
+  ## for CRAN test
+  original <- n.censor <- n.event <- survival <- ci.inf <- ci.sup <- NULL
+  ##
   
   x <- copy(x)
  

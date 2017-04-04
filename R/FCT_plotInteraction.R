@@ -19,6 +19,7 @@
 # {{{ doc
 #' @title Display an first order interaction for categorical variables
 #' @description Display an first order interaction for categorical variables
+#' @name plotInteraction
 #'
 #' @param object a linear model
 #' @param var1 a continuous or categorical covariate
@@ -33,6 +34,7 @@
 #'
 #' @examples
 #' library(lava)
+#' library(nlme)
 #'
 #' ## simulate interaction
 #' m <- lvm(Y ~ X1 + gender + group + Interaction)
@@ -66,14 +68,17 @@
 #'
 # }}}
 
+#' @rdname plotInteraction
+#' @export
 plotInteraction <- function(object, var1, var2,
                             method.predict = NULL, field.data = NULL,
                             alpha = 0.05, n.points = 1000, plot = TRUE, alpha.ggplot = 0.25, ...){
 
-    if(is.null(method.predict)){
+  
+      if(is.null(method.predict)){
         if(any(class(object) %in% c("gls","lme"))){
-            if(require(AICcmodavg)){
-                method.predict <- "predictSE"
+            if(requireNamespace("AICcmodavg")){
+                method.predict <- get("predictSE", asNamespace("AICcmodavg"))
             }else{
                 stop("the package AICcmodavg needs to be installed \n")
             }
@@ -147,6 +152,8 @@ plotInteraction <- function(object, var1, var2,
 # {{{ partialModel
 # {{{ doc
 #' @title Create a partial model relative to two variables
+#' @description Create a partial model relative to two variables
+#' @name partialModel
 #' 
 #' @param object the model to be reduced
 #' @param var1 a covariate
@@ -191,6 +198,8 @@ plotInteraction <- function(object, var1, var2,
 #' 
 # }}}
 
+#' @rdname partialModel
+#' @export
 partialModel <- function(object, var1, var2,
                          method.coef = NULL, field.formula = NULL, field.data = NULL){
 
@@ -277,11 +286,11 @@ partialModel <- function(object, var1, var2,
 
 # {{{ missing functions in gls 
 model.matrix.gls <- function(object, ...)
-  model.matrix(terms(object), data = getData(object), ...)
+  model.matrix(terms(object), data = nlme::getData(object), ...)
 
 
 model.frame.gls <- function(object, ...)
-  model.frame(formula(object), data = getData(object), ...)
+  model.frame(formula(object), data = nlme::getData(object), ...)
 
 
 terms.gls <- function(object, ...)
@@ -290,11 +299,11 @@ terms.gls <- function(object, ...)
 
 # {{{ missing functions in lme 
 model.matrix.lme <- function(object, ...)
-  model.matrix(terms(object), data = getData(object), ...)
+  model.matrix(terms(object), data = nlme::getData(object), ...)
 
 
 model.frame.lme <- function(object, ...)
-  model.frame(formula(object), data = getData(object), ...)
+  model.frame(formula(object), data = nlme::getData(object), ...)
 
 
 terms.lme <- function(object, ...)
