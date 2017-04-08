@@ -50,7 +50,9 @@
 #' @rdname partialModel
 #' @export
 partialModel <- function(object, var1, var2,
-                         method.coef = NULL, field.formula = NULL, field.data = NULL){
+                         method.coef = NULL, method.vcov = NULL,
+                         field.formula = NULL, field.data = NULL,
+                         tol = 1e-5){
   
   ## normalize model sturcture
   if(is.null(method.coef)){
@@ -61,6 +63,10 @@ partialModel <- function(object, var1, var2,
     }
     
   }
+    if(is.null(method.vcov)){
+        method.vcov <- "vcov"
+    }
+    
   if(is.null(field.formula)){
     if(any(class(object) %in% "gls")){
       field.formula <- "model"
@@ -80,9 +86,10 @@ partialModel <- function(object, var1, var2,
   ## get outcome name
   name.Y <- all.vars(formula.object[[2]])
   
-  ## get coef
+  ## get coef and vcov
   Beta <- do.call(method.coef, args = list(object))
-  
+  oldVcov <- do.call(method.vcov, args = list(object))
+   
   ## get data
   data <- eval(object$call[[field.data]])
   X <- model.matrix(formula.object, data)
@@ -121,14 +128,22 @@ partialModel <- function(object, var1, var2,
     object <- do.call(update, list(object, data = data))        
   }
   
-  ## export
-  newBeta <- do.call(method.coef, args = list(object))
-  newBeta <- newBeta[names(newBeta) %in% c(name.rm[[1]], name.rm[[2]], interaction.rm)]
-  if( any(abs(newBeta-Beta[names(newBeta)])>1e-6) ){
-    warning("The coefficients of the partial model seems to differ compare to the original model \n",
-            "range of the difference: ",paste(range(newBeta-Beta[names(newBeta)]), collapse = " ; "),"\n")
-  }
-  return(object)
+    ## export
+    newBeta <- do.call(method.coef, args = list(object))
+    keep.name <- names(newBeta)[names(newBeta) %in% c(name.rm[[1]], name.rm[[2]], interaction.rm)]
+    
+    newBeta <- newBeta[keep.name]
+    if( any(abs(newBeta-Beta[names(newBeta)])>tol) ){
+        warning("The coefficients of the partial model seem to differ compare to the original model \n",
+                "range of the difference: ",paste(range(newBeta-Beta[names(newBeta)]), collapse = " ; "),"\n")
+    }
+    newVcov <- do.call(method.vcov, args = list(object))[keep.name,keep.name,drop=FALSE]
+    if( any(abs(newVcov-oldVcov[keep.name,keep.name,drop=FALSE])>tol) ){
+        warning("The covariance matrix of the partial model seems to differ compare to the original model \n",
+                "range of the difference: ",paste(range(newVcov-oldVcov[keep.name,keep.name,drop=FALSE]), collapse = " ; "),"\n")
+    }
+    
+    return(object)
   
 }
 # }}}

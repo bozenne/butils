@@ -4,8 +4,8 @@
 \alias{partialModel}
 \title{Create a partial model relative to two variables}
 \usage{
-partialModel(object, var1, var2, method.coef = NULL, field.formula = NULL,
-  field.data = NULL)
+partialModel(object, var1, var2, method.coef = NULL, method.vcov = NULL,
+  field.formula = NULL, field.data = NULL, tol = 1e-05)
 }
 \arguments{
 \item{object}{the model to be reduced}
