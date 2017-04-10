@@ -16,9 +16,13 @@ partialModel(object, var1, var2, method.coef = NULL, method.vcov = NULL,
 
 \item{method.coef}{the method to extract the coefficient from the model}
 
+\item{method.vcov}{the method to extract the variance-covariance matrix of the coefficients from the model}
+
 \item{field.formula}{the name of the formula field in the call}
 
 \item{field.data}{the name of the data field in the call}
+
+\item{tol}{if the difference in coefficient or variance-covariance matrix between the complete and partial model exceed the tol parameter, a warning is displayed.}
 }
 \value{
 the reduced model
