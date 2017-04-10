@@ -8,8 +8,10 @@
 #' @param var1 a covariate
 #' @param var2 another covariate
 #' @param method.coef the method to extract the coefficient from the model
+#' @param method.vcov the method to extract the variance-covariance matrix of the coefficients from the model
 #' @param field.formula the name of the formula field in the call
 #' @param field.data the name of the data field in the call
+#' @param tol if the difference in coefficient or variance-covariance matrix between the complete and partial model exceed the tol parameter, a warning is displayed.
 #' 
 #' @return the reduced model
 #' 
