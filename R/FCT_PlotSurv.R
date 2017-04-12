@@ -25,11 +25,18 @@
 #' library(survival)
 #' dt <- as.data.table(aml)
 #' dt[,x:=as.factor(x)]
+#' 
+#' ## survfit
 #' KM <- survfit(Surv(time, status) ~ x, data = dt)
 #' ggSurv(KM, confint = FALSE)
 #' 
+#' ## coxph
 #' Cox <- coxph(Surv(time, status) ~ x, data = dt, x = TRUE)
 #' ggSurv(Cox)
+#' 
+#' ## data.table
+#' dt2 <- data.table(time = 1:10, survival = seq(1, by = -0.01, length.out = 10), n.censor = 0, n.event = 1)
+#' ggSurv(dt2)
 #' 
 #' @export
 `ggSurv` <-
@@ -37,7 +44,7 @@
 
 #' @rdname ggSurv
 ggSurv.survfit <- function(x, ...){
-    
+  
   dt.ggplot <- data.table::data.table(time = x$time,
                                       survival = x$surv,
                                       ci.inf = x$lower,
@@ -65,16 +72,16 @@ ggSurv.survfit <- function(x, ...){
     varStrata <- NULL 
   }
   
-  res <- ggSurv.dt(x = dt.ggplot,
-                   timeVar = "time", survivalVar = "survival", ciInfVar = "ci.inf", ciSupVar = "ci.sup", 
-                   eventVar = "n.event", censorVar = "n.censor",  strataVar = varStrata,
-                   ...)
+  res <- ggSurv(x = dt.ggplot,
+                timeVar = "time", survivalVar = "survival", ciInfVar = "ci.inf", ciSupVar = "ci.sup", 
+                eventVar = "n.event", censorVar = "n.censor",  strataVar = varStrata,
+                ...)
   return(invisible(res))
 }
 
 #' @rdname ggSurv
 ggSurv.coxph <- function(x, ...){
-    
+  
   ## for CRAN test
   strata <- NULL
   survival <- NULL
@@ -86,7 +93,7 @@ ggSurv.coxph <- function(x, ...){
   resPred <- riskRegression::predictCox(x, newdata = data, times = data$time, type = "survival")
   predC <- data.table(time = resPred$time,
                       survival = diag(resPred$survival)
-                      )
+  )
   
   if("strata" %in% names(resPred)){
     predC[, strata := as.factor(resPred$strata)]
@@ -95,7 +102,7 @@ ggSurv.coxph <- function(x, ...){
     cov <- all.vars(delete.response(terms(x$formula)))
     if(length(cov)==1){
       strataVar <- cov
-      predC[, cov := as.factor(data[[cov]]), with = FALSE]
+      predC[, (cov) := as.factor(data[[cov]])]
     }else if(length(cov)>1){
       predC[,strata := apply(data[cov],1,interaction)]
       strataVar <- "strata"
@@ -109,31 +116,31 @@ ggSurv.coxph <- function(x, ...){
   #### reduce to unique time
   predC <- predC[,list(survival = survival[1], n.event = sum(status==1), n.censor = sum(status==0)), by = c("time",strataVar)]  
   
-  res <- ggSurv.dt(x = predC,
-                   timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, confint = FALSE,
-                   eventVar = "n.event", censorVar = "n.censor",  strataVar = strataVar,
-                   ...)
+  res <- ggSurv(x = predC,
+                timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, confint = FALSE,
+                eventVar = "n.event", censorVar = "n.censor",  strataVar = strataVar,
+                ...)
   
   return(invisible(res))
   
 }
 
 #' @rdname ggSurv
-ggSurv.dt <- function(x, format = "data.table",
-                      timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, 
-                      eventVar = NULL, censorVar = NULL,  strataVar = NULL, 
-                      plot = TRUE, legend.position = "top",
-                      title = NULL, textSize = NULL, ylim = NULL, line.size = 2,
-                      confint = TRUE, alpha.CIfill = 0.2, alpha.CIline = 0.5,
-                      censoring = TRUE, alpha.censoring = 1, colour.censoring = rgb(0.2,0.2,0.2), shape.censoring = 3, size.censoring = 2, name.censoring = "censoring",
-                      events = FALSE, alpha.events = 1, colour.events = rgb(0.2,0.2,0.2), shape.events = 8, size.events = 2, name.events = "event", ...){
+ggSurv.data.table <- function(x, format = "data.table",
+                              timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, 
+                              eventVar = NULL, censorVar = NULL,  strataVar = NULL, 
+                              plot = TRUE, legend.position = "top",
+                              title = NULL, textSize = NULL, ylim = NULL, line.size = 2,
+                              confint = FALSE, alpha.CIfill = 0.2, alpha.CIline = 0.5,
+                              censoring = FALSE, alpha.censoring = 1, colour.censoring = rgb(0.2,0.2,0.2), shape.censoring = 3, size.censoring = 2, name.censoring = "censoring",
+                              events = FALSE, alpha.events = 1, colour.events = rgb(0.2,0.2,0.2), shape.events = 8, size.events = 2, name.events = "event", ...){
   
   ## for CRAN test
   original <- n.censor <- n.event <- survival <- ci.inf <- ci.sup <- NULL
   ##
   
   x <- copy(x)
- 
+  
   #### names
   validCharacter(value1 = timeVar, name1 = "timeVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
   validCharacter(value1 = survivalVar, name1 = "survivalVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
@@ -181,7 +188,7 @@ ggSurv.dt <- function(x, format = "data.table",
   setcolorder(copyx, names(x))
   
   x <- rbind(x, copyx)
- 
+  
   #### basic display  
   if(!is.null(plot)){
     dt2.ggplot <- copy(x)
@@ -209,7 +216,7 @@ ggSurv.dt <- function(x, format = "data.table",
       gg.base <- gg.base + guides(fill = guide_legend(title = strataVar, title.position = legend.position),
                                   color = guide_legend(title = strataVar, title.position = legend.position)) #+ scale_colour_discrete(name = varStrata)
     }
-  
+    
     # censoring
     values.ShapeLegend <- vector(mode = "numeric", length =  events + censoring)
     names(values.ShapeLegend)  <- c(if(censoring){name.censoring}, if(events){"event"})

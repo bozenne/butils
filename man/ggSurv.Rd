@@ -3,7 +3,7 @@
 \name{ggSurv}
 \alias{ggSurv}
 \alias{ggSurv.coxph}
-\alias{ggSurv.dt}
+\alias{ggSurv.data.table}
 \alias{ggSurv.survfit}
 \title{Survival curve using ggplot2}
 \usage{
@@ -13,16 +13,16 @@ ggSurv(x, ...)
 
 \method{ggSurv}{coxph}(x, ...)
 
-\method{ggSurv}{dt}(x, format = "data.table", timeVar = "time",
+\method{ggSurv}{data.table}(x, format = "data.table", timeVar = "time",
   survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL,
   eventVar = NULL, censorVar = NULL, strataVar = NULL, plot = TRUE,
   legend.position = "top", title = NULL, textSize = NULL, ylim = NULL,
-  line.size = 2, confint = TRUE, alpha.CIfill = 0.2, alpha.CIline = 0.5,
-  censoring = TRUE, alpha.censoring = 1, colour.censoring = rgb(0.2, 0.2,
-  0.2), shape.censoring = 3, size.censoring = 2,
-  name.censoring = "censoring", events = FALSE, alpha.events = 1,
-  colour.events = rgb(0.2, 0.2, 0.2), shape.events = 8, size.events = 2,
-  name.events = "event", ...)
+  line.size = 2, confint = FALSE, alpha.CIfill = 0.2,
+  alpha.CIline = 0.5, censoring = FALSE, alpha.censoring = 1,
+  colour.censoring = rgb(0.2, 0.2, 0.2), shape.censoring = 3,
+  size.censoring = 2, name.censoring = "censoring", events = FALSE,
+  alpha.events = 1, colour.events = rgb(0.2, 0.2, 0.2), shape.events = 8,
+  size.events = 2, name.events = "event", ...)
 }
 \arguments{
 \item{x}{a coxph object or a survfit object or a data.table object.}
@@ -66,11 +66,18 @@ Display a non-parametric or semi-parametric survival curve. Can handle one strat
 library(survival)
 dt <- as.data.table(aml)
 dt[,x:=as.factor(x)]
+
+## survfit
 KM <- survfit(Surv(time, status) ~ x, data = dt)
 ggSurv(KM, confint = FALSE)
 
+## coxph
 Cox <- coxph(Surv(time, status) ~ x, data = dt, x = TRUE)
 ggSurv(Cox)
+
+## data.table
+dt2 <- data.table(time = 1:10, survival = seq(1, by = -0.01, length.out = 10), n.censor = 0, n.event = 1)
+ggSurv(dt2)
 
 }
 
