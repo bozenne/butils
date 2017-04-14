@@ -64,4 +64,3 @@ cor.testDT(M, format = "wide")
 \keyword{correlation}
 \keyword{function}
 \keyword{test}
-
