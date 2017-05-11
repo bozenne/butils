@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr 25 2017 (14:13) 
 ## Version: 
-## last-updated: apr 25 2017 (14:26) 
+## last-updated: apr 25 2017 (15:13) 
 ##           By: Brice Ozenne
-##     Update #: 14
+##     Update #: 16
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -18,7 +18,7 @@
 EDF <- function(X,x,n){
     mean(X<=x)-1/(2*n)
 }
-erfinv <- function (x){
+erfinv <- function (x){ # from http://stackoverflow.com/questions/29067916/r-error-function-erfz
     qnorm((1 + x)/2)/sqrt(2)
 }
 
@@ -46,7 +46,7 @@ erfinv <- function (x){
 #' Xnorm <- normalize(X)
 #' shapiro.test(Xnorm)
 #' # hist(Xnorm)
-#' plot(X,Xnorm)
+#' # plot(X,Xnorm)
 #' @export
 normalize <- function(X){
     n <- length(X)
