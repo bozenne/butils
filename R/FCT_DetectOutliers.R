@@ -169,7 +169,7 @@ numOutlier <- function(x, type = "auto",
                        th.gaussian = 3, th.hampel = 3, th.boxplot = 1.5, 
                        na.rm = FALSE){
   
-  validCharacter(type, validValues = c("gaussian", "hampel", "boxplot", "auto"), validLength = 1)
+  butils.base::validCharacter(type, validValues = c("gaussian", "hampel", "boxplot", "auto"), validLength = 1)
   if(type == "auto"){
     if(stats::mad(x, na.rm = na.rm) == 0){type <- "boxplot"}else{type <- "hampel"}
   }
@@ -308,7 +308,7 @@ checkUnique <- function(x, test = FALSE){
 
 print.detectOutlier <- function(x, type = "value", ...){
   
-  validCharacter(type, validLength = 1, validValues = c("value","index"), method = "print.detectOutlier")
+  butils.base::validCharacter(type, validLength = 1, validValues = c("value","index"), method = "print.detectOutlier")
   
   if(x$type == "numeric"){
     cat.message <- "potential outliers: \n"
