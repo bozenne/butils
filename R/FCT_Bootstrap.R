@@ -77,10 +77,11 @@ bootGLS <- function(object,
                     GROUPvar = NULL,
                     load.library = "nlme",
                     seed = 10){
-    
-    data <- as.data.table(copy(eval(object$call$data)))
-    
-    ## tests
+  data <- try(as.data.table(copy(eval(object$call$data))), silent = TRUE)
+  if("try-error" %in% class(data)){
+    data <- as.data.table(copy(eval(object$call$data, envir = parent.frame())))
+  }
+  ## tests
     if(is.null(IDvar)){
         if("idBOOT" %in% names(data)){
             stop("\"idBOOT\" must not be the name of any column in object$call$data \n")
@@ -171,8 +172,9 @@ bootGLS <- function(object,
         
         objectBoot <- tryCatch(do.call(fctCoef,list(eval(object$call))),
                                error = function(x){return(NULL)})    
-        
-        M.boot[b,] <- objectBoot
+        if(!is.null(objectBoot)){
+          M.boot[b,] <- objectBoot
+        }
         utils::setTxtProgressBar(pb, value = b)
         
       }

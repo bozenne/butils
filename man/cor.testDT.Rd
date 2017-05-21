@@ -22,7 +22,7 @@ cor.testDT(data, format, names = NULL, lower.tri = TRUE,
 
 \item{use.pairwiseNNA}{If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
 
-\item{reorder}{argument order of corrMatOrder.}
+\item{reorder}{argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.}
 
 \item{imput.value}{the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median).}
 
@@ -60,6 +60,9 @@ This function uses the function \code{ggHeatmap} to display the correlation matr
 M <- matrix(rnorm(1e3),100,10)
 cor.testDT(M, format = "wide")
 
+}
+\seealso{
+\code{\link{ggHeatmap}} to display the correlation matrix
 }
 \keyword{correlation}
 \keyword{function}

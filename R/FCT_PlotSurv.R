@@ -35,7 +35,9 @@
 #' ggSurv(Cox)
 #' 
 #' ## data.table
-#' dt2 <- data.table(time = 1:10, survival = seq(1, by = -0.01, length.out = 10), n.censor = 0, n.event = 1)
+#' dt2 <- data.table(time = 1:10, 
+#'                   survival = seq(1, by = -0.01, length.out = 10), 
+#'                   n.censor = 0, n.event = 1)
 #' ggSurv(dt2)
 #' 
 #' @export
