@@ -6,6 +6,7 @@
 #' @import data.table
 #' @import ggplot2
 #' @import parallel
+#' @importFrom butils.base validCharacter validNames validPath
 #' @importFrom corrplot corrMatOrder
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach %dopar% foreach
