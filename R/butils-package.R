@@ -3,7 +3,6 @@
 #' @name butils-package
 #' @description Miscellaneous function for working in R
 #' 
-#' @import butils.base
 #' @import data.table
 #' @import ggplot2
 #' @import parallel

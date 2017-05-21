@@ -8,6 +8,8 @@ normalize(X, na.rm = FALSE)
 }
 \arguments{
 \item{X}{the vector of values}
+
+\item{na.rm}{should the NA values be ignored when estimating the cumulative distribution function.}
 }
 \description{
 (Slow) implementation of the transformation described in Albada, 2007.
@@ -38,4 +40,3 @@ shapiro.test(Xnorm)
 \references{
 Albada et al. Transformation of arbitrary distributions to the normal distribution with application to EEG test-retest reliability (2007, journal of Neuroscience Methods)
 }
-
