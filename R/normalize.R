@@ -38,6 +38,9 @@ erfinv <- function (x){ # from http://stackoverflow.com/questions/29067916/r-err
 #' shapiro.test(Xnorm)
 #' # plot(X, Xnorm)
 #'
+#' X.NA <- c(NA,X,NA)
+#' Xnorm.NA <- normalize(X.NA, na.rm = TRUE)
+#' 
 #' ## gamma distribution
 #' X <- rgamma(n, shape = 1)
 #' shapiro.test(X)
@@ -48,12 +51,36 @@ erfinv <- function (x){ # from http://stackoverflow.com/questions/29067916/r-err
 #' # hist(Xnorm)
 #' # plot(X,Xnorm)
 #' @export
-normalize <- function(X){
+normalize <- function(X, na.rm = FALSE){
+  
+  if(!is.numeric(X)){
+    stop("\'X\' must be a numeric vector \n")
+  }
+  
+  if(any(is.na(X))){
+    if(na.rm){
+      Xsave <- X
+      X <- as.numeric(na.omit(X))
+      test.NA <- TRUE
+    }else{
+      stop("\'X\' contains NA \n",
+           "set na.rm=TRUE to ignore them \n")
+    }
+  }else{
+    test.NA <- FALSE
+  }
+  
     n <- length(X)
-    
-    sapply(X, function(x){
+    X <- sapply(X, function(x){
         sqrt(2)*erfinv(2*EDF(X,x,n)-1)
     })
+    
+    if(test.NA){
+      Xsave[!is.na(Xsave)] <- X
+      X <- Xsave
+    }
+    
+    return(X)
 }
 
 

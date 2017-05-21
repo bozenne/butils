@@ -8,7 +8,7 @@
 #' @param lower.tri should only the lower traingle of the matrix be filled?
 #' @param method.cor the method used to compute the correlation. 
 #' @param use.pairwiseNNA If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
-#' @param reorder argument order of corrMatOrder.
+#' @param reorder argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.
 #' @param imput.value the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median). 
 #' @param hclust.method argument hclust.method of corrMatOrder.
 #' @param trace should the progression of the computation of the correlation be displayed. \emph{logical}.
@@ -30,6 +30,8 @@
 #' This function uses the function \code{ggHeatmap} to display the correlation matrix.
 #' 
 #' @return An object determined by the output argument
+#' 
+#' @seealso \code{\link{ggHeatmap}} to display the correlation matrix
 #' 
 #' @examples 
 #' M <- matrix(rnorm(1e3),100,10)
@@ -156,14 +158,18 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
   }
   
   #### output
+  out <- list()
   if(output == "data.table"){
-    return(cor.dt)
-  }else if(output == "matrix"){
-    return(cor.array)
-  }else if(output == "plot"){
-    return(gg)
+    out$dt <- cor.dt
+  }
+  if(output == "matrix"){
+    out$array <- cor.array
+  }
+  if(output == "plot"){
+    out$plot <- cor.plot
   }
   
+  return(out)
 }
 
 #' @title Display pairwise correlation
