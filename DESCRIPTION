@@ -12,6 +12,7 @@ Depends:
     data.table,
     ggplot2
 Imports:
+    butils.base,
     corrplot,
     stats,
     tools,
