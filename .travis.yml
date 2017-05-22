@@ -2,7 +2,7 @@
 
 language: R
 r_check_args: --as-cran
-cache: packages
+sudo: required
 
 r_github_packages:
 - bozenne/butils.base
