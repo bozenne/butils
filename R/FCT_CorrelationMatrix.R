@@ -45,8 +45,8 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
                        reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
   
-  validCharacter(format, validValues = c("wide","long"), validLength = 1, method = "cor.test.data.table")
-  validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "cor.test.data.table")
+  butils.base::validCharacter(format, validValues = c("wide","long"), validLength = 1, method = "cor.test.data.table")
+  butils.base::validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "cor.test.data.table")
   
   ## data format
   if(is.data.table(data) == FALSE){
@@ -59,7 +59,7 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
   if(is.null(names)){
     names <- names(data)
   }else{
-    validNames(names, validValues = names(data))
+    butils.base::validNames(names, validValues = names(data))
   }
   n.name <- length(names)
   
@@ -288,8 +288,8 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, round = NULL,
 getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NULL, addId = TRUE,
                         plot = TRUE, args.plot = list(), output = "matrix", trace = 1){
   
-  validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "getSigmaGLS")
-  validCharacter(type, validValues = c("correlation","covariance"), validLength = 1, method = "getSigmaGLS")
+  butils.base::validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "getSigmaGLS")
+  butils.base::validCharacter(type, validValues = c("correlation","covariance"), validLength = 1, method = "getSigmaGLS")
   data <- nlme::getData(gls)
   
   #### rebuilt the matrix of correlation

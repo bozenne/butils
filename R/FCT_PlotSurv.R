@@ -35,7 +35,9 @@
 #' ggSurv(Cox)
 #' 
 #' ## data.table
-#' dt2 <- data.table(time = 1:10, survival = seq(1, by = -0.01, length.out = 10), n.censor = 0, n.event = 1)
+#' dt2 <- data.table(time = 1:10, 
+#'                   survival = seq(1, by = -0.01, length.out = 10), 
+#'                   n.censor = 0, n.event = 1)
 #' ggSurv(dt2)
 #' 
 #' @export
@@ -145,13 +147,13 @@ ggSurv.data.table <- function(x, format = "data.table",
   x <- copy(x)
   
   #### names
-  validCharacter(value1 = timeVar, name1 = "timeVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
-  validCharacter(value1 = survivalVar, name1 = "survivalVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
-  validCharacter(value1 = ciInfVar, name1 = "ciInfVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
-  validCharacter(value1 = ciSupVar, name1 = "ciSupVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
-  validCharacter(value1 = eventVar, name1 = "eventVar", validLength = 1, refuse.NULL = events, validValues = names(x), method = "ggSurv.dt")
-  validCharacter(value1 = censorVar, name1 = "censorVar", validLength = 1, refuse.NULL = censoring, validValues = names(x), method = "ggSurv.dt")
-  validCharacter(value1 = strataVar, name1 = "strataVar", validLength = 1, refuse.NULL = FALSE, validValues = names(x), method = "ggSurv.dt")
+  butils.base::validCharacter(value1 = timeVar, name1 = "timeVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
+  butils.base::validCharacter(value1 = survivalVar, name1 = "survivalVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
+  butils.base::validCharacter(value1 = ciInfVar, name1 = "ciInfVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
+  butils.base::validCharacter(value1 = ciSupVar, name1 = "ciSupVar", validLength = 1, refuse.NULL = confint, validValues = names(x), method = "ggSurv.dt")
+  butils.base::validCharacter(value1 = eventVar, name1 = "eventVar", validLength = 1, refuse.NULL = events, validValues = names(x), method = "ggSurv.dt")
+  butils.base::validCharacter(value1 = censorVar, name1 = "censorVar", validLength = 1, refuse.NULL = censoring, validValues = names(x), method = "ggSurv.dt")
+  butils.base::validCharacter(value1 = strataVar, name1 = "strataVar", validLength = 1, refuse.NULL = FALSE, validValues = names(x), method = "ggSurv.dt")
   
   x[,.SD, .SDcols = c(timeVar,survivalVar,ciInfVar,ciSupVar, eventVar, censorVar, strataVar)]
   setnames(x, old = c(timeVar,survivalVar), new = c("time","survival"))

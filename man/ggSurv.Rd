@@ -2,9 +2,9 @@
 % Please edit documentation in R/FCT_PlotSurv.R
 \name{ggSurv}
 \alias{ggSurv}
+\alias{ggSurv.survfit}
 \alias{ggSurv.coxph}
 \alias{ggSurv.data.table}
-\alias{ggSurv.survfit}
 \title{Survival curve using ggplot2}
 \usage{
 ggSurv(x, ...)
@@ -76,8 +76,9 @@ Cox <- coxph(Surv(time, status) ~ x, data = dt, x = TRUE)
 ggSurv(Cox)
 
 ## data.table
-dt2 <- data.table(time = 1:10, survival = seq(1, by = -0.01, length.out = 10), n.censor = 0, n.event = 1)
+dt2 <- data.table(time = 1:10, 
+                  survival = seq(1, by = -0.01, length.out = 10), 
+                  n.censor = 0, n.event = 1)
 ggSurv(dt2)
 
 }
-

@@ -2,17 +2,21 @@ Package: butils
 Type: Package
 Title: Various usefull functions
 Version: 1.1
+<<<<<<< HEAD
 Date: 2017-05-22
+=======
+Date: 2017-05-21
+>>>>>>> b4acf0cd80241f4f248ddd4d5f0172963bbc8d06
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R.
 License: GPL-3
 Depends:
     R (>= 2.10),
-    butils.base,
     data.table,
     ggplot2
 Imports:
+    butils.base,
     corrplot,
     stats,
     tools,
@@ -30,8 +34,8 @@ Imports:
 Suggests:
     lava,
     survival,
-	  testthat,
-	  AICcmodavg
+    testthat,
+    AICcmodavg
 LazyLoad: yes
 NeedsCompilation: no
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

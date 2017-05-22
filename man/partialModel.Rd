@@ -63,4 +63,3 @@ partialModel(lme.full, var1 = "X2", var2 = "X3")
 partialModel(lme.full, var1 = "X1", var2 = "X2")
 
 }
-

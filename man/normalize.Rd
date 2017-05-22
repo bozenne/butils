@@ -40,4 +40,3 @@ shapiro.test(Xnorm)
 \references{
 Albada et al. Transformation of arbitrary distributions to the normal distribution with application to EEG test-retest reliability (2007, journal of Neuroscience Methods)
 }
-

@@ -24,8 +24,8 @@ launchBatch <- function(file, path = ".", dirBatch = NULL,
                         operator = "start R CMD BATCH", add.Rout = TRUE, add.lis = TRUE, add.options = "",
                         rm.newfile = FALSE){
   
-  validPath(path, type = "dir", method = "launchBatch")
-  validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
+  butils.base::validPath(path, type = "dir", method = "launchBatch")
+  butils.base::validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
   
   #### analyse file path
   fileName <- tools::file_path_sans_ext(file)
