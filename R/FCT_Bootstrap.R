@@ -73,10 +73,12 @@ bootGLS <- function(object,
                     n.boot,
                     fctCoef,
                     n.cpus = 1,
+                    export.publish = FALSE,
                     IDvar = NULL,
                     GROUPvar = NULL,
                     load.library = "nlme",
                     seed = 10){
+  
   data <- try(as.data.table(copy(eval(object$call$data))), silent = TRUE)
   if("try-error" %in% class(data)){
     data <- as.data.table(copy(eval(object$call$data, envir = parent.frame())))
@@ -99,22 +101,44 @@ bootGLS <- function(object,
              "possible names: ",paste(names(data), collapse = " "),"\n")
     }
     
-    ## 
-    setkeyv(data, IDvar)
-    vec.id <- unique(data[[IDvar]]) #  all ids
-    if(!is.null(GROUPvar)){
-        trueGroup <- data[,.SD[[1]][1], by = IDvar, .SDcols = GROUPvar][[2]]
-    }else{
-        indexId <- lapply(vec.id, function(x){which(data[[IDvar]]==x)})
-        n.obsId <- unlist(lapply(indexId, length))
-    }
+  ## publish
+  if(export.publish){
+    object.publish <- publish(object, print = FALSE)  
+    load.library <- c("Publish", load.library)
+  }
+  ## 
+  setkeyv(data, IDvar)
+  vec.id <- unique(data[[IDvar]]) #  all ids
+  if(!is.null(GROUPvar)){
+    trueGroup <- data[,.SD[[1]][1], by = IDvar, .SDcols = GROUPvar][[2]]
+  }else{
+    indexId <- lapply(vec.id, function(x){which(data[[IDvar]]==x)})
+    n.obsId <- unlist(lapply(indexId, length))
+  }
+  
+  ##
+  if(export.publish){
+    variable <- object.publish$rawTable[,"Variable"]
+    n.coef <- length(variable)
     
-    ##
+    index.blanck <- which(variable == "")
+    variable[index.blanck] <- variable[sapply(index.blanck, function(x){max(setdiff(1:x,index.blanck))})]
+    e.coef <- setNames(object.publish$rawTable[,"Coefficient"],
+                       paste(variable,object.publish$rawTable[,"Units"])
+    )
+  }else{
     e.coef <- coef(object)
     n.coef <- length(e.coef)
+  }
     n.id <- length(vec.id)
       
     ## 
+    if(export.publish){
+      fctCoef <- function(x){
+         res <- publish(x, print = FALSE)
+         return(res$rawTable$Coefficient)
+      }
+    }
     if(missing(fctCoef)){
       if(class(object) == "lme"){
         fctCoef <- "fixef"
@@ -147,19 +171,25 @@ bootGLS <- function(object,
       cl <- parallel::makeCluster(n.cpus)
       doParallel::registerDoParallel(cl)
       
-      boots <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),.export=NULL), {
+     boots <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),.export=NULL), {
         set.seed(bootseeds[b])
         
         object$call$data <- resampleFCT()
         
         objectBoot <- tryCatch(do.call(fctCoef,list(eval(object$call))),
                                error = function(x){return(NULL)})    
-        
         return(objectBoot)
       })
-      
       # perform bootstrap
       M.boot <- do.call(rbind, boots)
+      
+      if(is.null(M.boot)){ # failure of all bootstraps
+        boots <- foreach::`%dopar%`(foreach::foreach(b=1:1,.packages=c(load.library,"data.table"),.export=NULL), {
+          set.seed(bootseeds[b])
+          object$call$data <- resampleFCT()
+          do.call(fctCoef,list(eval(object$call)))
+        })
+      }
       
     }else{
       
@@ -169,7 +199,6 @@ bootGLS <- function(object,
         set.seed(bootseeds[b])
         
         object$call$data <- resampleFCT()
-        
         objectBoot <- tryCatch(do.call(fctCoef,list(eval(object$call))),
                                error = function(x){return(NULL)})    
         if(!is.null(objectBoot)){
@@ -303,19 +332,21 @@ calcPvalue <- function(M.boot, GROUPvar, e.coef, n.coef){
 }
 
 findP1 <- function(dist){
-
-    if(all(dist>0) || all(dist<0)){return(0)}
-    
-  optimum <- optim(par = 0.5, lower = 0, upper = 1, fn=function(p){
-    abs(quantile(dist, probs = p))
+  
+  if(all(dist>0) || all(dist<0)){return(0)}
+  
+  optimum <- optim(par = log(-log(0.5)), fn=function(p){
+    p2 <- exp(-exp(p)) # convert to [0;1] scale
+    abs(quantile(dist, probs = p2))
   }, method = "L-BFGS-B")
+  optimum$par <- exp(-exp(optimum$par)) # backtransform
   
   if(optimum$par>0.5){
-      p.value <- 2*(1-optimum$par)
+    p.value <- 2*(1-optimum$par)
   }else{
-      p.value <- 2*optimum$par
+    p.value <- 2*optimum$par
   }
-
+  
   return(p.value)
 }
 

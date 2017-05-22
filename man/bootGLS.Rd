@@ -4,8 +4,8 @@
 \alias{bootGLS}
 \title{Perform bootstrap computation on an object}
 \usage{
-bootGLS(object, n.boot, fctCoef, n.cpus = 1, IDvar = NULL,
-  GROUPvar = NULL, load.library = "nlme", seed = 10)
+bootGLS(object, n.boot, fctCoef, n.cpus = 1, export.publish = FALSE,
+  IDvar = NULL, GROUPvar = NULL, load.library = "nlme", seed = 10)
 }
 \arguments{
 \item{object}{the fitted model.}

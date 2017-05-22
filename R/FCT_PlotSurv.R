@@ -43,6 +43,7 @@
   function(x,...) UseMethod("ggSurv")
 
 #' @rdname ggSurv
+#' @export
 ggSurv.survfit <- function(x, ...){
   
   dt.ggplot <- data.table::data.table(time = x$time,
@@ -80,6 +81,7 @@ ggSurv.survfit <- function(x, ...){
 }
 
 #' @rdname ggSurv
+#' @export
 ggSurv.coxph <- function(x, ...){
   
   ## for CRAN test
@@ -126,6 +128,7 @@ ggSurv.coxph <- function(x, ...){
 }
 
 #' @rdname ggSurv
+#' @export
 ggSurv.data.table <- function(x, format = "data.table",
                               timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, 
                               eventVar = NULL, censorVar = NULL,  strataVar = NULL, 
