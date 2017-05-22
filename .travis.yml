@@ -6,6 +6,7 @@ sudo: required
 
 r_github_packages:
 - bozenne/butils.base
+- tagteam/Publish
 
 after_success:
 - Rscript -e 'library(covr);coveralls()'
