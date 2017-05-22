@@ -16,6 +16,7 @@
 #' @importFrom MASS boxcox
 #' @importFrom Matrix bdiag
 #' @importFrom nlme getGroupsFormula
+#' @importFrom Publish publish
 #' @importFrom profvis profvis
 #' @importFrom proftools plotProfileCallGraph readProfileData
 #' @importFrom riskRegression predictCox

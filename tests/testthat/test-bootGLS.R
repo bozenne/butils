@@ -8,8 +8,8 @@ context("#### bootGLS ####")
 
 set.seed(10)
 n <- 1e2
-n.boot <- 1e4
-n.sim <- 1e2
+n.boot <- 10
+n.sim <- 2
 diff <- 0.3
 
 

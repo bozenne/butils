@@ -5,6 +5,7 @@
 #' @param object the fitted model.
 #' @param n.boot the number of replications. Should be a large number.
 #' @param n.cpus the number of cpu to use.
+#' @param export.publish use \code{Publish::publish} to define the parameter of interest
 #' @param fctCoef the function used to extract the statistics of interest from the model.
 #' @param IDvar the variable in the dataset indicating the grouping level of the data. 
 #' @param GROUPvar the group variable use to resample under H0. Otherwise resampling is done under H1.
@@ -103,7 +104,7 @@ bootGLS <- function(object,
     
   ## publish
   if(export.publish){
-    object.publish <- publish(object, print = FALSE)  
+    object.publish <- Publish::publish(object, print = FALSE)  
     load.library <- c("Publish", load.library)
   }
   ## 
@@ -135,7 +136,7 @@ bootGLS <- function(object,
     ## 
     if(export.publish){
       fctCoef <- function(x){
-         res <- publish(x, print = FALSE)
+         res <- Publish::publish(x, print = FALSE)
          return(res$rawTable$Coefficient)
       }
     }

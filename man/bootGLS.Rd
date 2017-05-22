@@ -16,6 +16,8 @@ bootGLS(object, n.boot, fctCoef, n.cpus = 1, export.publish = FALSE,
 
 \item{n.cpus}{the number of cpu to use.}
 
+\item{export.publish}{use \code{Publish::publish} to define the parameter of interest}
+
 \item{IDvar}{the variable in the dataset indicating the grouping level of the data.}
 
 \item{GROUPvar}{the group variable use to resample under H0. Otherwise resampling is done under H1.}

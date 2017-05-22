@@ -8,6 +8,8 @@ normalize(X, na.rm = FALSE)
 }
 \arguments{
 \item{X}{the vector of values}
+
+\item{na.rm}{should the NA values be ignored when estimating the cumulative distribution function.}
 }
 \description{
 (Slow) implementation of the transformation described in Albada, 2007.

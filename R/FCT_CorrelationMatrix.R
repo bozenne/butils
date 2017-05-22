@@ -166,7 +166,7 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
     out$array <- cor.array
   }
   if(output == "plot"){
-    out$plot <- cor.plot
+    out$plot <- gg
   }
   
   return(out)

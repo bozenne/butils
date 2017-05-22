@@ -25,7 +25,8 @@ Imports:
     foreach,
     gdata,
     proftools,
-	  profvis
+	  profvis,
+	  Publish
 Suggests:
     lava,
     survival,

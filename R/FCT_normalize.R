@@ -26,6 +26,7 @@ erfinv <- function (x){ # from http://stackoverflow.com/questions/29067916/r-err
 #' @description (Slow) implementation of the transformation described in Albada, 2007.
 #' 
 #' @param X the vector of values
+#' @param na.rm should the NA values be ignored when estimating the cumulative distribution function.
 #' 
 #' @references Albada et al. Transformation of arbitrary distributions to the normal distribution with application to EEG test-retest reliability (2007, journal of Neuroscience Methods)
 #' @examples
