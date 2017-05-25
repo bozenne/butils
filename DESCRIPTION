@@ -2,7 +2,7 @@ Package: butils
 Type: Package
 Title: Various usefull functions
 Version: 1.1
-Date: 2017-05-21
+Date: 2017-05-25
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R.
@@ -25,8 +25,8 @@ Imports:
     foreach,
     gdata,
     proftools,
-	  profvis,
-	  Publish
+    profvis,
+    Publish
 Suggests:
     lava,
     survival,
@@ -34,4 +34,4 @@ Suggests:
     AICcmodavg
 LazyLoad: yes
 NeedsCompilation: no
-RoxygenNote: 6.0.1
+RoxygenNote: 5.0.1

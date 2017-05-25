@@ -67,3 +67,4 @@ res <- plotInteraction(lmefit, var1 = "X1", var2 = "group")
 res$model
 
 }
+

@@ -33,3 +33,4 @@ n <- 1e3
 scaleOutlier(rnorm(n))
 
 }
+

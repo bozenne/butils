@@ -7,3 +7,4 @@
 \description{
 Miscellaneous function for working in R
 }
+

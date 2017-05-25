@@ -43,3 +43,4 @@ getSigmaGLS(fm1)
 \keyword{display}
 \keyword{function}
 \keyword{gls}
+

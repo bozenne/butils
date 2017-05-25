@@ -59,3 +59,4 @@ data must be coercible to data.table. \cr
 \keyword{correlation}
 \keyword{display}
 \keyword{function}
+

@@ -43,3 +43,4 @@ profileCode(FUN, type = "profvis", plot = TRUE)
 }
 \keyword{function}
 \keyword{profile}
+

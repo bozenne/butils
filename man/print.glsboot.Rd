@@ -19,3 +19,4 @@ Display the result fo the bootstrap computation
 \details{
 Should have an attribute call that includes a data attribute (i.e. object$call$data must exist).
 }
+
