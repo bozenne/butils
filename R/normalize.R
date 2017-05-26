@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr 25 2017 (14:13) 
 ## Version: 
-## last-updated: apr 25 2017 (15:13) 
+## last-updated: maj 25 2017 (18:52) 
 ##           By: Brice Ozenne
-##     Update #: 16
+##     Update #: 17
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -14,13 +14,6 @@
 #----------------------------------------------------------------------
 ## 
 ### Code:
-
-EDF <- function(X,x,n){
-    mean(X<=x)-1/(2*n)
-}
-erfinv <- function (x){ # from http://stackoverflow.com/questions/29067916/r-error-function-erfz
-    qnorm((1 + x)/2)/sqrt(2)
-}
 
 #' @title Transform a variable to obtain approximate normality
 #' @description (Slow) implementation of the transformation described in Albada, 2007.
@@ -82,6 +75,13 @@ normalize <- function(X, na.rm = FALSE){
     }
     
     return(X)
+}
+
+EDF <- function(X,x,n){
+    mean(X<=x)-1/(2*n)
+}
+erfinv <- function (x){ # from http://stackoverflow.com/questions/29067916/r-error-function-erfz
+    qnorm((1 + x)/2)/sqrt(2)
 }
 
 

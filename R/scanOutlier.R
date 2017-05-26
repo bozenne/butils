@@ -1,84 +1,4 @@
-#' @title Robust scaling
-#' @description Robust scaling of a numeric vector 
-#'
-#' @param x a numeric vector
-#' @param center the method used to assess the "average" value
-#' @param scale the method used to assess the dispersion of the data
-#' @param method a method taking the dataset as its first argument and returning first the center and then the scale value. Disregarded if arguments center and scale are not null.
-#' @param na.rm should missing values be omitted
-#' @param noScaleIf0 If \code{TRUE} the variable will not be scaled if its dispersion is null.
-#' @param ... additional arguments passed to method
-#' 
-#' @return the scaled vector
-#' 
-#' @examples 
-#' n <- 1e3
-#' scaleOutlier(rnorm(n))
-#' 
-#' @export
-scaleOutlier <- function(x, center = "median", scale = "mad", method, 
-                         na.rm = FALSE, noScaleIf0 = FALSE, ...){
-  
-  if(na.rm == TRUE){
-    xx <- na.omit(x)
-  }else{
-    xx <- x
-  }
-  
-  if(is.null(center) && is.null(scale) && !missing(method)){
-    
-    res.method <- method(xx, ...)
-    centerR <- res.method[1]
-    scaleR <- res.method[2]
-    
-  }else{
-    
-    if(is.character(center)){
-      centerR <- do.call(center, args = list(xx, ...))
-    }else if(is.numeric(center)){
-      centerR <- center
-    }else if(identical(center, FALSE)){
-      centerR <- FALSE
-    }else{
-      stop("scaleOutlier: unknown type of center parameter \n")
-    }
-    
-    if(is.character(scale)){
-      scaleR <- do.call(scale, args = list(xx, ...))
-    }else if(is.numeric(scale)){
-      scaleR <- scale
-    }else if(identical(scale, FALSE)){
-      scaleR <- FALSE
-    }else{
-      stop("scaleOutlier: unknown type of scale parameter \n")
-    }
-    
-  }
-  
-  if(is.infinite(centerR)){ 
-    stop("scaleOutlier: infinite center parameter \n")
-  }
-  if(is.infinite(scaleR)){ 
-    stop("scaleOutlier: infinite scale parameter \n")
-  }
-  if(is.na(centerR)){ 
-    stop("scaleOutlier: center parameter is NA \n")
-  }
-  if(is.na(scaleR)){ 
-    stop("scaleOutlier: scale parameter is NA \n")
-  }
-  if(scaleR == 0){ 
-    if(noScaleIf0){
-      scaleR <- FALSE
-    }else{
-      stop("scaleOutlier: scale parameter is 0 \n")
-    }
-  }
-  
-  return( scale(x, center = centerR, scale = scaleR) )
-  
-}
-
+# {{{ scanOutlier
 #' @title Search potential outliers
 #' @description Search potential outliers in a dataset
 #' 
@@ -141,9 +61,11 @@ scanOutlier <- function(data, id,
   class(output) <- "ls_detectOutlier"
   return(output)
 }
+# }}}
 
-#### check functions ####
+# {{{ check functions
 
+# {{{ doc
 #' @title Identify outlier
 #' @name identifyOutlier
 #' @description Identify numeric or factor outliers
@@ -163,7 +85,9 @@ scanOutlier <- function(data, id,
 #' \dontrun{
 #' numOutlier(rnorm(1e3))
 #' }
+# }}}
 
+# {{{ numOutlier
 #' @rdname identifyOutlier
 numOutlier <- function(x, type = "auto",
                        th.gaussian = 3, th.hampel = 3, th.boxplot = 1.5, 
@@ -226,7 +150,9 @@ numOutlier <- function(x, type = "auto",
   class(output) <- "detectOutlier"
   return(output)
 }
+# }}}
 
+# {{{ factorOutlier
 #' @rdname identifyOutlier
 factorOutlier <- function(x, threshold = 0.01, useNA = "ifany"){
   
@@ -250,7 +176,9 @@ factorOutlier <- function(x, threshold = 0.01, useNA = "ifany"){
   class(output) <- "detectOutlier"
   return(output)
 }
+# }}}
 
+# {{{ checkDuplicated
 checkDuplicated <- function(x){
   
   index.duplicated <- which(duplicated(x))
@@ -271,7 +199,9 @@ checkDuplicated <- function(x){
   class(output) <- "detectOutlier"
   return(output)
 }
+# }}}
 
+# {{{ checkUnique
 checkUnique <- function(x, test = FALSE){
   
   if(length(unique(x))==1){
@@ -302,10 +232,13 @@ checkUnique <- function(x, test = FALSE){
   }
   
 }
+# }}}
 
+# }}}
 
-#### print ####
+# {{{ print 
 
+# {{{ print.detectOutlier
 print.detectOutlier <- function(x, type = "value", ...){
   
   butils.base::validCharacter(type, validLength = 1, validValues = c("value","index"), method = "print.detectOutlier")
@@ -334,7 +267,9 @@ print.detectOutlier <- function(x, type = "value", ...){
   }
   
 }
+# }}}
 
+# {{{ print.ls_detectOutlier
 print.ls_detectOutlier <- function(x, only.outlier = TRUE, ...){
   
   names.x <- names(x)
@@ -350,9 +285,13 @@ print.ls_detectOutlier <- function(x, only.outlier = TRUE, ...){
   })
   return(invisible())
 }
+# }}}
 
-#### plot ####
+# }}}
 
+# {{{ plot 
+
+# {{{ plot.detectOutlier
 #' @export
 plot.detectOutlier <- function(x, ...){
   
@@ -363,6 +302,6 @@ plot.detectOutlier <- function(x, ...){
   }
   
 }
+# }}}
 
-
-
+# }}}
