@@ -2,7 +2,7 @@ Package: butils
 Type: Package
 Title: Various usefull functions
 Version: 1.1
-Date: 2017-05-25
+Date: 2017-05-26
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R.
@@ -14,21 +14,23 @@ Depends:
 Imports:
     butils.base,
     corrplot,
-    stats,
-    tools,
-    utils,
-    nlme,
-    riskRegression,
-    MASS,
-    Matrix,
     doParallel,
     foreach,
-    gdata,
+    gdata,    
+    MASS,
+    Matrix,
+    merTools,
+    nlme,
     proftools,
     profvis,
-    Publish
+    Publish,
+    riskRegression,
+    stats,
+    tools,
+    utils
 Suggests:
     lava,
+    lme4,
     survival,
     testthat,
     AICcmodavg
