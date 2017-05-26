@@ -54,8 +54,6 @@ calcPartialResiduals <- function(model,var,
                                  FUN.predict,
                                  ...) {
 
-    rm.intercept <- TRUE
-    
     model.class <- class(model)
     attributes(model.class) <- NULL
     if (!identical(model.class,"lmerMod") && !identical(model.class,"lme") && !identical(model.class,"gls") && !identical(model.class,"lm")){
@@ -186,24 +184,34 @@ calcPartialResiduals <- function(model,var,
             
         }
     }
+    # }}}
 
+    # {{{ intercept
+    # if intercept always remove it from the fitted value
+    # if no intercept:
+    # - no factor variable: 0 interceot
+    # - first factor variable: not of interest treat it as a standard intercept
+    #                              of interest remove it only for partial residuals
     model.formula <- FUN.formula(model)
     beta <- FUN.coef(model)
     if(attr(terms(model.formula),"intercept")==1){
-        if(rm.intercept){
-            intercept <- beta["(Intercept)"]
-        }else{
-            intercept <- 0
-        }
+        intercept.data <- 0       
+        intercept.fit <- beta["(Intercept)"]        
     }else{
         if(any(design.factor)){ # find reference level
             design.mat <- FUN.model.matrix(model.formula, data = design.df[1,,drop=FALSE])
             attr.assign <- attr(design.mat, "assign")
             indexRef <- which(tapply(attr.assign, attr.assign, function(x){any(duplicated(x))}))
-
-            intercept <- beta[match(indexRef, attr.assign)]
+            if(attr(terms(model.formula), "term.labels")[indexRef] %in% var){
+                intercept.data <- beta[match(indexRef, attr.assign)]
+                intercept.fit <- 0
+            }else{
+                intercept.data <- 0
+                intercept.fit <- beta[match(indexRef, attr.assign)]
+            }
         }else{
-            intercept <- 0
+            intercept.data <- 0
+            intercept.fit <- 0
         }
     }
     # }}}
@@ -218,9 +226,7 @@ calcPartialResiduals <- function(model,var,
             stop("no implemented - specify FUN.predict \n")
         }
     }
-    design.df$pFit <- design.df$pFit - intercept
-    design.df$pResiduals <- newdata.fit[[name.Y]] - design.df$pFit
-    
+    design.df$pResiduals <- newdata.fit[[name.Y]] - (design.df$pFit-intercept.data)
     # }}}
     
     # {{{ partial fitted values
@@ -291,7 +297,9 @@ calcPartialResiduals <- function(model,var,
         grid.predict$fit.lower <- grid.predict$fit - z * se.tempo
         grid.predict$fit.upper <- grid.predict$fit + z * se.tempo        
     }
-    # grid.predict$fit <- grid.predict$fit - intercept
+    grid.predict$fit <- grid.predict$fit - intercept.fit
+    grid.predict$fit.lower <- grid.predict$fit.lower - intercept.fit
+    grid.predict$fit.upper <- grid.predict$fit.upper - intercept.fit
 
     # }}}
 
