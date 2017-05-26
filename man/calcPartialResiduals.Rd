@@ -6,7 +6,7 @@
 \usage{
 calcPartialResiduals(model, var, conditional = FALSE,
   interval = "confidence", level = 0.95, npoints = 100,
-  quantile.range = c(0, 1), FUN.df, FUN.predict, ...)
+  quantile.range = c(0, 1), FUN.df, ...)
 }
 \arguments{
 \item{model}{Model object (e.g. \code{lm})}
@@ -25,8 +25,6 @@ calcPartialResiduals(model, var, conditional = FALSE,
 
 \item{FUN.df}{Optional function returning the residual degree of freedoms.}
 
-\item{FUN.predict, }{Optional predict-function used to calculate confidence limits and predictions (see details).}
-
 \item{\dots}{additional arguments to lower level functions}
 }
 \value{
@@ -41,14 +39,7 @@ list with following members:
 Compute partial residuals for linear and linear mixed models.
 }
 \details{
-When using mixed models, the confidence and prediction intervals ignore the uncertainty of the covariance parameters.
-To avoid that the user can set the argument \code{predictfun} to the appropriate function to compute prediction and confidence intervals.
-This function should take the following arguments: object, newdata, level, interval, se.fit (will be automatically be set to TRUE).
-It should output a list with an element called fit that contains a matrix with one row for each line of newdata
-and three columns:
-- \code{fit} containing the punctual estimate
-- \code{upr} containing the upper limit of the confidence interval
-- \code{lwr} containing the lower limit of the confidence interval
+IMPORTANT: When using mixed models, the confidence and prediction intervals ignore the uncertainty of the covariance parameters.
 }
 \examples{
 library(lava)

@@ -8,19 +8,11 @@
 ##' @param level Level of confidence limits (default 95\%)
 ##' @param npoints Length of the vector of unique values relative to each continuous variable.
 ##' @param quantile.range the quantiles (for the continous covariates) between which the fitted values will be computed.
-##' @param FUN.predict, Optional predict-function used to calculate confidence limits and predictions (see details).
 ##' @param FUN.df Optional function returning the residual degree of freedoms.
 ##' @param \dots additional arguments to lower level functions
 ##' 
 ##' @details
-##' When using mixed models, the confidence and prediction intervals ignore the uncertainty of the covariance parameters.
-##' To avoid that the user can set the argument \code{predictfun} to the appropriate function to compute prediction and confidence intervals.
-##' This function should take the following arguments: object, newdata, level, interval, se.fit (will be automatically be set to TRUE).
-##' It should output a list with an element called fit that contains a matrix with one row for each line of newdata
-##' and three columns:
-##' - \code{fit} containing the punctual estimate
-##' - \code{upr} containing the upper limit of the confidence interval
-##' - \code{lwr} containing the lower limit of the confidence interval
+##' IMPORTANT: When using mixed models, the confidence and prediction intervals ignore the uncertainty of the covariance parameters.
 ##' 
 ##' @return list with following members:
 ##' \item{data}{Original dataset with an additional column containing the partial residuals}
@@ -51,7 +43,6 @@ calcPartialResiduals <- function(model,var,
                                  npoints = 100,
                                  quantile.range = c(0,1),                                 
                                  FUN.df,
-                                 FUN.predict,
                                  ...) {
 
     model.class <- class(model)
@@ -135,7 +126,6 @@ calcPartialResiduals <- function(model,var,
     # }}}
 
     # {{{ normalize input
-
     interval <- match.arg(interval, c("confidence","prediction"))
 
     design.df <- FUN.model.frame(model)
@@ -160,12 +150,14 @@ calcPartialResiduals <- function(model,var,
     # }}}
   
     # {{{ additional tests
-    if (inherits(model,"lmerMod") && missing(FUN.predict)) {
-        warning(interval," intervals may not be reliable (see ?lme4:::predict.merMod) \n",
-                "Consider specifying predictfun (e.g. using lme4::bootMer) \n")
+    ## if (inherits(model,"lmerMod")) {
+    ##     warning(interval," intervals may not be reliable (see ?lme4:::predict.merMod) \n")
+    ## }
+
+    if(conditional){ # https://stackoverflow.com/questions/25538199/design-matrix-for-mlm-from-librarylme4-with-fixed-and-random-effects
+        stop("no yet implemented \n")
     }
 
-    
     # }}}
 
     # {{{ Reference level
@@ -187,46 +179,40 @@ calcPartialResiduals <- function(model,var,
     # }}}
 
     # {{{ intercept
-    # if intercept always remove it from the fitted value
-    # if no intercept:
-    # - no factor variable: 0 interceot
-    # - first factor variable: not of interest treat it as a standard intercept
-    #                              of interest remove it only for partial residuals
     model.formula <- FUN.formula(model)
     beta <- FUN.coef(model)
-    if(attr(terms(model.formula),"intercept")==1){
-        intercept.data <- 0       
-        intercept.fit <- beta["(Intercept)"]        
+    test.intercept <- as.logical(attr(terms(model.formula),"intercept"))
+    if(test.intercept){
+        name.intercept <- "(Intercept)"
+        var.intercept <- "(Intercept)"
+        intercept <- beta[name.intercept]        
     }else{
         if(any(design.factor)){ # find reference level
             design.mat <- FUN.model.matrix(model.formula, data = design.df[1,,drop=FALSE])
             attr.assign <- attr(design.mat, "assign")
             indexRef <- which(tapply(attr.assign, attr.assign, function(x){any(duplicated(x))}))
-            if(attr(terms(model.formula), "term.labels")[indexRef] %in% var){
-                intercept.data <- beta[match(indexRef, attr.assign)]
-                intercept.fit <- 0
-            }else{
-                intercept.data <- 0
-                intercept.fit <- beta[match(indexRef, attr.assign)]
-            }
+            name.intercept <- names(beta)[match(indexRef, attr.assign)]
+
+            intercept <- beta[name.intercept]
+            var.intercept <- attr(terms(model.formula), "term.labels")[indexRef]
+             
         }else{
-            intercept.data <- 0
-            intercept.fit <- 0
+            name.intercept <- NULL
+            var.intercept <- NULL
+            intercept <- 0
         }
     }
     # }}}
 
     # {{{ partial residuals
-    if(!missing(FUN.predict)){
-        design.df$pFit <- do.call(FUN.predict, args = list(model, newdata = newdata.fit, conditional = conditional, type = "response"))$fit[,"fit"]
-    }else{        
-        design.mat <- model.matrix(model.formula, data = newdata.fit)
-        design.df$pFit <- as.numeric(design.mat %*% beta)
-        if(conditional){ # https://stackoverflow.com/questions/25538199/design-matrix-for-mlm-from-librarylme4-with-fixed-and-random-effects
-            stop("no implemented - specify FUN.predict \n")
-        }
+    design.mat <- model.matrix(model.formula, data = newdata.fit)
+    design.df$pFit <- as.numeric(design.mat %*% beta)
+    if(!is.null(var.intercept) && (var.intercept %in% var)){
+        # add the residual due to the intercept
+        # since it is among the variable of interest
+        design.df$pFit <- design.df$pFit-intercept
     }
-    design.df$pResiduals <- newdata.fit[[name.Y]] - (design.df$pFit-intercept.data)
+    design.df$pResiduals <- newdata.fit[[name.Y]] - design.df$pFit
     # }}}
     
     # {{{ partial fitted values
@@ -247,60 +233,46 @@ calcPartialResiduals <- function(model,var,
         }
     })
 
+    ## create the data.frame
     grid.predict <- expand.grid(ls.forGrid, KEEP.OUT.ATTRS = FALSE)
     names(grid.predict) <- name.X.df
-    if(any(design.factor)){         # restaure factor
+    grid.predict[[name.Y]] <- 0
+    ## restaure factor variables
+    if(any(design.factor)){         
         for(iVar in names(which(design.factor))){
             grid.predict[[iVar]] <- factor(grid.predict[[iVar]], levels = xlevels[[iVar]])
         }
     }
-    
-    if(!missing(FUN.predict)){
-        res.predict <- do.call(FUN.predict, args = list(model,
-                                                        se.fit = TRUE,
-                                                        conditional = conditional,
-                                                        newdata = grid.predict,
-                                                        interval = interval,
-                                                        level = level,
-                                                        ...))
-
-        grid.predict$fit <- res.predict$fit[,"fit"]
-        grid.predict$fit.lower <- res.predict$fit[,"lwr"]
-        grid.predict$fit.upper <- res.predict$fit[,"upr"]
-    }else{
-        if(conditional){ # https://stackoverflow.com/questions/25538199/design-matrix-for-mlm-from-librarylme4-with-fixed-and-random-effects
-            stop("no implemented - specify FUN.predict \n")
-        }
-        
-        grid.predict[[name.Y]] <- 0
-        design.grid.predict <- model.matrix(model.formula, grid.predict)
-        grid.predict$fit <- as.numeric(design.grid.predict %*% beta)
-
-        model.df <- FUN.df(model,level)       
-        if(is.null(model.df)){
-            z <- qnorm(1 - (1 - level)/2)
-        }else{
-            z <- qt(1 - (1 - level)/2, df = model.df)
-        }
-        
-        model.vcov <- FUN.vcov(model)
-        if(interval == "prediction"){
-            model.sigma2 <- FUN.sigma2(model)
-        }else{
-            model.sigma2 <- 0
-        }
-        
-        se.tempo <- apply(design.grid.predict, 1, function(x){
-            sqrt(rbind(x) %*% model.vcov %*% cbind(x) + model.sigma2)
-        })
-
-        grid.predict$fit.lower <- grid.predict$fit - z * se.tempo
-        grid.predict$fit.upper <- grid.predict$fit + z * se.tempo        
+    ## convert to design matrix
+    design.grid.predict <- model.matrix(model.formula, grid.predict)
+    ## remove intercept
+    if(!is.null(var.intercept) && (var.intercept %in% var == FALSE)){
+        # remive the intercept from the prediction
+        # when it is not among the variable of interest
+        design.grid.predict[,name.intercept] <- 0
     }
-    grid.predict$fit <- grid.predict$fit - intercept.fit
-    grid.predict$fit.lower <- grid.predict$fit.lower - intercept.fit
-    grid.predict$fit.upper <- grid.predict$fit.upper - intercept.fit
+    grid.predict$fit <- as.numeric(design.grid.predict %*% beta)
 
+    model.df <- FUN.df(model,level)       
+    if(is.null(model.df)){
+        z <- qnorm(1 - (1 - level)/2)
+    }else{
+        z <- qt(1 - (1 - level)/2, df = model.df)
+    }
+        
+    model.vcov <- FUN.vcov(model)
+    if(interval == "prediction"){
+        model.sigma2 <- FUN.sigma2(model)
+    }else{
+        model.sigma2 <- 0
+    }
+
+    se.tempo <- apply(design.grid.predict, 1, function(x){
+        sqrt(rbind(x) %*% model.vcov %*% cbind(x) + model.sigma2)
+    })
+
+    grid.predict$fit.lower <- grid.predict$fit - z * se.tempo
+    grid.predict$fit.upper <- grid.predict$fit + z * se.tempo        
     # }}}
 
     out <- list(data = as.data.table(design.df),                
