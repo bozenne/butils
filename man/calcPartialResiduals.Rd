@@ -54,12 +54,11 @@ pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
 
 
 }
-\author{
-Brice Ozenne
-}
 \seealso{
 \code{plot.partialResiduals} for a graphical display and more examples.
 }
+\author{
+Brice Ozenne
+}
 \keyword{hplot,}
 \keyword{regression}
-

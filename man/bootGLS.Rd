@@ -87,4 +87,3 @@ apply(res$all.boot, 2, mean)
 }
 
 }
-

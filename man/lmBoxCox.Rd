@@ -28,4 +28,3 @@ lmBoxCox(Y~X1+X2, data = df)
 }
 
 }
-

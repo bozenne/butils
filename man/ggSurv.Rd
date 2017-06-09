@@ -2,9 +2,9 @@
 % Please edit documentation in R/ggSurv.R
 \name{ggSurv}
 \alias{ggSurv}
+\alias{ggSurv.survfit}
 \alias{ggSurv.coxph}
 \alias{ggSurv.data.table}
-\alias{ggSurv.survfit}
 \title{Survival curve using ggplot2}
 \usage{
 ggSurv(x, ...)
@@ -82,4 +82,3 @@ dt2 <- data.table(time = 1:10,
 ggSurv(dt2)
 
 }
-

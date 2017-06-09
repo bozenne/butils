@@ -38,4 +38,3 @@ Then the command for generating the .lis is added to the file and the batch is l
 }
 \keyword{batch}
 \keyword{function}
-
