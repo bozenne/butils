@@ -93,7 +93,11 @@ partialModel <- function(object, var1, var2,
   oldVcov <- do.call(method.vcov, args = list(object))
    
   ## get data
-  data <- eval(object$call[[field.data]])
+  data <- try(as.data.table(copy(eval(object$call[[field.data]]))), silent = TRUE)
+  if("try-error" %in% class(data)){
+    data <- as.data.table(copy(eval(object$call[[field.data]], envir = parent.frame())))
+  }
+  data <- as.data.frame(data)
   X <- model.matrix(formula.object, data)
   
   ## index remove columns corresponding to var1 and var2
@@ -136,7 +140,7 @@ partialModel <- function(object, var1, var2,
     
     newBeta <- newBeta[keep.name]
     if( any(abs(newBeta-Beta[names(newBeta)])>tol) ){
-        warning("The coefficients of the partial model seem to differ compare to the original model \n",
+        message("The coefficients of the partial model seem to differ compare to the original model \n",
                 "range of the difference: ",paste(range(newBeta-Beta[names(newBeta)]), collapse = " ; "),"\n")
     }
     newVcov <- do.call(method.vcov, args = list(object))[keep.name,keep.name,drop=FALSE]

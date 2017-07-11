@@ -21,8 +21,24 @@
 #' @keywords function batch
 #' @export
 launchBatch <- function(file, path = ".", dirBatch = NULL,  
-                        operator = "start R CMD BATCH", add.Rout = TRUE, add.lis = TRUE, add.options = "",
+                        operator = NULL, add.Rout = TRUE, add.lis = TRUE, add.options = "",
                         rm.newfile = FALSE){
+  
+  if (.Platform$OS.type == "windows") { 
+    OS <- "win"
+    if(is.null(operator)){operator <- "start R CMD BATCH"}
+    FCTshell <- "shell"
+  } else if (Sys.info()["sysname"] == "Darwin") {
+    OS <- "mac" 
+    if(is.null(operator)){operator <- "R CMD BATCH"}
+    FCTshell <- "system"
+  } else if (.Platform$OS.type == "unix") { 
+    OS <- "unix"
+    if(is.null(operator)){operator <- "R CMD BATCH"}
+    FCTshell <- "system"
+  } else {
+    stop("Unknown OS")
+  }
   
   butils.base::validPath(path, type = "dir", method = "launchBatch")
   butils.base::validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
@@ -67,6 +83,6 @@ launchBatch <- function(file, path = ".", dirBatch = NULL,
   
   
   
-  output <- shell(command)
+  output <- do.call(FCTshell,list(command))
   return(invisible(output))
 }
