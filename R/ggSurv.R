@@ -1,3 +1,4 @@
+# {{{ doc
 #' @title Survival curve using ggplot2
 #' @description Display a non-parametric or semi-parametric survival curve. Can handle one strata variable.
 #' @name ggSurv
@@ -43,7 +44,9 @@
 #' @export
 `ggSurv` <-
   function(x,...) UseMethod("ggSurv")
+# }}}
 
+# {{{ ggSurv.survfit
 #' @rdname ggSurv
 #' @export
 ggSurv.survfit <- function(x, ...){
@@ -81,7 +84,9 @@ ggSurv.survfit <- function(x, ...){
                 ...)
   return(invisible(res))
 }
+# }}}
 
+# {{{ ggSurv.coxph
 #' @rdname ggSurv
 #' @export
 ggSurv.coxph <- function(x, ...){
@@ -128,7 +133,9 @@ ggSurv.coxph <- function(x, ...){
   return(invisible(res))
   
 }
+# }}}
 
+# {{{ ggSurv.data.table
 #' @rdname ggSurv
 #' @export
 ggSurv.data.table <- function(x, format = "data.table",
@@ -266,6 +273,7 @@ ggSurv.data.table <- function(x, format = "data.table",
   return(invisible(list(data.ggplot = x,
                         ggplot = gg.base)))
 }
+# }}}
 
 
 

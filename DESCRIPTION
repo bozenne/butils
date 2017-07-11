@@ -14,21 +14,23 @@ Depends:
 Imports:
     butils.base,
     corrplot,
-    stats,
-    tools,
-    utils,
-    nlme,
-    riskRegression,
-    MASS,
-    Matrix,
     doParallel,
     foreach,
-    gdata,
+    gdata,    
+    MASS,
+    Matrix,
+    merTools,
+    nlme,
     proftools,
-	  profvis,
-	  Publish
+    profvis,
+    Publish,
+    riskRegression,
+    stats,
+    tools,
+    utils
 Suggests:
     lava,
+    lme4,
     survival,
     testthat,
     AICcmodavg

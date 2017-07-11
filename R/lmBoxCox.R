@@ -11,12 +11,12 @@
 #' df <- sim(lvm(Y ~ X1 + X2),1e2)
 #' df$Y <- df$Y-min(df$Y)+1
 #' lm(Y~X1+X2, data = df)
-#' lmBC(Y~X1+X2, data = df)
+#' lmBoxCox(Y~X1+X2, data = df)
 #' #' 
 #' }
 #' 
 #' @export
-lmBC <- function(formula, data, trace = TRUE, ...){
+lmBoxCox <- function(formula, data, trace = TRUE, ...){
   resBC <- MASS::boxcox(object = formula, data = data, ..., plot = FALSE)
   lambda <- resBC$x[which.max(resBC$y)]
   
