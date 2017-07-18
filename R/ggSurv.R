@@ -29,17 +29,24 @@
 #' 
 #' ## survfit
 #' KM <- survfit(Surv(time, status) ~ x, data = dt)
-#' ggSurv(KM, confint = FALSE)
+#' ggSurv(KM)
+#' ggSurv(KM, confint = TRUE)
 #' 
 #' ## coxph
 #' Cox <- coxph(Surv(time, status) ~ x, data = dt, x = TRUE)
 #' ggSurv(Cox)
+#' ggSurv(Cox, confint = TRUE)
 #' 
 #' ## data.table
 #' dt2 <- data.table(time = 1:10, 
 #'                   survival = seq(1, by = -0.01, length.out = 10), 
 #'                   n.censor = 0, n.event = 1)
 #' ggSurv(dt2)
+#'
+#' dt3 <- data.table(time = 1:10, 
+#'                   survival = seq(1, by = -0.01, length.out = 10)
+#' )
+#' ggSurv.data.table(dt3)
 #' 
 #' @export
 `ggSurv` <-
@@ -89,48 +96,90 @@ ggSurv.survfit <- function(x, ...){
 # {{{ ggSurv.coxph
 #' @rdname ggSurv
 #' @export
-ggSurv.coxph <- function(x, ...){
-  
-  ## for CRAN test
-  strata <- NULL
-  survival <- NULL
-  ##
-  
-  data <- eval(x$call$data)
-  time <- unique(data$time)
-  
-  resPred <- riskRegression::predictCox(x, newdata = data, times = data$time, type = "survival")
-  predC <- data.table(time = resPred$time,
-                      survival = diag(resPred$survival)
-  )
-  
-  if("strata" %in% names(resPred)){
-    predC[, strata := as.factor(resPred$strata)]
-    strataVar <- "strata"
-  }else{
-    cov <- all.vars(delete.response(terms(x$formula)))
-    if(length(cov)==1){
-      strataVar <- cov
-      predC[, (cov) := as.factor(data[[cov]])]
-    }else if(length(cov)>1){
-      predC[,strata := apply(data[cov],1,interaction)]
-      strataVar <- "strata"
-    }else{
-      strataVar <- NULL
+ggSurv.coxph <- function(x, confint = FALSE, ...){
+
+    ## for CRAN test
+    strata <- status <- survival <- NULL
+
+    ## get Design matrix
+    data <- as.data.table(riskRegression::CoxDesign(x))[,.SD,.SDcols=c("stop","status")]
+
+    ## add covariates in the original form
+    coxInfo <- riskRegression::CoxVariableName(x)
+    originalData <- as.data.table(eval(x$call$data))
+        
+    name.Xstrata <- coxInfo$stratavars.original
+    if(length(name.Xstrata)>0){
+        data <- cbind(data, originalData[,.SD,.SDcols=name.Xstrata])
     }
-  }
-  status <- x$y[,2]
-  predC[, "status" := unname(status)]
+    terms.special <- prodlim::strip.terms(terms(CoxFormula(x)), special = "strata")
+    name.Xlp <- attr(terms.special, "term.labels")
+    if(length(name.Xlp)>0){
+        data  <- cbind(data,originalData[,.SD,.SDcols=name.Xlp])
+    }
+    
+    # order rows before extraction of non-duplicated observations
+    # such that event will be extracted in priority 
+    data[, status := 1-status]
+    setkeyv(data, c("stop","status"))
+    data[, status := 1-status]
+
+    # remove duplicates
+    data0 <- copy(data)
+    data0[, status := NULL]
+    index.duplicated <- which(duplicated(data0))
+    index.Nduplicated <- setdiff(1:NROW(data), index.duplicated)
+
+ 
+    data <- data[index.Nduplicated]
+    data[, observation := 1:.N]
+    time <- unique(data$stop)
+    predC <- NULL
+    
+    if((length(name.Xstrata)+length(name.Xlp))>0){
+        strataVar <- c(name.Xstrata, name.Xlp)
+        X.levels <- data[,unique(.SD), .SDcols = strataVar]
+        n.levels <- NROW(X.levels)
+
+        xXXx <- x # avoid confusion in name
+        rrPred <- data[, .(dtres = .(
+                               cbind(strata = interaction(.SD[1,strataVar,with = FALSE]),
+                                     as.data.table(riskRegression::predictCox(xXXx, newdata = .SD, times = time, se = confint, type = "survival")))
+                           )),
+                       by = strataVar, .SDcols = names(data)]
+        predC <- rbindlist(rrPred[,dtres])
+
+        if(length(strataVar)>1){
+            strataVar <- paste(strataVar, collpase=".", sep = "")
+        }
+        setnames(predC, old = "strata", new = strataVar)
+    }else{
+        predC <- riskRegression::predictCox(x, newdata = data, times = time, se = confint, type = "survival")
+        strataVar <- NULL
+    }
+    predC <- merge(predC, data[,.SD,.SDcols = c("status",'observation') ], by = "observation")
+    predC[,observation := NULL]
+    setnames(predC, old = "times", new = "time")
+    
+    #### reduce to unique time
+    if(confint==FALSE){
+        predC[, survival.lower := NA]
+        predC[, survival.upper := NA]
+    }
+    predC <- predC[,list(survival = survival[1],
+                         survival.upper = survival.upper[1],
+                         survival.lower = survival.lower[1],
+                         n.event = sum(status==1), n.censor = sum(status==0)), by = c("time",strataVar)]
+
+    res <- ggSurv(x = predC,
+                  timeVar = "time", survivalVar = "survival",
+                  confint = confint,
+                  ciInfVar = "survival.lower",
+                  ciSupVar = "survival.upper",
+                  eventVar = "n.event", censorVar = "n.censor",  strataVar = strataVar, 
+                  ...)
   
-  #### reduce to unique time
-  predC <- predC[,list(survival = survival[1], n.event = sum(status==1), n.censor = sum(status==0)), by = c("time",strataVar)]  
-  
-  res <- ggSurv(x = predC,
-                timeVar = "time", survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL, confint = FALSE,
-                eventVar = "n.event", censorVar = "n.censor",  strataVar = strataVar,
-                ...)
-  
-  return(invisible(res))
+    return(invisible(res))
   
 }
 # }}}
@@ -146,13 +195,12 @@ ggSurv.data.table <- function(x, format = "data.table",
                               confint = FALSE, alpha.CIfill = 0.2, alpha.CIline = 0.5,
                               censoring = FALSE, alpha.censoring = 1, colour.censoring = rgb(0.2,0.2,0.2), shape.censoring = 3, size.censoring = 2, name.censoring = "censoring",
                               events = FALSE, alpha.events = 1, colour.events = rgb(0.2,0.2,0.2), shape.events = 8, size.events = 2, name.events = "event", ...){
-  
+
   ## for CRAN test
   original <- n.censor <- n.event <- survival <- ci.inf <- ci.sup <- NULL
   ##
-  
   x <- copy(x)
-  
+
   #### names
   butils.base::validCharacter(value1 = timeVar, name1 = "timeVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
   butils.base::validCharacter(value1 = survivalVar, name1 = "survivalVar", validLength = 1, validValues = names(x), method = "ggSurv.dt")
@@ -161,12 +209,14 @@ ggSurv.data.table <- function(x, format = "data.table",
   butils.base::validCharacter(value1 = eventVar, name1 = "eventVar", validLength = 1, refuse.NULL = events, validValues = names(x), method = "ggSurv.dt")
   butils.base::validCharacter(value1 = censorVar, name1 = "censorVar", validLength = 1, refuse.NULL = censoring, validValues = names(x), method = "ggSurv.dt")
   butils.base::validCharacter(value1 = strataVar, name1 = "strataVar", validLength = 1, refuse.NULL = FALSE, validValues = names(x), method = "ggSurv.dt")
-  
-  x[,.SD, .SDcols = c(timeVar,survivalVar,ciInfVar,ciSupVar, eventVar, censorVar, strataVar)]
+
+  x <- x[,.SD, .SDcols = c(timeVar,survivalVar,ciInfVar,ciSupVar, eventVar, censorVar, strataVar)]
   setnames(x, old = c(timeVar,survivalVar), new = c("time","survival"))
-  
-  if(!is.null(ciInfVar) && !is.null(ciSupVar)){
-    setnames(x, old = c(ciInfVar,ciSupVar), new = c("ci.inf","ci.sup"))
+
+  if(confint){
+      setnames(x, old = c(ciInfVar,ciSupVar), new = c("ci.inf","ci.sup"))
+      ciInfVar <- "ci.inf"
+      ciSupVar <- "ci.sup"
   }
   if(!is.null(eventVar)){
     setnames(x, old = eventVar, new = "n.event")
@@ -174,32 +224,34 @@ ggSurv.data.table <- function(x, format = "data.table",
   if(!is.null(censorVar)){
     setnames(x, old = censorVar, new = "n.censor")
   }
-  
+
   #### order dataset
   setkeyv(x, c("time", strataVar))
-  
-  #### add first and last point
-  x[, original := TRUE]
-  if (is.null(strataVar)) {
-    copyx <- x[, cbind(time = c(0,.SD$time[-.N] + .Machine$double.eps*100),
-                       .SD[, c(survivalVar, ciInfVar, ciSupVar, eventVar, censorVar), with = FALSE],
-                       original = FALSE)]
+
+    #### add first and last point
+    x[, original := TRUE]
+    if (is.null(strataVar)) {
+        copyx <- x[, cbind(time = c(0,.SD$time[-.N] + .Machine$double.eps*100),
+                           .SD[, c(survivalVar, ciInfVar, ciSupVar, eventVar, censorVar), with = FALSE],
+                           original = FALSE)]
     
-  }else{
-    n.levels.model <- length(unique(x[[strataVar]]))
-    x[, (strataVar) := lapply(.SD, as.factor), .SDcols = strataVar]
+    }else{
+        n.levels.model <- length(unique(x[[strataVar]]))
+        x[, (strataVar) := lapply(.SD, as.factor), .SDcols = strataVar]
     
     copyx <- x[, cbind(time = c(0,.SD$time[-.N] + .Machine$double.eps*100),
                        .SD[, c(survivalVar, ciInfVar, ciSupVar, eventVar, censorVar), with = FALSE],
                        original = FALSE),
                by = strataVar]
   }
-  
-  copyx[,n.censor := 0]
-  copyx[,n.event := 0]
-  setcolorder(copyx, names(x))
-  
-  x <- rbind(x, copyx)
+    if(censoring){
+        copyx[,n.censor := 0]
+    }
+    if(events){
+        copyx[,n.event := 0]
+    }
+    setcolorder(copyx, names(x))   
+    x <- rbind(x, copyx)
   
   #### basic display  
   if(!is.null(plot)){
