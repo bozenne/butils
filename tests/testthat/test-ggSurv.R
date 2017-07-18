@@ -3,9 +3,9 @@
 ## author: Brice
 ## created: jul 11 2017 (18:21) 
 ## Version: 
-## last-updated: jul 11 2017 (18:31) 
-##           By: Brice
-##     Update #: 2
+## last-updated: jul 18 2017 (11:55) 
+##           By: Brice Ozenne
+##     Update #: 11
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -14,30 +14,50 @@
 #----------------------------------------------------------------------
 ## 
 ### Code:
-library(lava)
 
-set.seed(10)
-n <- 500  
+# {{{ random example
+library(survival)
+dt <- as.data.table(aml)
+dt[,x:=as.factor(x)]
+ 
+## survfit
+KM <- survfit(Surv(time, status) ~ x, data = dt)
+ggSurv(KM)
+ggSurv(KM, censoring = TRUE, event = TRUE)
+ggSurv(KM, confint = TRUE)
+  
+## survfit
+KM <- survfit(Surv(time, status) ~ x, data = dt)
+ggSurv(KM)
+ggSurv(KM, censoring = TRUE, event = TRUE)
+ggSurv(KM, confint = TRUE)
+ 
+## data.table
+dt2 <- data.table(time = 1:10, 
+                  survival = seq(1, by = -0.01, length.out = 10), 
+                  n.censor = 0, n.event = 1)
+ggSurv(dt2)
 
-newdata <- data.frame(X1=1)
-time <- 0.25
+dt3 <- data.table(time = 1:10, 
+                  survival = seq(1, by = -0.01, length.out = 10)
+                  )
+ggSurv(dt3)
+# }}} 
 
-m <- lvm()
-regression(m) <- y ~ 1
-regression(m) <- s ~ exp(-2*X1)
-distribution(m,~X1) <- binomial.lvm()
-distribution(m,~cens) <- coxWeibull.lvm(scale=1)
-distribution(m,~y) <- a <- coxWeibull.lvm(scale=1,shape=~s)
-eventTime(m) <- eventtime ~ min(y=1,cens=0)
-d <- as.data.table(sim(m,n))
-setkey(d, eventtime)
+# {{{ display of events and censoring
+d <- data.table(time = 1:4,
+                status = rep(0:1,2)
+                )
+KM <- survfit(Surv(time, status) ~ 1, data = d)
+ggSurv(KM, censoring = TRUE, event = TRUE)
 
+dS <- rbind(cbind(d, strata = 1),
+            cbind(d, strata = 2),
+            cbind(time = 0.5, status = 1, strata = 2))
+KM <- survfit(Surv(time, status) ~ strata, data = dS)
+ggSurv(KM, censoring = TRUE, event = TRUE)
 
-m.cox <- coxph(Surv(eventtime, status) ~ X1, data = d, y = TRUE, x = TRUE)
-ggSurv(m.cox)
-
-mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1), data = d, y = TRUE, x = TRUE)
-ggSurv(mStrata.cox)
-
+# }}}
+ 
 #----------------------------------------------------------------------
 ### test-ggSurv.R ends here

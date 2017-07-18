@@ -7,13 +7,13 @@
 \alias{ggSurv.data.table}
 \title{Survival curve using ggplot2}
 \usage{
-ggSurv(x, ...)
+ggSurv(object, ...)
 
-\method{ggSurv}{survfit}(x, ...)
+\method{ggSurv}{survfit}(object, ...)
 
-\method{ggSurv}{coxph}(x, ...)
+\method{ggSurv}{coxph}(object, newdata = NULL, confint = FALSE, ...)
 
-\method{ggSurv}{data.table}(x, format = "data.table", timeVar = "time",
+\method{ggSurv}{data.table}(object, format = "data.table", timeVar = "time",
   survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL,
   eventVar = NULL, censorVar = NULL, strataVar = NULL, plot = TRUE,
   legend.position = "top", title = NULL, textSize = NULL, ylim = NULL,
@@ -25,9 +25,13 @@ ggSurv(x, ...)
   size.events = 2, name.events = "event", ...)
 }
 \arguments{
-\item{x}{a coxph object or a survfit object or a data.table object.}
+\item{object}{a coxph object or a survfit object or a data.table object.}
 
 \item{...}{arguments to be passed to lower level functions}
+
+\item{newdata}{dataset containing the covariates conditional to which the survival is displayed.}
+
+\item{confint, alpha.CIfill, alpha.CIline}{how to display confidence intervals}
 
 \item{format}{the format used to export the data. Can be data.table or data.frame.}
 
@@ -53,37 +57,59 @@ ggSurv(x, ...)
 
 \item{line.size}{size of the survival curves}
 
-\item{confint, alpha.CIfill, alpha.CIline}{how to display confidence intervals}
-
 \item{censoring, alpha.censoring, colour.censoring, shape.censoring, size.censoring, name.censoring}{how to display censored events}
 
 \item{events, alpha.events, colour.events, shape.events, size.events, name.events}{how to display non-censored events}
 }
+\value{
+A list:
+\itemize{
+  \item plot: the ggplot object
+  \item data: the data used to create the ggplot object
+}
+}
 \description{
-Display a non-parametric or semi-parametric survival curve. Can handle one strata variable.
+Display a non-parametric or semi-parametric survival curve.
 }
 \examples{
+library(lava)
 library(survival)
-dt <- as.data.table(aml)
-dt[,x:=as.factor(x)]
 
-## survfit
-KM <- survfit(Surv(time, status) ~ x, data = dt)
-ggSurv(KM, confint = FALSE)
+set.seed(10)
+n <- 500
+newdata <- data.frame(X1=1)
+time <- 0.25
 
-## coxph
-Cox <- coxph(Surv(time, status) ~ x, data = dt, x = TRUE)
-ggSurv(Cox)
+## simulate non proportional hazard using lava
+m <- lvm()
+regression(m) <- y ~ 1
+regression(m) <- s ~ exp(-2*X1)
+distribution(m,~X1) <- binomial.lvm()
+distribution(m,~cens) <- coxWeibull.lvm(scale=1)
+distribution(m,~y) <- coxWeibull.lvm(scale=1,shape=~s)
+eventTime(m) <- eventtime ~ min(y=1,cens=0)
+d <- as.data.table(sim(m,n))
+setkey(d, eventtime)
 
-## data.table
-dt2 <- data.table(time = 1:10, 
-                  survival = seq(1, by = -0.01, length.out = 10), 
-                  n.censor = 0, n.event = 1)
-ggSurv(dt2)
+## Cox (PH)
+m.cox <- coxph(Surv(eventtime, status) ~ X1, data = d, y = TRUE, x = TRUE)
+res1 <- ggSurv(m.cox)
+ggSurv(m.cox, newdata = d[,.SD[1], by = X1])
+ggSurv(m.cox, newdata = d[,.SD[1], by = X1], confint = TRUE)
 
-dt3 <- data.table(time = 1:10, 
-                  survival = seq(1, by = -0.01, length.out = 10)
+## Cox (stratified)
+mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1), data = d, y = TRUE, x = TRUE)
+ggSurv(mStrata.cox)
+
+## KM
+m.KM <- survfit(Surv(eventtime, status) ~ X1, data = d)
+res2 <- ggSurv(m.KM)
+
+## combine plot
+dt.gg <- rbind(cbind(res1$data[original == TRUE & X1 == 1], model = "cox"),
+              cbind(res2$data[original == TRUE & X1 == 1], model = "KM")
 )
-ggSurv.data.table(dt3)
+dt.gg[,c("X1","original") := NULL]
+ggSurv(dt.gg, timeVar = "time", survivalVar = "survival", strataVar = "model")
 
 }
