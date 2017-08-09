@@ -44,7 +44,7 @@
 #' distribution(m,~cens) <- coxWeibull.lvm(scale=1)
 #' distribution(m,~y) <- coxWeibull.lvm(scale=1,shape=~s)
 #' eventTime(m) <- eventtime ~ min(y=1,cens=0)
-#' d <- as.data.table(sim(m,n))
+#' d <- as.data.table(lava::sim(m,n))
 #' setkey(d, eventtime)
 #'
 #' ## Cox (PH)

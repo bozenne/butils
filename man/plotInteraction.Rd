@@ -22,7 +22,7 @@ set.seed(10)
 m.lvm <- lvm(Y~2*Age+4*gender+gene+time)
 categorical(m.lvm, labels = c("M","F")) <- ~gender
 categorical(m.lvm, K = 10) <- ~gene
-d <- sim(n = 1e2, m.lvm)
+d <- lava::sim(n = 1e2, m.lvm)
 
 ## linear model
 m <- lm(Y~Age+gender, data = d)

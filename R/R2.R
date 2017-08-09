@@ -49,7 +49,7 @@
 #' 
 #' m <- lvm(Y~X1+X2+X3, G~1)
 #' categorical(m, K=5, label = c("A","B","C","D","E")) <- ~G
-#' d <- sim(m, 1e2)
+#' d <- lava::sim(m, 1e2)
 #' d <- d[order(d$G),]
 #' d$Y <- d$Y + 0.5*as.numeric(as.factor(d$G))
 #'
@@ -119,10 +119,10 @@ calcR2 <- function(model, trace = FALSE){
     R2 <- FCTcalcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
 
     ## McFadden R2
-    iff <- update(ff, paste0(".~1"))
-    imodel <- try(update(model, iff), silent = TRUE)
+    iff <- stats::update(ff, paste0(".~1"))
+    imodel <- try(stats::update(model, formula = iff, data = df), silent = TRUE)
     if(class(imodel)!="try-error"){
-        LR <- 2 * as.numeric(logLik(model)-logLik(imodel))
+        LR <- 2 * as.numeric(stats::logLik(model)-stats::logLik(imodel))
         R2.LR <- 1-exp(-LR/n)
     }else{
         R2.LR <- NA
@@ -133,12 +133,12 @@ calcR2 <- function(model, trace = FALSE){
     pR2.LR <- setNames(numeric(n.exo),name.exo)
     for(iX in 1:n.exo){ # iX <- 1
         if(trace){ cat(iX,"(",name.exo[iX],") ", sep = "") }
-        iff <- update(ff, paste0(".~.-",name.exo[iX]))
-        imodel <- try(update(model, iff), silent = TRUE)
+        iff <- stats::update(ff, paste0(".~.-",name.exo[iX]))
+        imodel <- try(stats::update(model, formula = iff, data = df), silent = TRUE)
         if(class(imodel)!="try-error"){
             value0 <- predict(imodel, type = "response")
             pR2[iX] <- FCTcalcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
-            LR <- 2 * as.numeric(logLik(model)-logLik(imodel))
+            LR <- 2 * as.numeric(stats::logLik(model)-stats::logLik(imodel))
             pR2.LR[iX] <- 1-exp(-LR/n)
         }
     }

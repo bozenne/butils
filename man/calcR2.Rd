@@ -39,7 +39,7 @@ library(nlme)
 
 m <- lvm(Y~X1+X2+X3, G~1)
 categorical(m, K=5, label = c("A","B","C","D","E")) <- ~G
-d <- sim(m, 1e2)
+d <- lava::sim(m, 1e2)
 d <- d[order(d$G),]
 d$Y <- d$Y + 0.5*as.numeric(as.factor(d$G))
 

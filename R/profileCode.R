@@ -18,7 +18,7 @@
 #' \dontrun{
 #' library(lava)
 #' m <- lvm(Y ~ X + G)
-#' d <- sim(m, 1e2)
+#' d <- lava::sim(m, 1e2)
 #' FUN <- function(){
 #' estimate(m,d)
 #' }

@@ -8,7 +8,7 @@
 #'
 #' @examples 
 #' if(require(lava)){
-#' df <- sim(lvm(Y ~ X1 + X2),1e2)
+#' df <- lava::sim(lvm(Y ~ X1 + X2),1e2)
 #' df$Y <- df$Y-min(df$Y)+1
 #' lm(Y~X1+X2, data = df)
 #' lmBoxCox(Y~X1+X2, data = df)

@@ -46,7 +46,7 @@ library(lava)
 set.seed(10)
 m.lvm <- lvm(Y~X1+X2+Id+Id2)
 categorical(m.lvm, K = 5) <- ~Id+Id2
-d <- sim(n = 1e2, m.lvm)
+d <- lava::sim(n = 1e2, m.lvm)
  
 m <- lm(Y~X1+X2, data = d)
 pres1 <- calcPartialResiduals(m, var = "X1")

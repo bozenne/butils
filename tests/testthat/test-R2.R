@@ -18,8 +18,12 @@ d$Y <- d$Y + 0.5*as.numeric(as.factor(d$G))
 
 ## linear model
 m.lm <- lm(Y~X1+X2+X3, data = d)
+print(m.lm)
+print(d)
 res1 <- calcR2(m.lm)
 res2 <- heplots::etasq(m.lm)
+
+print(res1)
 
 expect_equal(as.double(summary(m.lm)$r.squared), as.double(res1$R2.Buse))
 expect_equal(as.double(summary(m.lm)$r.squared), as.double(res1$R2.McFadden))
