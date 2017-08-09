@@ -33,7 +33,8 @@ Suggests:
     lme4,
     survival,
     testthat,
-    AICcmodavg
+    AICcmodavg,
+	heplots
 LazyLoad: yes
 NeedsCompilation: no
 RoxygenNote: 6.0.1

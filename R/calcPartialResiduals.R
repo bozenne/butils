@@ -126,6 +126,7 @@ calcPartialResiduals <- function(model,var,
     # }}}
 
     # {{{ normalize input
+
     interval <- match.arg(interval, c("confidence","prediction"))
 
     design.df <- FUN.model.frame(model)
@@ -205,7 +206,7 @@ calcPartialResiduals <- function(model,var,
     # }}}
 
     # {{{ partial residuals
-    design.mat <- model.matrix(model.formula, data = newdata.fit)
+    design.mat <- model.matrix(model.formula, data = newdata.fit)    
     design.df$pFit <- as.numeric(design.mat %*% beta)
     if(!is.null(var.intercept) && (var.intercept %in% var)){
         # add the residual due to the intercept
