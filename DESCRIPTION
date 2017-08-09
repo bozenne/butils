@@ -2,7 +2,7 @@ Package: butils
 Type: Package
 Title: Various usefull functions
 Version: 1.1
-Date: 2017-08-08
+Date: 2017-08-09
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R.
@@ -16,7 +16,6 @@ Imports:
     corrplot,
     doParallel,
     foreach,
-    formula.tools,
     gdata,    
     MASS,
     Matrix,
