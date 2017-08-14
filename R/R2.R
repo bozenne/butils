@@ -5,7 +5,7 @@
 ## Version: 
 ## last-updated: aug  8 2017 (17:34) 
 ##           By: Brice Ozenne
-##     Update #: 78
+##     Update #: 88
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -102,7 +102,8 @@ calcR2 <- function(model, trace = FALSE){
             V <- Matrix::Diagonal(x = std.residuals)
         }else{
             if(is.unsorted(model$groups)){
-                stop("sort the group factor relative to the random effect before fitting the model \n")
+                stop("sort the variable defining the clusters for the random effect before fitting the model \n",
+                     "current values: ",paste(model$groups, collapse = " "),"\n")
             }
             ls.V <- lapply(levels(model$groups), function(x){
                 getSigmaGLS(model, individual = x, plot = FALSE)
@@ -120,7 +121,7 @@ calcR2 <- function(model, trace = FALSE){
 
     ## McFadden R2
     iff <- stats::update(ff, paste0(".~1"))
-    imodel <- try(stats::update(model, formula = iff, data = df), silent = TRUE)
+    imodel <- try(stats::update(model, iff, data = df), silent = TRUE)
     if(class(imodel)!="try-error"){
         LR <- 2 * as.numeric(stats::logLik(model)-stats::logLik(imodel))
         R2.LR <- 1-exp(-LR/n)
@@ -134,7 +135,7 @@ calcR2 <- function(model, trace = FALSE){
     for(iX in 1:n.exo){ # iX <- 1
         if(trace){ cat(iX,"(",name.exo[iX],") ", sep = "") }
         iff <- stats::update(ff, paste0(".~.-",name.exo[iX]))
-        imodel <- try(stats::update(model, formula = iff, data = df), silent = TRUE)
+        imodel <- try(stats::update(model, iff, data = df), silent = TRUE)
         if(class(imodel)!="try-error"){
             value0 <- predict(imodel, type = "response")
             pR2[iX] <- FCTcalcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
