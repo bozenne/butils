@@ -45,8 +45,8 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
                        reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
   
-  butils.base::validCharacter(format, validValues = c("wide","long"), validLength = 1, method = "cor.test.data.table")
-  butils.base::validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "cor.test.data.table")
+  validCharacter(format, validValues = c("wide","long"), validLength = 1, method = "cor.test.data.table")
+  validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "cor.test.data.table")
   
   ## data format
   if(is.data.table(data) == FALSE){
@@ -59,7 +59,7 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
   if(is.null(names)){
     names <- names(data)
   }else{
-    butils.base::validNames(names, validValues = names(data))
+    validNames(names, validValues = names(data))
   }
   n.name <- length(names)
   

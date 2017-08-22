@@ -4,12 +4,14 @@
 \alias{getSigmaGLS}
 \title{Variance-covariance of GLS object}
 \usage{
-getSigmaGLS(gls, type = "covariance", upper = NULL, individual = NULL,
-  addId = TRUE, plot = TRUE, args.plot = list(), output = "matrix",
-  trace = 1)
+getSigmaGLS(gls, data = NULL, type = "covariance", upper = NULL,
+  individual = NULL, addId = TRUE, plot = TRUE, args.plot = list(),
+  output = "matrix", trace = 1)
 }
 \arguments{
 \item{gls}{the gls object}
+
+\item{data}{the data that have been used to fit the model.}
 
 \item{type}{Can be either "correlation" or "covariance".}
 
@@ -34,7 +36,14 @@ Rebuilt the variance-covariance matrix from a GLS object
 if(require(nlme)){
 data(Ovary)
 Ovary <- as.data.table(Ovary)
+
+## order factor
+print("AA")
+Ovary[, Mare := as.factor(as.numeric(as.character(Mare)))]
 setkeyv(Ovary, "Mare")
+print("BB")
+
+## 
 fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), 
             data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
 getSigmaGLS(fm1)

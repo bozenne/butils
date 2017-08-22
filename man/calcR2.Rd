@@ -4,10 +4,12 @@
 \alias{calcR2}
 \title{Compute the R square using the predicted values}
 \usage{
-calcR2(model, trace = FALSE)
+calcR2(model, data = NULL, trace = FALSE)
 }
 \arguments{
-\item{model}{the model from which the R squared should be computed}
+\item{model}{the model from which the R squared should be computed.}
+
+\item{data}{the data that have been used to fit the model.}
 
 \item{trace}{should the execution of the function be traced.}
 }
@@ -44,10 +46,21 @@ d <- d[order(d$G),]
 d$Y <- d$Y + 0.5*as.numeric(as.factor(d$G))
 
 ## linear model
-m.lm <- lm(Y~X1+X2+X3, data = d)#' 
+m.lm <- lm(Y~X1+X2+X3, data = d)
 calcR2(m.lm)
+summary(m.lm)
 
 summary(m.lm)$r.squared
+
+ff <- Y~X1+X2+X3
+m.lm <- lm(ff, data = d)
+calcR2(m.lm)
+summary(m.lm)
+
+dt <- as.data.table(d)
+dt[,interaction := X1*X2]
+m.lm2 <- lm(Y~X1+X2+X3+interaction, data = dt[G \%in\% c("A","B")])
+calcR2(m.lm2)
 
 ## gls model
 m.gls1 <- gls(Y~X1+X2+X3, data = d)

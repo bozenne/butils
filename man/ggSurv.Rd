@@ -11,7 +11,8 @@ ggSurv(object, ...)
 
 \method{ggSurv}{survfit}(object, ...)
 
-\method{ggSurv}{coxph}(object, newdata = NULL, confint = FALSE, ...)
+\method{ggSurv}{coxph}(object, data = NULL, newdata = NULL,
+  confint = FALSE, ...)
 
 \method{ggSurv}{data.table}(object, format = "data.table", timeVar = "time",
   survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL,
@@ -28,6 +29,8 @@ ggSurv(object, ...)
 \item{object}{a coxph object or a survfit object or a data.table object.}
 
 \item{...}{arguments to be passed to lower level functions}
+
+\item{data}{the data that have been used to fit the model.}
 
 \item{newdata}{dataset containing the covariates conditional to which the survival is displayed.}
 
@@ -76,7 +79,7 @@ library(lava)
 library(survival)
 
 set.seed(10)
-n <- 500
+n <- 100
 newdata <- data.frame(X1=1)
 time <- 0.25
 
@@ -99,7 +102,7 @@ ggSurv(m.cox, newdata = d[,.SD[1], by = X1], confint = TRUE)
 
 ## Cox (stratified)
 mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1), data = d, y = TRUE, x = TRUE)
-ggSurv(mStrata.cox)
+ggSurv(mStrata.cox, censoring = TRUE, event = TRUE)
 
 ## KM
 m.KM <- survfit(Surv(eventtime, status) ~ X1, data = d)
@@ -107,7 +110,7 @@ res2 <- ggSurv(m.KM)
 
 ## combine plot
 dt.gg <- rbind(cbind(res1$data[original == TRUE & X1 == 1], model = "cox"),
-              cbind(res2$data[original == TRUE & X1 == 1], model = "KM")
+               cbind(res2$data[original == TRUE & X1 == 1], model = "KM")
 )
 dt.gg[,c("X1","original") := NULL]
 ggSurv(dt.gg, timeVar = "time", survivalVar = "survival", strataVar = "model")

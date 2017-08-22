@@ -39,10 +39,10 @@ launchBatch <- function(file, path = ".", dirBatch = NULL,
   } else {
     stop("Unknown OS")
   }
-  
-  butils.base::validPath(path, type = "dir", method = "launchBatch")
-  butils.base::validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
-  
+
+  validPath(path, type = "dir", method = "launchBatch")
+  validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
+
   #### analyse file path
   fileName <- tools::file_path_sans_ext(file)
   fileExtension <- tools::file_ext(file)

@@ -4,11 +4,11 @@
 \alias{ggHeatmap}
 \title{Display pairwise correlation}
 \usage{
-ggHeatmap(data, name.x, name.y, name.fill, add.text, round = NULL,
-  title = "", xlab = "", ylab = "", legend_title = "correlation",
-  na.value = "grey50", col_low = "blue", col_midpoint = "white",
-  col_high = "red", midpoint = 0, limits = NULL, textSize = 15,
-  angle.x = 90)
+ggHeatmap(data, name.x, name.y, name.fill, add.text, plot = TRUE,
+  round = NULL, title = "", xlab = "", ylab = "",
+  legend_title = "correlation", na.value = "grey50", col_low = "blue",
+  col_midpoint = "white", col_high = "red", midpoint = 0, limits = NULL,
+  textSize = 15, angle.x = 90)
 }
 \arguments{
 \item{data}{the dataset containing the correlation values.}
@@ -20,6 +20,8 @@ ggHeatmap(data, name.x, name.y, name.fill, add.text, round = NULL,
 \item{name.fill}{name of the column containing the value of the correlation}
 
 \item{add.text}{additional information to be displayed above the squares representing the correlation. Must name a column in data.}
+
+\item{plot}{should the graph be displayed.}
 
 \item{round}{if not \code{NULL}, the number of digit used to round add.text using signif. Can also be \code{p.value} to indicates with the usual convention the significance level.}
 
@@ -48,13 +50,27 @@ ggHeatmap(data, name.x, name.y, name.fill, add.text, round = NULL,
 \item{angle.x}{the inclination of the x labels}
 }
 \value{
-a ggplot object
+a list containing:
+\itemize{
+  \item plot: a ggplot object.
+  \item data: a data.table object used to create the plot.
+}
 }
 \description{
 Display a correlation matrix (or heatmap) using ggplot2
 }
 \details{
 data must be coercible to data.table. \cr
+}
+\examples{
+
+fill <- runif(16)
+df <- cbind(expand.grid(x = 1:4, y = 1:4),fill = fill)
+ggHeatmap(df, name.x = "x", name.y = "y", name.fill = "fill")
+
+M <- matrix(fill,4,4)
+ggHeatmap(M)
+
 }
 \keyword{correlation}
 \keyword{display}

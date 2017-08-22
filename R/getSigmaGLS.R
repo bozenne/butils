@@ -20,6 +20,7 @@
 #' @description Rebuilt the variance-covariance matrix from a GLS object
 #' 
 #' @param gls the gls object
+#' @param data the data that have been used to fit the model.
 #' @param type Can be either "correlation" or "covariance".
 #' @param individual cluster for which the variance covariance matrix should be returned
 #' @param upper logical value indicating whether the upper triangle of the distance matrix should be returned
@@ -33,19 +34,28 @@
 #' if(require(nlme)){
 #' data(Ovary)
 #' Ovary <- as.data.table(Ovary)
+#' 
+#' ## order factor
+#' print("AA")
+#' Ovary[, Mare := as.factor(as.numeric(as.character(Mare)))]
 #' setkeyv(Ovary, "Mare")
+#' print("BB")
+#' 
+#' ## 
 #' fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), 
 #'             data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
 #' getSigmaGLS(fm1)
 #' }
 #' @keywords function correlation display gls
 #' @export
-getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NULL, addId = TRUE,
+getSigmaGLS <- function(gls, data = NULL, type = "covariance", upper = NULL, individual = NULL, addId = TRUE,
                         plot = TRUE, args.plot = list(), output = "matrix", trace = 1){
   
-  butils.base::validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "getSigmaGLS")
-  butils.base::validCharacter(type, validValues = c("correlation","covariance"), validLength = 1, method = "getSigmaGLS")
-  data <- nlme::getData(gls)
+  validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "getSigmaGLS")
+  validCharacter(type, validValues = c("correlation","covariance"), validLength = 1, method = "getSigmaGLS")
+  if(is.null(data)){
+    data <- extractData(gls, force = TRUE, convert2dt = FALSE)
+  }
   
   #### rebuilt the matrix of correlation
   if (!is.null(gls$modelStruct$corStruct)) {
@@ -55,7 +65,7 @@ getSigmaGLS <- function(gls, type = "covariance", upper = NULL, individual = NUL
     formulaCor <- get("formula.corStruct", asNamespace("nlme"))(corObj)
     variableCor <- all.vars(nlme::getGroupsFormula(formulaCor))
     
-    if(any(order(data[[variableCor]]) != seq_len(NROW(data)))){
+    if(is.unsorted(data[[variableCor]])){
       stop("getSigmaGLS: the dataset used to fit the model must be sort by \"",paste(variableCor, collapse = "\" \""),"\"",
            " to ensure valid extraction of the variance covariance matrix \n")
     }

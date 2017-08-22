@@ -97,16 +97,6 @@ calcPartialResiduals <- function(model,var,
         model.matrix(model, data = data, fixed.only = FALSE)
     }
 
-    if(model.class %in% c("lme","gls")){
-        FUN.model.frame <- function(model, ...){
-            nlme::getData(model)
-        }
-    }else{
-        FUN.model.frame <- function(model, ...){
-            model.frame(model, fixed.only = FALSE)
-        }
-    }
-
     if(missing(FUN.df)){
         if(model.class %in% c("lmerMod","lme","gls")){
             FUN.df <- function(model, level){
@@ -129,7 +119,7 @@ calcPartialResiduals <- function(model,var,
 
     interval <- match.arg(interval, c("confidence","prediction"))
 
-    design.df <- FUN.model.frame(model)
+    design.df <- extractData(model, force = TRUE, convert2dt = TRUE)
     
     design.numeric <- sapply(design.df, is.numeric)
     design.factor <- sapply(design.df, is.factor)

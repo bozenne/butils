@@ -6,9 +6,9 @@
 #' @import data.table
 #' @import ggplot2
 #' @import parallel
-#' @importFrom butils.base validCharacter validNames validPath
 #' @importFrom corrplot corrMatOrder
 #' @importFrom doParallel registerDoParallel
+#' @importFrom methods is
 #' @importFrom foreach %dopar% foreach
 #' @importFrom gdata lowerTriangle upperTriangle
 #' @importFrom grDevices rgb
@@ -16,11 +16,10 @@
 #' @importFrom MASS boxcox
 #' @importFrom Matrix bdiag
 #' @importFrom merTools predictInterval
-#' @importFrom nlme fixef getGroupsFormula ranef
-#' @importFrom Publish publish
+#' @importFrom nlme fixef getData getGroupsFormula ranef
 #' @importFrom profvis profvis
 #' @importFrom proftools plotProfileCallGraph readProfileData
-#' @importFrom riskRegression predictCox
+#' @importFrom riskRegression CoxVariableName predictCox
 #' @importFrom stats as.formula coef cov cov2cor delete.response formula IQR lm logLik mad median model.frame model.matrix na.omit optim predict qnorm quantile sd setNames terms time update qt
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils Rprof setTxtProgressBar summaryRprof txtProgressBar  

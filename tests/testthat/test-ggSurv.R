@@ -15,6 +15,9 @@
 ## 
 ### Code:
 
+
+context("#### Display survival curves ####")
+
 # {{{ random example
 library(survival)
 dt <- as.data.table(aml)

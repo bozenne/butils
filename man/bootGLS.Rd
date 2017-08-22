@@ -4,8 +4,9 @@
 \alias{bootGLS}
 \title{Perform bootstrap computation on an object}
 \usage{
-bootGLS(object, n.boot, fctCoef, n.cpus = 1, export.publish = FALSE,
-  IDvar = NULL, GROUPvar = NULL, load.library = "nlme", seed = 10)
+bootGLS(object, n.boot, fctCoef, data = NULL, n.cpus = 1,
+  export.publish = FALSE, IDvar = NULL, GROUPvar = NULL,
+  load.library = "nlme", seed = 10)
 }
 \arguments{
 \item{object}{the fitted model.}
@@ -13,6 +14,8 @@ bootGLS(object, n.boot, fctCoef, n.cpus = 1, export.publish = FALSE,
 \item{n.boot}{the number of replications. Should be a large number.}
 
 \item{fctCoef}{the function used to extract the statistics of interest from the model.}
+
+\item{data}{the data that have been used to fit the model.}
 
 \item{n.cpus}{the number of cpu to use.}
 
@@ -36,6 +39,10 @@ Bootstrap under H1: randomly select observations (or individuals according to ar
 If the same individual appear several times, a different group value is given for each apparition.
 
 Bootstrap under H0: randomly permute the group label (according to argument GROUPvar) at the observation level (or individuals according to argument IDvar).
+
+The Publish package must be installed for the function to work when setting the argument \code{export.publish} to \code{TRUE}.
+The Publish package is available on Github: https://github.com/tagteam/Publish
+and can be installed using, for e.g., the devtools package: devtools::install_github("tagteam/Publish")
 }
 \examples{
 #### lm ####

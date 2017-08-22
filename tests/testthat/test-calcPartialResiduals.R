@@ -14,6 +14,9 @@
 #----------------------------------------------------------------------
 ## 
 ### Code:
+
+context("#### partial residuals ####")
+
 library(lava)
 library(nlme)
 library(lme4)

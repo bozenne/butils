@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug  8 2017 (14:03) 
 ## Version: 
-## last-updated: aug  8 2017 (17:34) 
+## last-updated: aug 21 2017 (17:56) 
 ##           By: Brice Ozenne
-##     Update #: 88
+##     Update #: 90
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,7 +17,8 @@
 #' @title Compute the R square using the predicted values
 #' @description Compute the R square using the predicted values
 #'
-#' @param model the model from which the R squared should be computed
+#' @param model the model from which the R squared should be computed.
+#' @param data the data that have been used to fit the model.
 #' @param trace should the execution of the function be traced.
 #' 
 #' @details Compute the Generalized R2 defined by Buse (1973) using the formula:
@@ -52,13 +53,24 @@
 #' d <- lava::sim(m, 1e2)
 #' d <- d[order(d$G),]
 #' d$Y <- d$Y + 0.5*as.numeric(as.factor(d$G))
-#'
+#' 
 #' ## linear model
-#' m.lm <- lm(Y~X1+X2+X3, data = d)#' 
+#' m.lm <- lm(Y~X1+X2+X3, data = d)
 #' calcR2(m.lm)
-#'
+#' summary(m.lm)
+#' 
 #' summary(m.lm)$r.squared
 #'
+#' ff <- Y~X1+X2+X3
+#' m.lm <- lm(ff, data = d)
+#' calcR2(m.lm)
+#' summary(m.lm)
+#' 
+#' dt <- as.data.table(d)
+#' dt[,interaction := X1*X2]
+#' m.lm2 <- lm(Y~X1+X2+X3+interaction, data = dt[G %in% c("A","B")])
+#' calcR2(m.lm2)
+#' 
 #' ## gls model
 #' m.gls1 <- gls(Y~X1+X2+X3, data = d)
 #' calcR2(m.gls1)
@@ -75,24 +87,26 @@
 #'
 #' 
 #' @export
-calcR2 <- function(model, trace = FALSE){
+calcR2 <- function(model, data = NULL, trace = FALSE){
 
     if(class(model) %in% c("lm","gls","lme") == FALSE){
         stop("Function only compatible with \'lm\', \'gls\', and \'lme\' objects \n")
     }
     
     ff <- formula(model)
-    if(class(model) %in% c("gls","lme")){
-        df <- eval(model$call$data)
+    if(is.null(data)){
+      print("start")
+      data <- extractData(model, force = TRUE, convert2dt = TRUE)
+      print("end")
     }else{
-        df <- model.frame(model)
+      data <- copy(as.data.table(data))
     }
-    n <- NROW(df)
+    n <- NROW(data)
     
     name.endo <- all.vars(ff[[2]])
     name.exo <- all.vars(ff[[3]])
     n.exo <- length(name.exo)
-
+    
     ## V
     if(class(model)=="lm"){        
         iV <- NULL        
@@ -101,12 +115,8 @@ calcR2 <- function(model, trace = FALSE){
         if (is.null(model$modelStruct$corStruct)) { # no correlation matrix b
             V <- Matrix::Diagonal(x = std.residuals)
         }else{
-            if(is.unsorted(model$groups)){
-                stop("sort the variable defining the clusters for the random effect before fitting the model \n",
-                     "current values: ",paste(model$groups, collapse = " "),"\n")
-            }
             ls.V <- lapply(levels(model$groups), function(x){
-                getSigmaGLS(model, individual = x, plot = FALSE)
+                getSigmaGLS(model, data = data, individual = x, plot = FALSE)
             })
             V <- Matrix::bdiag(ls.V)             
         }
@@ -114,14 +124,14 @@ calcR2 <- function(model, trace = FALSE){
     }
     
     ## R2
-    Y <- df[[name.endo]]
+    Y <- data[[name.endo]]
     value0 <- mean(Y)    
     value <- predict(model, type = "response")
     R2 <- FCTcalcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
 
     ## McFadden R2
     iff <- stats::update(ff, paste0(".~1"))
-    imodel <- try(stats::update(model, iff, data = df), silent = TRUE)
+    imodel <- try(stats::update(model, iff, data = data), silent = TRUE)
     if(class(imodel)!="try-error"){
         LR <- 2 * as.numeric(stats::logLik(model)-stats::logLik(imodel))
         R2.LR <- 1-exp(-LR/n)
@@ -135,7 +145,7 @@ calcR2 <- function(model, trace = FALSE){
     for(iX in 1:n.exo){ # iX <- 1
         if(trace){ cat(iX,"(",name.exo[iX],") ", sep = "") }
         iff <- stats::update(ff, paste0(".~.-",name.exo[iX]))
-        imodel <- try(stats::update(model, iff, data = df), silent = TRUE)
+        imodel <- try(stats::update(model, iff, data = data), silent = TRUE)
         if(class(imodel)!="try-error"){
             value0 <- predict(imodel, type = "response")
             pR2[iX] <- FCTcalcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
