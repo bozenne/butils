@@ -1,10 +1,10 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: R
+cache: packages
 compiler: gcc
 r_check_args: --as-cran
 sudo: required
-
 
 before_install:
   # C++14
@@ -15,7 +15,9 @@ install:
   # C++14
   - sudo apt-get install -qq g++-6
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
-
+  ## For installing all CRAN dependencies using rpack's DESCRIPTION
+  - ./travis-tool.sh install_deps
+  
 r_github_packages:
 - bozenne/butils.base
 - tagteam/Publish
