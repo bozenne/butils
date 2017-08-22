@@ -1,8 +1,8 @@
 Package: butils
 Type: Package
 Title: Various usefull functions
-Version: 1.1
-Date: 2017-08-14
+Version: 1.2
+Date: 2017-08-22
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R.
@@ -12,7 +12,6 @@ Depends:
     data.table,
     ggplot2
 Imports:
-    butils.base,
     corrplot,
     doParallel,
     foreach,
@@ -20,21 +19,22 @@ Imports:
     MASS,
     Matrix,
     merTools,
+    methods,
     nlme,
     proftools,
     profvis,
-    Publish,
     riskRegression,
     stats,
     tools,
     utils
 Suggests:
+    AICcmodavg,
+    heplots,
     lava,
     lme4,
+    Publish,
     survival,
-    testthat,
-    AICcmodavg,
-	heplots
+    testthat
 LazyLoad: yes
 NeedsCompilation: no
 RoxygenNote: 6.0.1
