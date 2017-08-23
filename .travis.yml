@@ -8,25 +8,31 @@ dist: trusty
 r_check_args: --as-cran
 sudo: required
 
-CRAN: http://cran.rstudio.com
-
+repos:
+  CRAN: http://cran.rstudio.com 
  
 before_install:
   # C++14
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -qq
-  - sudo apt-get install -qq g++-6
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+  # R
+  - sudo add-apt-repository -y ppa:marutter/rrutter
+  - sudo apt-get update -qq
+  
+install: 
+  # R
+  - sudo apt-get install r-base r-base-dev
+  - sudo apt-get install libssh2-1-dev
+  - sudo Rscript install_r_packages.R
+  # C++14, do this after installing the R packages
+  - sudo apt-get install -qq g++-5
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 90
+  # Codecov
+  - sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-5 90
+  - sudo pip install codecov
 
 r_github_packages:
 - tagteam/Publish
-
-#install: 
-#  # C++14
-#  - sudo apt-get install -qq g++-6
-#  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
-#  # R
-#  - R -e 'devtools::install_deps(dep = T)'
 
 after_success:
 - Rscript -e 'library(covr);coveralls()'
@@ -34,10 +40,12 @@ after_success:
 after_failure:
 - ./travis-tool.sh dump_logs
 
+#####
 ## This job is running on container-based infrastructure, which does not allow use of 'sudo', setuid, and setgid executables.
 ## If you require sudo, add 'sudo: required' to your .travis.yml
 ## >>> this is why I use "sudo: required"
 
+#####
 ## * installing *source* package ‘RcppArmadillo’ ...
 ## configure: WARNING: Only g++ version 4.7.2 or greater can be used with RcppArmadillo.
 ## configure: error: Please use a different compiler.
@@ -45,4 +53,39 @@ after_failure:
 ## >>> this is why I have added the lines C++14 as advised here:
 ##     https://gist.github.com/cotsog/3ce84675af0d74438d91 
 
+#####
 ## BUT then I got 
+##  * checking package dependencies ... ERROR
+##
+## Packages required but not available:
+##
+##  ‘data.table’ ‘ggplot2’ ‘corrplot’ ‘doParallel’ ‘foreach’ ‘gdata’
+##
+##  ‘merTools’ ‘proftools’ ‘profvis’ ‘riskRegression’
+##
+## Packages suggested but not available:
+##
+##  ‘AICcmodavg’ ‘heplots’ ‘lava’ ‘lme4’ ‘Publish’ ‘testthat’
+## This is normal since I have overwritten the install (see https://github.com/travis-ci/travis-ci/issues/5650)
+
+#####
+## Using a different confing I got
+## * checking package dependencies ... ERROR
+##
+## Packages required but not available: ‘merTools’ ‘riskRegression’
+##
+## Packages suggested but not available:
+##
+##  ‘AICcmodavg’ ‘heplots’ ‘lme4’ ‘Publish’
+
+#####
+## So I tried to put all the commands in before_install
+## It seemed to work since I got "checking whether g++ version is sufficient... (6.3.0) yes"
+## But I also got
+## g++ -shared -L/home/travis/R-bin/lib -o RcppArmadillo.so RcppArmadillo.o RcppExports.o fastLm.o -fopenmp -L/home/travis/R-bin/lib/R/lib -lRlapack -L/home/travis/R-bin/lib/R/lib -lRblas -lgfortran -lm -lquadmath
+## /usr/bin/ld: cannot find -lgfortran
+## collect2: error: ld returned 1 exit status
+## make: *** [RcppArmadillo.so] Error 1
+## ERROR: compilation failed for package ‘RcppArmadillo’
+
+ 
