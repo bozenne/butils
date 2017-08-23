@@ -3,20 +3,35 @@
 language: R
 cache: packages
 compiler: gcc
+dist: trusty
 r_check_args: --as-cran
 sudo: required
 
 repos:
   CRAN: https://cloud.r-project.org
-  
-before_install:
-- sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-- sudo apt-get -qq update
-- sudo apt-get -qq install g++-4.8
 
 r_github_packages:
 - tagteam/Publish
+  
+before_install:
+  # C++14
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
+  # R
+  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
+  - chmod 755 ./travis-tool.sh
+  - ./travis-tool.sh bootstrap
 
+install: 
+  # C++14
+  - sudo apt-get install -qq g++-6
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+  # R
+  - ./travis-tool.sh install_deps
+
+script: 
+  - ./travis-tool.sh run_tests
+  
 after_success:
 - Rscript -e 'library(covr);coveralls()'
 
