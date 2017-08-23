@@ -3,30 +3,27 @@
 # Use the R testing scheme
 language: R
 cache: packages
-compiler: gcc
-dist: trusty
+## compiler: gcc
+## dist: trusty
 r_check_args: --as-cran
 sudo: required
 
 repos:
   CRAN: http://cran.rstudio.com 
  
-before_install:
-- sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-- sudo apt-get update -qq
-- sudo apt-get install -qq g++-6
-- sudo apt-get install -qq gfortran-4.8
-- sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
-- sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-4.8 60
+## before_install:
+## - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+## - sudo apt-get update -qq
+## - sudo apt-get install -qq g++-6
+## - sudo apt-get install -qq gfortran-4.8
+## - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+## - sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-4.8 60
 
 r_github_packages:
 - tagteam/Publish
 
 after_success:
 - Rscript -e 'library(covr);coveralls()'
-
-after_failure:
-- ./travis-tool.sh dump_logs
 
 #####
 ## This job is running on container-based infrastructure, which does not allow use of 'sudo', setuid, and setgid executables.
