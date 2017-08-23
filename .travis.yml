@@ -8,11 +8,12 @@ r_check_args: --as-cran
 sudo: required
 
 repos:
-  CRAN: https://cloud.r-project.org
+  CRAN: http://cran.rstudio.com
 
 r_github_packages:
 - tagteam/Publish
-  
+- tagteam/riskRegression
+ 
 before_install:
   # C++14
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
