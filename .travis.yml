@@ -4,30 +4,45 @@
 language: R
 cache: packages
 compiler: gcc
-dist: precise
+dist: trusty
 r_check_args: --as-cran
-sudo: false
+sudo: required
 
 CRAN: http://cran.rstudio.com
 
-r_github_packages:
-- tagteam/Publish
-- tagteam/riskRegression
  
 before_install:
   # C++14
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get update -qq
-
-install: 
-  # C++14
   - sudo apt-get install -qq g++-6
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
-  # R
-  - R -e 'devtools::install_deps(dep = T)'
+
+r_github_packages:
+- tagteam/Publish
+
+#install: 
+#  # C++14
+#  - sudo apt-get install -qq g++-6
+#  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+#  # R
+#  - R -e 'devtools::install_deps(dep = T)'
 
 after_success:
 - Rscript -e 'library(covr);coveralls()'
 
 after_failure:
 - ./travis-tool.sh dump_logs
+
+## This job is running on container-based infrastructure, which does not allow use of 'sudo', setuid, and setgid executables.
+## If you require sudo, add 'sudo: required' to your .travis.yml
+## >>> this is why I use "sudo: required"
+
+## * installing *source* package ‘RcppArmadillo’ ...
+## configure: WARNING: Only g++ version 4.7.2 or greater can be used with RcppArmadillo.
+## configure: error: Please use a different compiler.
+## ERROR: configuration failed for package ‘RcppArmadillo’
+## >>> this is why I have added the lines C++14 as advised here:
+##     https://gist.github.com/cotsog/3ce84675af0d74438d91 
+
+## BUT then I got 
