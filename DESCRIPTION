@@ -2,7 +2,7 @@ Package: butils
 Type: Package
 Title: Various usefull functions
 Version: 1.2
-Date: 2017-08-22
+Date: 2017-08-23
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous function for working in R.
@@ -23,7 +23,6 @@ Imports:
     nlme,
     proftools,
     profvis,
-    riskRegression,
     stats,
     tools,
     utils
@@ -33,6 +32,7 @@ Suggests:
     lava,
     lme4,
     Publish,
+    riskRegression,
     survival,
     testthat
 LazyLoad: yes

@@ -1,6 +1,5 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
-# Use the R testing scheme
 language: R
 cache: packages
 ## compiler: gcc
@@ -11,14 +10,6 @@ sudo: required
 repos:
   CRAN: http://cran.rstudio.com 
  
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-5
-    - g++-5
-
 ## before_install:
 ## - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 ## - sudo apt-get update -qq

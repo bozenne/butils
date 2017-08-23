@@ -117,6 +117,7 @@ ggSurv.survfit <- function(object, ...){
 #' @rdname ggSurv
 #' @export
 ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, ...){
+  requireNamespace("riskRegression")
   
   ## for CRAN test
   . <- Utimes <- xxSTRATAxx <- n.event <- n.censor <- survival.lower <- survival.upper <- strata <- status <- survival <- NULL

@@ -71,8 +71,8 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
     data <- try(nlme::getData(object), silent = TRUE)
 
   }else if(any(class(object) %in% c("coxph","cph"))){
-    data <- try(riskRegression::CoxDesign(object), silent = TRUE)
-    
+    requireNamespace("riskRegression")
+    data <- try(riskRegression::CoxDesign(object), silent = TRUE)    
     strataVar <- riskRegression::CoxVariableName(object)$stratavars.original
     
     if(length(strataVar)>0){ 
