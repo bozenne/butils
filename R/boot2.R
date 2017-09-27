@@ -17,6 +17,7 @@
 
 ## * bootPb - Documentation
 ##' @title Copy of \code{boot::boot} with progress bar
+##' @description Copy of \code{boot::boot} with progress bar
 ##' @name bootPb
 ##' 
 ##' @param data see \code{boot::boot}
@@ -44,7 +45,7 @@
 ##' 
 ##' m.boot <- function(data, indices) {
 ##'   d <- data[indices]
-##'   mean(d, na.rm = T) 
+##'   mean(d, na.rm = TRUE) 
 ##' }
 ##' tot_rep <- 200
 ##' v1 <- rnorm(1000)
@@ -53,8 +54,8 @@
 ## * bootPb - Code
 ##' @rdname bootPb
 ##' @export
-bootPb <- function (data, statistic, R, sim = "ordinary", stype = c("i", 
-                                                                    "f", "w"), strata = rep(1, n), L = NULL, m = 0, weights = NULL, 
+bootPb <- function (data, statistic, R, sim = "ordinary", stype = c("i","f", "w"), 
+                    strata = rep(1, n), L = NULL, m = 0, weights = NULL, 
                     ran.gen = function(d, p) d, mle = NULL, simple = FALSE, ..., 
                     parallel = c("no", "multicore", "snow"), ncpus = getOption("boot.ncpus", 
                                                                                1L), cl = NULL) 
@@ -79,7 +80,7 @@ bootPb <- function (data, statistic, R, sim = "ordinary", stype = c("i",
         simple <- FALSE
     }
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
-        runif(1)
+      stats::runif(1)
     seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
     n <- NROW(data)
     if ((n == 0) || is.null(n)) 
@@ -88,7 +89,7 @@ bootPb <- function (data, statistic, R, sim = "ordinary", stype = c("i",
     strata <- tapply(seq_len(n), as.numeric(strata))
     t0 <- if (sim != "parametric") {
               if ((sim == "antithetic") && is.null(L)) 
-                  L <- empinf(data = data, statistic = statistic, stype = stype, 
+                  L <- boot::empinf(data = data, statistic = statistic, stype = stype, 
                               strata = strata, ...)
               if (sim != "ordinary") 
                   m <- 0
@@ -136,7 +137,7 @@ bootPb <- function (data, statistic, R, sim = "ordinary", stype = c("i",
                   i <- i[, seq_len(n)]
               }
               if (stype %in% c("f", "w")) {
-                  f <- freq.array(i)
+                  f <- boot::freq.array(i)
                   rm(i)
                   if (stype == "w") 
                       f <- f/ns

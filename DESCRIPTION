@@ -1,7 +1,7 @@
 Package: butils
 Type: Package
 Title: Various usefull functions
-Version: 1.2.1
+Version: 1.2.2
 Date: 2017-09-27
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
