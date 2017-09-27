@@ -6,6 +6,7 @@
 #' @import data.table
 #' @import ggplot2
 #' @import parallel
+#' @importFrom boot empinf freq.array
 #' @importFrom corrplot corrMatOrder
 #' @importFrom doParallel registerDoParallel
 #' @importFrom methods is

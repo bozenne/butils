@@ -12,6 +12,7 @@ Depends:
     data.table,
     ggplot2
 Imports:
+    boot,
     corrplot,
     doParallel,
     foreach,
@@ -27,7 +28,6 @@ Imports:
     tools,
     utils
 Suggests:
-    boot,
     AICcmodavg,
     heplots,
     lava,
