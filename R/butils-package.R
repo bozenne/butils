@@ -17,9 +17,11 @@
 #' @importFrom Matrix bdiag
 #' @importFrom merTools predictInterval
 #' @importFrom nlme fixef getData getGroupsFormula ranef
+#' @importFrom pbapply pbapply
 #' @importFrom profvis profvis
 #' @importFrom proftools plotProfileCallGraph readProfileData
 #' @importFrom stats as.formula coef cov cov2cor delete.response formula IQR lm logLik mad median model.frame model.matrix na.omit optim predict qnorm quantile sd setNames terms time update qt
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils Rprof setTxtProgressBar summaryRprof txtProgressBar  
 NULL
+
