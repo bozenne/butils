@@ -4,8 +4,8 @@
 \alias{bootGLS}
 \title{Perform bootstrap computation on an object}
 \usage{
-bootGLS(object, n.boot, fctCoef, data = NULL, n.cpus = 1,
-  export.publish = FALSE, IDvar = NULL, GROUPvar = NULL,
+bootGLS(object, n.boot, FUN.coef, data = NULL, n.cpus = 1,
+  export.publish = FALSE, var.id = NULL, var.group = NULL,
   load.library = "nlme", seed = 10)
 }
 \arguments{
@@ -13,7 +13,7 @@ bootGLS(object, n.boot, fctCoef, data = NULL, n.cpus = 1,
 
 \item{n.boot}{the number of replications. Should be a large number.}
 
-\item{fctCoef}{the function used to extract the statistics of interest from the model.}
+\item{FUN.coef}{the function used to extract the statistics of interest from the model.}
 
 \item{data}{the data that have been used to fit the model.}
 
@@ -21,9 +21,9 @@ bootGLS(object, n.boot, fctCoef, data = NULL, n.cpus = 1,
 
 \item{export.publish}{use \code{Publish::publish} to define the parameter of interest}
 
-\item{IDvar}{the variable in the dataset indicating the grouping level of the data.}
+\item{var.id}{the variable in the dataset indicating the grouping level of the data.}
 
-\item{GROUPvar}{the group variable use to resample under H0. Otherwise resampling is done under H1.}
+\item{var.group}{the group variable use to resample under H0. Otherwise resampling is done under H1.}
 
 \item{load.library}{additional library to load}
 
@@ -35,10 +35,10 @@ Perform bootstrap computation on an object under H0 or H1. Handle one grouping v
 \details{
 Should have an attribute call that includes a data attribute (i.e. object$call$data must exist).
 
-Bootstrap under H1: randomly select observations (or individuals according to argument IDvar) to form a new dataset.
+Bootstrap under H1: randomly select observations (or individuals according to argument var.id) to form a new dataset.
 If the same individual appear several times, a different group value is given for each apparition.
 
-Bootstrap under H0: randomly permute the group label (according to argument GROUPvar) at the observation level (or individuals according to argument IDvar).
+Bootstrap under H0: randomly permute the group label (according to argument var.group) at the observation level (or individuals according to argument var.id).
 
 The Publish package must be installed for the function to work when setting the argument \code{export.publish} to \code{TRUE}.
 The Publish package is available on Github: https://github.com/tagteam/Publish
@@ -59,20 +59,20 @@ summary(m.lm)
 
 \dontshow{
 res <- bootGLS(m.lm, n.boot = 1e2)
-resG <- bootGLS(m.lm, n.boot = 1e2, GROUPvar = "G")
+resG <- bootGLS(m.lm, n.boot = 1e2, var.group = "G")
 
 res
-print(res, seq_length.out = 10)
+print(res, seq.length.out = 10)
 resG 
 }
 
 
 \dontrun{ 
 res <- bootGLS(m.lm, n.boot = 1e4, n.cpus = 4)
-resG <- bootGLS(m.lm, n.boot = 1e4, GROUPvar = "G", n.cpus = 4)
+resG <- bootGLS(m.lm, n.boot = 1e4, var.group = "G", n.cpus = 4)
 
 res
-print(res, seq_length.out = 10)
+print(res, seq.length.out = 10)
 resG
 }
 
@@ -84,10 +84,10 @@ fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), Ovary,
 summary(fm1)
 
 \dontshow{
-bootGLS(fm1, n.boot = 1e2, IDvar = "Mare")
+bootGLS(fm1, n.boot = 1e2, var.id = "Mare")
 }
 \dontrun{
-res <- bootGLS(fm1, n.boot = 1e4, n.cpus = 4, IDvar = "Mare")
+res <- bootGLS(fm1, n.boot = 1e4, n.cpus = 4, var.id = "Mare")
 apply(res$all.boot, 2, mean)
 }
 

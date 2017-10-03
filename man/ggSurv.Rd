@@ -14,16 +14,16 @@ ggSurv(object, ...)
 \method{ggSurv}{coxph}(object, data = NULL, newdata = NULL,
   confint = FALSE, ...)
 
-\method{ggSurv}{data.table}(object, format = "data.table", timeVar = "time",
-  survivalVar = "survival", ciInfVar = NULL, ciSupVar = NULL,
-  eventVar = NULL, censorVar = NULL, strataVar = NULL, plot = TRUE,
-  legend.position = "top", title = NULL, textSize = NULL, ylim = NULL,
-  line.size = 2, confint = FALSE, alpha.CIfill = 0.2,
-  alpha.CIline = 0.5, censoring = FALSE, alpha.censoring = 1,
-  colour.censoring = rgb(0.2, 0.2, 0.2), shape.censoring = 3,
-  size.censoring = 2, name.censoring = "censoring", events = FALSE,
-  alpha.events = 1, colour.events = rgb(0.2, 0.2, 0.2), shape.events = 8,
-  size.events = 2, name.events = "event", ...)
+\method{ggSurv}{data.table}(object, format = "data.table",
+  var.time = "time", var.survival = "survival", var.ci.inf = NULL,
+  var.ci.sup = NULL, var.event = NULL, var.censor = NULL,
+  var.strata = NULL, plot = TRUE, legend.position = "top", title = NULL,
+  text.size = NULL, ylim = NULL, line.size = 2, confint = FALSE,
+  alpha.CIfill = 0.2, alpha.CIline = 0.5, censoring = FALSE,
+  alpha.censoring = 1, colour.censoring = rgb(0.2, 0.2, 0.2),
+  shape.censoring = 3, size.censoring = 2, name.censoring = "censoring",
+  events = FALSE, alpha.events = 1, colour.events = rgb(0.2, 0.2, 0.2),
+  shape.events = 8, size.events = 2, name.events = "event", ...)
 }
 \arguments{
 \item{object}{a coxph object or a survfit object or a data.table object.}
@@ -38,23 +38,23 @@ ggSurv(object, ...)
 
 \item{format}{the format used to export the data. Can be data.table or data.frame.}
 
-\item{timeVar}{the name of the column in the data.table object containing the time variable}
+\item{var.time}{the name of the column in the data.table object containing the time variable}
 
-\item{survivalVar}{the name of the column in the data.table object containing the survival at each time}
+\item{var.survival}{the name of the column in the data.table object containing the survival at each time}
 
-\item{ciInfVar}{the name of the column in the data.table object containing the lower bound of the confidence interval}
+\item{var.ci.inf}{the name of the column in the data.table object containing the lower bound of the confidence interval}
 
-\item{ciSupVar}{the name of the column in the data.table object containing the upper bound of the confidence interval}
+\item{var.ci.sup}{the name of the column in the data.table object containing the upper bound of the confidence interval}
 
-\item{eventVar}{the name of the column in the data.table object containing the number of events at each time}
+\item{var.event}{the name of the column in the data.table object containing the number of events at each time}
 
-\item{censorVar}{the name of the column in the data.table object containing the number of censored patients at each time}
+\item{var.censor}{the name of the column in the data.table object containing the number of censored patients at each time}
 
-\item{strataVar}{the name of the column in the data.table object containing the strata variable}
+\item{var.strata}{the name of the column in the data.table object containing the strata variable}
 
 \item{plot}{should the plot be displayed}
 
-\item{legend.position, title, textSize}{annotations on the plot}
+\item{legend.position, title, text.size}{annotations on the plot}
 
 \item{ylim}{y range (survival)}
 
@@ -113,6 +113,6 @@ dt.gg <- rbind(cbind(res1$data[original == TRUE & X1 == 1], model = "cox"),
                cbind(res2$data[original == TRUE & X1 == 1], model = "KM")
 )
 dt.gg[,c("X1","original") := NULL]
-ggSurv(dt.gg, timeVar = "time", survivalVar = "survival", strataVar = "model")
+ggSurv(dt.gg, var.time = "time", var.survival = "survival", var.strata = "model")
 
 }

@@ -4,12 +4,12 @@
 \alias{print.glsboot}
 \title{Display the result fo the bootstrap computation}
 \usage{
-\method{print}{glsboot}(x, seq_length.out, ...)
+\method{print}{glsboot}(x, seq.length.out, ...)
 }
 \arguments{
 \item{x}{object obtained with the function \code{bootGLS}}
 
-\item{seq_length.out}{the number of subsamples on which the results should be computed}
+\item{seq.length.out}{the number of subsamples on which the results should be computed}
 
 \item{...}{not used}
 }

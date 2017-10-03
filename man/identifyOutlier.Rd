@@ -9,7 +9,7 @@
 numOutlier(x, type = "auto", th.gaussian = 3, th.hampel = 3,
   th.boxplot = 1.5, na.rm = FALSE)
 
-factorOutlier(x, threshold = 0.01, useNA = "ifany")
+factorOutlier(x, threshold = 0.01, use.NA = "ifany")
 }
 \arguments{
 \item{x}{a vector of numeric}
@@ -26,7 +26,7 @@ factorOutlier(x, threshold = 0.01, useNA = "ifany")
 
 \item{threshold}{the threshold for defining an outlier regarding the prevalence (categorical variables)}
 
-\item{useNA}{argument passed to \code{table}}
+\item{use.NA}{argument passed to \code{table}}
 }
 \description{
 Identify numeric or factor outliers

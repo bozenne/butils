@@ -8,7 +8,7 @@ ggHeatmap(data, name.x, name.y, name.fill, add.text, plot = TRUE,
   round = NULL, title = "", xlab = "", ylab = "",
   legend_title = "correlation", na.value = "grey50", col_low = "blue",
   col_midpoint = "white", col_high = "red", midpoint = 0, limits = NULL,
-  textSize = 15, angle.x = 90)
+  text.size = 15, angle.x = 90)
 }
 \arguments{
 \item{data}{the dataset containing the correlation values.}
@@ -45,7 +45,7 @@ ggHeatmap(data, name.x, name.y, name.fill, add.text, plot = TRUE,
 
 \item{limits}{the minimum and maximum correlation values used to build the color panel}
 
-\item{textSize}{the size of the text in the plot}
+\item{text.size}{the size of the text in the plot}
 
 \item{angle.x}{the inclination of the x labels}
 }

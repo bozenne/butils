@@ -5,8 +5,8 @@
 \title{Variance-covariance of GLS object}
 \usage{
 getSigmaGLS(gls, data = NULL, type = "covariance", upper = NULL,
-  individual = NULL, addId = TRUE, plot = TRUE, args.plot = list(),
-  output = "matrix", trace = 1)
+  individual = NULL, plot = TRUE, args.plot = list(), output = "matrix",
+  trace = 1)
 }
 \arguments{
 \item{gls}{the gls object}
@@ -18,8 +18,6 @@ getSigmaGLS(gls, data = NULL, type = "covariance", upper = NULL,
 \item{upper}{logical value indicating whether the upper triangle of the distance matrix should be returned}
 
 \item{individual}{cluster for which the variance covariance matrix should be returned}
-
-\item{addId}{the id name at the row and col names}
 
 \item{plot}{should the correlation matrix be displayed. \emph{logical}.}
 
