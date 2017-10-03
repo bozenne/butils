@@ -21,6 +21,7 @@ before_install:
 
 r_github_packages:
 - tagteam/Publish
+- tagteam/riskRegression
 
 after_success:
 - Rscript -e 'library(covr);coveralls()'
@@ -54,16 +55,6 @@ after_success:
 ## This is normal since I have overwritten the install (see https://github.com/travis-ci/travis-ci/issues/5650)
 
 #####
-## Using a different confing I got
-## * checking package dependencies ... ERROR
-##
-## Packages required but not available: ‘merTools’ ‘riskRegression’
-##
-## Packages suggested but not available:
-##
-##  ‘AICcmodavg’ ‘heplots’ ‘lme4’ ‘Publish’
-
-#####
 ## So I tried to put all the commands in before_install
 ## It seemed to work since I got "checking whether g++ version is sufficient... (6.3.0) yes"
 ## But I also got
@@ -78,4 +69,4 @@ after_success:
 ## According to https://stackoverflow.com/questions/42150845/usr-bin-ld-cannot-find-lgfortran-when-installing-rcpparmadillo-in-r
 ## this is because "Gfortran is a part of the GCC package. It is an optional part, but in this case you really want it to be included."
 ## So I am trying to find how to install both gcc and gfortran at the same time
-## but https://hub.docker.com/r/bowhan/buildessential/~/dockerfile/
+## It works when I ask for compatible versions of gcc and gfortran
