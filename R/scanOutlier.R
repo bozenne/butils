@@ -77,7 +77,7 @@ scanOutlier <- function(data, id,
 #' @param th.hampel the threshold for defining an outlier when mad
 #' @param th.boxplot the threshold for defining the IQR
 #' @param type the type of robust metric for assessing the "average" value
-#' @param useNA argument passed to \code{table}
+#' @param use.NA argument passed to \code{table}
 #' 
 #' @references idea from http://www.r-bloggers.com/finding-outliers-in-numerical-data/
 #'
@@ -93,7 +93,7 @@ numOutlier <- function(x, type = "auto",
                        th.gaussian = 3, th.hampel = 3, th.boxplot = 1.5, 
                        na.rm = FALSE){
   
-  validCharacter(type, validValues = c("gaussian", "hampel", "boxplot", "auto"), validLength = 1)
+  validCharacter(type, valid.values = c("gaussian", "hampel", "boxplot", "auto"), valid.length = 1)
   if(type == "auto"){
     if(stats::mad(x, na.rm = na.rm) == 0){type <- "boxplot"}else{type <- "hampel"}
   }
@@ -154,12 +154,12 @@ numOutlier <- function(x, type = "auto",
 
 # {{{ factorOutlier
 #' @rdname identifyOutlier
-factorOutlier <- function(x, threshold = 0.01, useNA = "ifany"){
+factorOutlier <- function(x, threshold = 0.01, use.NA = "ifany"){
   
   groups <- unique(x)
   n.group <- length(groups)
   
-  tabx <- table(x, useNA = useNA)
+  tabx <- table(x, useNA = use.NA)
   prevalence <- tabx/sum(tabx)
   test.outlier <- prevalence < threshold/n.group
   group.outlier <- names(tabx)[test.outlier]
@@ -241,7 +241,7 @@ checkUnique <- function(x, test = FALSE){
 # {{{ print.detectOutlier
 print.detectOutlier <- function(x, type = "value", ...){
   
-  validCharacter(type, validLength = 1, validValues = c("value","index"), method = "print.detectOutlier")
+  validCharacter(type, valid.length = 1, valid.values = c("value","index"), method = "print.detectOutlier")
   
   if(x$type == "numeric"){
     cat.message <- "potential outliers: \n"

@@ -72,7 +72,7 @@ ggCor <- function(data, type = "correlation", legend_title = NULL, plot = TRUE, 
 #' @param col_high the color used to diplay high correlation values
 #' @param midpoint the value corresponding to intermediate correlation value.
 #' @param limits the minimum and maximum correlation values used to build the color panel
-#' @param textSize the size of the text in the plot
+#' @param text.size the size of the text in the plot
 #' @param angle.x the inclination of the x labels
 #' 
 #' @details 
@@ -98,7 +98,7 @@ ggCor <- function(data, type = "correlation", legend_title = NULL, plot = TRUE, 
 ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, round = NULL,
                       title = "", xlab = "", ylab = "",  legend_title = "correlation",
                       na.value = "grey50", col_low = "blue", col_midpoint = "white", col_high = "red", midpoint = 0, limits = NULL, 
-                      textSize = 15, angle.x = 90){
+                      text.size = 15, angle.x = 90){
   XXIdXX <- NULL # For CRAN check
   
     if(is.matrix(data)){ # convert matrix to data.table
@@ -175,7 +175,7 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, ro
     gg <- gg + scale_fill_gradient2(low = col_low, mid = col_midpoint, high = col_high, 
                                     name = legend_title, 
                                     midpoint = midpoint, na.value = na.value, limits = limits)
-    gg <- gg + theme(text = element_text(size=textSize), axis.text.x = element_text(angle = angle.x, hjust = 1))
+    gg <- gg + theme(text = element_text(size=text.size), axis.text.x = element_text(angle = angle.x, hjust = 1))
     gg <- gg + theme(legend.key.height=unit(0.1,"npc"),
                      legend.key.width=unit(0.08,"npc"))
     if(!missing(add.text)){

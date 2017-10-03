@@ -4,7 +4,7 @@ library(testthat)
 
 context("#### bootGLS ####")
 
-# {{{ linear model
+## * linear model
 
 set.seed(10)
 n <- 1e2
@@ -27,7 +27,7 @@ for(iSim in 1:n.sim){ # iSim <- 1
         m.lm <- lm(Y ~ G, data = df)
 
         resH1 <- bootGLS(m.lm, n.boot = n.boot)
-        resH0 <- bootGLS(m.lm, n.boot = n.boot, GROUPvar = "G")
+        resH0 <- bootGLS(m.lm, n.boot = n.boot, var.group = "G")
 
         ls.CI[[iDiff]] <- rbind(ls.CI[[iDiff]],
                                 c(resH0$p.value["G"]>0.05,resH1$p.value["G"]>0.05)
@@ -42,13 +42,9 @@ for(iSim in 1:n.sim){ # iSim <- 1
 }
 close(pb)
 
-# }}}
 
-# {{{ under H1
+## * under H1
 
-# }}}
-
-# {{{
 test.sim <- FALSE
 
 if(test.sim){
@@ -89,4 +85,4 @@ if(test.sim){
   )
   
 }
-# }}}
+

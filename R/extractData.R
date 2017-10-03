@@ -1,6 +1,6 @@
 #' @title Extract data from a model
 #' 
-#' @description Extract data from a model using \code{nlme::getData}, \code{riskRegression::CoxDesign} or \code{model.frame}.. 
+#' @description Extract data from a model using \code{nlme::getData}, \code{riskRegression::coxDesign} or \code{model.frame}.. 
 #' If it fails it will try to extract it by its name according to \code{model$call$data}.
 #' 
 #' @param object the fitted model.
@@ -56,7 +56,7 @@
 extractData <- function(object, force = FALSE, convert2dt = TRUE){
   
   ## check arguments
-  validLogical(convert2dt, validLength = 1)
+  validLogical(convert2dt, valid.length = 1)
   
   ## use extractors 
   if(any(class(object) %in% c("gls","gnls","lme","lmList","nlme","nls"))){ # nlme package
@@ -72,10 +72,10 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
 
   }else if(any(class(object) %in% c("coxph","cph"))){
     requireNamespace("riskRegression")
-    data <- try(riskRegression::CoxDesign(object), silent = TRUE)    
-    strataVar <- riskRegression::CoxVariableName(object)$stratavars.original
+    data <- try(riskRegression::coxDesign(object), silent = TRUE)    
+    var.strata <- riskRegression::coxVariableName(object)$strata.vars.original
     
-    if(length(strataVar)>0){ 
+    if(length(var.strata)>0){ 
       
       if(as.character(object$call$data) %in% ls()){
         data2 <- eval(object$call$data)
@@ -84,7 +84,7 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
       }
       
       data2 <- as.data.table(data2)
-      data <- cbind(data, data2[,.SD,.SDcols = strataVar])
+      data <- cbind(data, data2[,.SD,.SDcols = var.strata])
     }
     
   }else{

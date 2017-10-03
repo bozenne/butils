@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: maj 26 2017 (13:56) 
 ## Version: 
-## last-updated: maj 26 2017 (14:17) 
+## last-updated: okt  3 2017 (16:22) 
 ##           By: Brice Ozenne
-##     Update #: 3
+##     Update #: 7
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -24,7 +24,6 @@
 #' @param type Can be either "correlation" or "covariance".
 #' @param individual cluster for which the variance covariance matrix should be returned
 #' @param upper logical value indicating whether the upper triangle of the distance matrix should be returned
-#' @param addId the id name at the row and col names
 #' @param plot should the correlation matrix be displayed. \emph{logical}.
 #' @param args.plot a list of arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed
 #' @param output how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.
@@ -48,11 +47,11 @@
 #' }
 #' @keywords function correlation display gls
 #' @export
-getSigmaGLS <- function(gls, data = NULL, type = "covariance", upper = NULL, individual = NULL, addId = TRUE,
+getSigmaGLS <- function(gls, data = NULL, type = "covariance", upper = NULL, individual = NULL, 
                         plot = TRUE, args.plot = list(), output = "matrix", trace = 1){
   
-  validCharacter(output, validValues = c("data.table","matrix","plot"), validLength = 1, method = "getSigmaGLS")
-  validCharacter(type, validValues = c("correlation","covariance"), validLength = 1, method = "getSigmaGLS")
+  validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "getSigmaGLS")
+  validCharacter(type, valid.values = c("correlation","covariance"), valid.length = 1, method = "getSigmaGLS")
   if(is.null(data)){
     data <- extractData(gls, force = TRUE, convert2dt = FALSE)
   }
