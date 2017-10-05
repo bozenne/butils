@@ -16,7 +16,4 @@ Internal function
 }
 \examples{
 
-e.lm <- lm(Y~X, data = data.frame(Y=1:5,X=1:5))
-butils:::evalInParentEnv(e.lm$call$data, envir = environment())
-
 }

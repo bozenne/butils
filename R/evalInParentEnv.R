@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: okt  5 2017 (10:48) 
 ## Version: 
-## last-updated: okt  5 2017 (12:39) 
+## last-updated: okt  5 2017 (13:45) 
 ##           By: Brice Ozenne
-##     Update #: 4
+##     Update #: 6
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,11 +21,6 @@
 #' 
 #' @param name character string containing the name of the object to get.
 #' @param envir the environment from which to look for the object.
-#' 
-#' @examples 
-#' 
-#' e.lm <- lm(Y~X, data = data.frame(Y=1:5,X=1:5))
-#' butils:::evalInParentEnv(e.lm$call$data, envir = environment())
 #' 
 evalInParentEnv <- function(name, envir){
   
