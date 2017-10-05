@@ -21,11 +21,11 @@ for(iSim in 1:n.sim){ # iSim <- 1
     for(iDiff in 1:2){ # iDiff <- 1
         Y1 <- rnorm(n, mean = 0)
         Y2 <- rnorm(n, mean = c(0,diff)[iDiff])
-        df <- rbind(data.frame(Y=Y1,G=1),
+        df.sim <- rbind(data.frame(Y=Y1,G=1),
                     data.frame(Y=Y2,G=2)            
                     )
-        m.lm <- lm(Y ~ G, data = df)
-
+        m.lm <- lm(Y ~ G, data = df.sim)
+        
         resH1 <- bootGLS(m.lm, n.boot = n.boot)
         resH0 <- bootGLS(m.lm, n.boot = n.boot, var.group = "G")
 

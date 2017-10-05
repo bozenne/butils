@@ -131,22 +131,23 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
   
   ## extract the data used to fit the model
   if(is.null(data)){
-    originalData <- extractData(object, force = TRUE, convert2dt = TRUE)
+      originalData <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+      ## cannot use model.frame = TRUE otherwise the strata variable are combined into one
   }else{
-    originalData <- copy(as.data.table(data))
-    setnames(originalData, old = coxInfo$time, new = "stop")
+      originalData <- copy(as.data.table(data))
   }
+  setnames(originalData, old = coxInfo$time, new = "stop")
   
   ## initialize newdata
   if(is.null(newdata)){
-    if(length(name.X)>0){
-      newdata <- originalData[,.SD,.SDcols=c("stop",name.X)]
-    }else{
-      newdata <- originalData[,.SD,.SDcols = "stop"]
-    }        
-    init.newdata <- TRUE
+      if(length(name.X)>0){
+          newdata <- originalData[,.SD,.SDcols=c("stop",name.X)]
+      }else{
+          newdata <- originalData[,.SD,.SDcols = "stop"]
+      }        
+      init.newdata <- TRUE
   }else{
-    init.newdata <- FALSE
+      init.newdata <- FALSE
   }
   
   ## add strata

@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: maj 25 2017 (20:41) 
 ## Version: 
-## last-updated: maj 26 2017 (15:18) 
+## last-updated: okt  5 2017 (11:00) 
 ##           By: Brice Ozenne
-##     Update #: 44
+##     Update #: 45
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -23,7 +23,7 @@ library(lme4)
 library(merTools)
 library(AICcmodavg)
 
-# {{{ linear model
+## * linear model
 
 set.seed(10)
 n <- 100
@@ -116,9 +116,7 @@ test_that("linear model - 2 variables", {
     ## expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
 })
 
-# }}}
-
-# {{{ linear model no intercept
+## * linear model no intercept
 set.seed(10)
 n <- 100
 dd <- data.frame(x0 = rnorm(n),

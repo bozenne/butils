@@ -76,7 +76,6 @@ m.gls2 <- gls(Y~X1+X2+X3,
               correlation = corCompSymm(form = ~ 1 |G), data = d)
 calcR2(m.gls2)
 
-
 }
 \references{
 A. Buse (1973). Goodness of Fit in Generalized Least Squares Estimation. The American Statistician,, Vol. 27, No. 3.

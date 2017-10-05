@@ -85,9 +85,9 @@ bootGLS <- function(object,
                     var.group = NULL,
                     load.library = "nlme",
                     seed = 10){
-  
+
   if(is.null(data)){
-    data <- extractData(object, force = TRUE, convert2dt = TRUE)
+    data <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
   }else{
     data <- copy(as.data.table(data))
   }
