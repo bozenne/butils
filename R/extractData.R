@@ -62,11 +62,11 @@ extractData <- function(object, model.frame = FALSE, convert2dt = TRUE){
     if(model.frame){ ## use extractors 
         if(any(class(object) %in% c("gls","gnls","lme","lmList","nlme","nls"))){ # nlme package
       
-      name.data <- as.character(object$call$data)
       
       # assign the dataset to the object if not in the current environment
-      if(name.data %in% ls() == FALSE){
-        object$data <- getInParentEnv(name.data, environment())
+      name.data <- as.character(object$call$data)
+      if((length(name.data) == 1) && (name.data %in% ls() == FALSE)){
+        object$data <- evalInParentEnv(object$call$data, environment())
       }
       
       data <- try(nlme::getData(object), silent = TRUE)
@@ -79,7 +79,7 @@ extractData <- function(object, model.frame = FALSE, convert2dt = TRUE){
       
       if(length(strataVar)>0){ 
         
-        data2 <- getInParentEnv(as.character(object$call$data), environment())
+        data2 <- evalInParentEnv(object$call$data, environment())
         
         data2 <- as.data.table(data2)
         data <- cbind(data, data2[,.SD,.SDcols = strataVar])
@@ -98,7 +98,7 @@ extractData <- function(object, model.frame = FALSE, convert2dt = TRUE){
         data <- try(eval(object$call$data), silent = TRUE)        
         ## useful when object$call$data = dt[x %in% "a"] which is incompatible with as.character
         if("try-error" %in% class(data)){
-            data <- getInParentEnv(as.character(object$call$data), environment())
+            data <- evalInParentEnv(object$call$data, environment())
         }
         if("function" %in% class(data)){
             stop("data has the same name as a function \n",

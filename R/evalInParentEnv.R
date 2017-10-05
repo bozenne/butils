@@ -1,11 +1,11 @@
-### getInParentEnv.R --- 
+### evalInParentEnv.R --- 
 #----------------------------------------------------------------------
 ## author: Brice Ozenne
 ## created: okt  5 2017 (10:48) 
 ## Version: 
-## last-updated: okt  5 2017 (10:48) 
+## last-updated: okt  5 2017 (12:39) 
 ##           By: Brice Ozenne
-##     Update #: 1
+##     Update #: 4
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,22 +21,34 @@
 #' 
 #' @param name character string containing the name of the object to get.
 #' @param envir the environment from which to look for the object.
-getInParentEnv <- function(name, envir){
+#' 
+#' @examples 
+#' 
+#' e.lm <- lm(Y~X, data = data.frame(Y=1:5,X=1:5))
+#' butils:::evalInParentEnv(e.lm$call$data, envir = environment())
+#' 
+evalInParentEnv <- function(name, envir){
   
+  ### ** find parent environments
   frames <- sys.status()
   all.frames <- sapply(1:length(frames$sys.frames), function(x){identical(parent.frame(x),globalenv())})
   index.parents <- which(all.frames==FALSE)
   n.parents <- length(index.parents)
   
+  ### ** look in parent environments
   iParent <- 1
   res <- NULL
-  while(iParent <= n.parents){ # iParent <- 1
-    if(name %in% ls(envir = parent.frame(iParent))){
-      res <- get(name, envir = parent.frame(iParent))
-      iParent <- n.parents + 1
-    }else{
-      iParent <- iParent + 1     
-    }
+  cv <- FALSE
+  while((iParent <= n.parents) && (cv == FALSE)){ # iParent <- 1
+    
+    res <- try(eval(name, envir = parent.frame(iParent)))
+      
+      if("try-error" %in% class(res)){
+        iParent <- iParent + 1     
+      }else{
+        cv <- TRUE
+      }
+    
   }
   
   return(res)
@@ -44,4 +56,4 @@ getInParentEnv <- function(name, envir){
 
 
 #----------------------------------------------------------------------
-### getInParentEnv.R ends here
+### evalInParentEnv.R ends here
