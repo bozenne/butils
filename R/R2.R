@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug  8 2017 (14:03) 
 ## Version: 
-## last-updated: aug 21 2017 (17:56) 
+## last-updated: okt  5 2017 (11:05) 
 ##           By: Brice Ozenne
-##     Update #: 90
+##     Update #: 101
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -14,9 +14,13 @@
 #----------------------------------------------------------------------
 ## 
 ### Code:
+
+## * calcR2 - documentation
 #' @title Compute the R square using the predicted values
 #' @description Compute the R square using the predicted values
 #'
+#' @name calcR2
+#' 
 #' @param model the model from which the R squared should be computed.
 #' @param data the data that have been used to fit the model.
 #' @param trace should the execution of the function be traced.
@@ -85,7 +89,9 @@
 #'               correlation = corCompSymm(form = ~ 1 |G), data = d)
 #' calcR2(m.gls2)
 #'
-#' 
+
+## * function - calcR2
+#' @rdname calcR2
 #' @export
 calcR2 <- function(model, data = NULL, trace = FALSE){
 
@@ -95,9 +101,7 @@ calcR2 <- function(model, data = NULL, trace = FALSE){
     
     ff <- formula(model)
     if(is.null(data)){
-      print("start")
-      data <- extractData(model, force = TRUE, convert2dt = TRUE)
-      print("end")
+      data <- extractData(model, model.frame = FALSE, convert2dt = TRUE)
     }else{
       data <- copy(as.data.table(data))
     }
@@ -127,7 +131,7 @@ calcR2 <- function(model, data = NULL, trace = FALSE){
     Y <- data[[name.endo]]
     value0 <- mean(Y)    
     value <- predict(model, type = "response")
-    R2 <- FCTcalcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
+    R2 <- .calcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
 
     ## McFadden R2
     iff <- stats::update(ff, paste0(".~1"))
@@ -148,7 +152,7 @@ calcR2 <- function(model, data = NULL, trace = FALSE){
         imodel <- try(stats::update(model, iff, data = data), silent = TRUE)
         if(class(imodel)!="try-error"){
             value0 <- predict(imodel, type = "response")
-            pR2[iX] <- FCTcalcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
+            pR2[iX] <- .calcR2(residuals = Y - value, residuals0 = Y - value0, iV = iV)
             LR <- 2 * as.numeric(stats::logLik(model)-stats::logLik(imodel))
             pR2.LR[iX] <- 1-exp(-LR/n)
         }
@@ -161,7 +165,8 @@ calcR2 <- function(model, data = NULL, trace = FALSE){
                 partialR2.McFadden = pR2.LR))
 }
 
-FCTcalcR2 <- function(residuals, residuals0, iV){
+## * FCT.calcR2
+.calcR2 <- function(residuals, residuals0, iV){
     if(is.null(iV)){
         SS.residual <- sum(residuals^2)
         SS.total <- sum(residuals0^2)
