@@ -2,7 +2,7 @@
 % Please edit documentation in R/calcPartialResiduals.R
 \name{calcPartialResiduals}
 \alias{calcPartialResiduals}
-\title{Plot regression lines}
+\title{Compute partial residuals for linear and linear mixed models.}
 \usage{
 calcPartialResiduals(model, var, conditional = FALSE,
   interval = "confidence", level = 0.95, npoints = 100,
@@ -55,10 +55,9 @@ pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
 
 }
 \seealso{
-\code{plot.partialResiduals} for a graphical display and more examples.
+\code{plot.partialResiduals} for a graphical display and more examples.'
 }
 \author{
 Brice Ozenne
 }
-\keyword{hplot,}
 \keyword{regression}

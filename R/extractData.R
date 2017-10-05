@@ -65,7 +65,7 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
     
     # assign the dataset to the object if not in the current environment
     if(name.data %in% ls() == FALSE){
-      object$data <- findINparent(name.data, environment())
+      object$data <- getInParentEnv(name.data, environment())
     }
     
     data <- try(nlme::getData(object), silent = TRUE)
@@ -80,7 +80,7 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
       if(as.character(object$call$data) %in% ls()){
         data2 <- eval(object$call$data)
       }else{
-        data2 <- findINparent(as.character(object$call$data), environment())
+        data2 <- getInParentEnv(as.character(object$call$data), environment())
       }
       
       data2 <- as.data.table(data2)
@@ -99,7 +99,7 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
   
   ## recovery solution (could also try to search for object$data if not in object$call$data)
   if("try-error" %in% class(data) || class(data) %in% c("data.frame","data.table") == FALSE){
-    data <- findINparent(as.character(object$call$data), environment())
+    data <- getInParentEnv(as.character(object$call$data), environment())
     
     if(is.null(data)){
         stop("Could not extract the data from the model \n",
@@ -126,7 +126,7 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
 #' 
 #' @param name character string containing the name of the object to get.
 #' @param envir the environment from which to look for the object.
-findINparent <- function(name, envir){
+getInParentEnv <- function(name, envir){
 
     frames <- sys.status()
     all.frames <- sapply(1:length(frames$sys.frames), function(x){identical(parent.frame(x),globalenv())})

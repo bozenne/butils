@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr  4 2017 (15:45) 
 ## Version: 
-## last-updated: okt  3 2017 (16:08) 
+## last-updated: okt  5 2017 (10:09) 
 ##           By: Brice Ozenne
-##     Update #: 161
+##     Update #: 167
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,10 +15,12 @@
 ## 
 ### Code:
 
-# {{{ doc
+## * documentation - plot.partialResiduals
 #' @title Display an first order interaction for categorical variables
 #' @description Display an first order interaction for categorical variables
 #'
+#' @rdname plot.partialResiduals
+#' 
 #' @param x a linear model
 #' @param alpha.ggplot transparency parameter for the points or the bands
 #' @param ... additional argument to be passed to \code{partialModel}
@@ -58,11 +60,11 @@
 #' plot(pres4)
 #' 
 #' }
-# }}}
 
 
-# {{{ plot.partialResiduals
-#' @rdname plotInteraction
+## * plot.partialResiduals
+#' @rdname plot.partialResiduals
+#' @method plot partialResiduals
 #' @export
 plot.partialResiduals <- function(x, alpha.ggplot = 0.25, ...){    
 
@@ -76,7 +78,7 @@ plot.partialResiduals <- function(x, alpha.ggplot = 0.25, ...){
         stop("the partial residuals must be computed only regarding 1 or 2 variables \n")
     }
 
-    #### sort dataset
+### ** sort dataset
     x$data <- copy(x$data)
     x$partialFit <- cbind(x$partialFit, type = paste0(100*x$level,"% ",x$interval," interval"))
     if(is.null(var2)){
@@ -87,7 +89,7 @@ plot.partialResiduals <- function(x, alpha.ggplot = 0.25, ...){
         setkeyv(x$partialFit, c(var1,var2))
     }
     
-    #### display ####
+### ** display
     gg <- ggplot()
     if(is.null(var2) && !is.numeric(x$partialFit[[var1]])){
         gg <- gg + geom_point(data = x$data,
@@ -110,11 +112,10 @@ plot.partialResiduals <- function(x, alpha.ggplot = 0.25, ...){
     gg <- gg + ylab(paste0("Partial residuals \n",x$name.Y," | ",paste0(x$var,collapse = ", ")))
     print(gg)
      
-    #### export ####
+### ** export
     return(invisible(gg))
     
 }
-# }}}
 
 
 

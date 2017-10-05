@@ -1,6 +1,10 @@
-##' Compute partial residuals for linear and linear mixed models.
+
+## * documentation - calcPartialResiduals
+##' @title Compute partial residuals for linear and linear mixed models.
+##' @description Compute partial residuals for linear and linear mixed models.
 ##'
-##' @title Plot regression lines
+##' @name calcPartialResiduals
+##' 
 ##' @param model Model object (e.g. \code{lm})
 ##' @param var Variable relative to which the partial residual will be displayed.
 ##' @param conditional are the predictions conditional to the random effect? (if any)
@@ -20,9 +24,10 @@
 ##' \item{var}{variable(s) for which the partial residuals have been computed}
 ##' \item{level}{Level of confidence}
 ##' \item{name.Y}{name of the response variable}
+##'
+##' @seealso \code{plot.partialResiduals} for a graphical display and more examples.'
+##' 
 ##' @author Brice Ozenne
-##' @seealso \code{plot.partialResiduals} for a graphical display and more examples.
-##' @export
 ##' @examples
 ##' library(lava)
 ##' set.seed(10)
@@ -35,7 +40,11 @@
 ##' pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
 ##'
 ##' 
-##' @keywords hplot, regression
+##' @keywords regression
+
+## * function - calcPartialResiduals
+##' @rdname calcPartialResiduals
+##' @export
 calcPartialResiduals <- function(model,var,
                                  conditional = FALSE,
                                  interval = "confidence",                                 
@@ -277,7 +286,7 @@ calcPartialResiduals <- function(model,var,
 }
 
 
-# {{{ prediction functions
+## * predict functions
 #' @title prediction function for calcPartialResiduals
 #' @rdname FUN.predict
 #' @description Suggestion of functions to obtain confidence intervals with mixed models
@@ -335,4 +344,3 @@ predict_AICcmodavg <- function(object, newdata, level, conditional, interval, ..
 }
 # }}}
 
-# }}}
