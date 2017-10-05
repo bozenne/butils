@@ -77,11 +77,7 @@ extractData <- function(object, force = FALSE, convert2dt = TRUE){
     
     if(length(var.strata)>0){ 
       
-      if(as.character(object$call$data) %in% ls()){
-        data2 <- eval(object$call$data)
-      }else{
-        data2 <- getInParentEnv(as.character(object$call$data), environment())
-      }
+      data2 <- getInParentEnv(as.character(object$call$data), environment())
       
       data2 <- as.data.table(data2)
       data <- cbind(data, data2[,.SD,.SDcols = var.strata])
