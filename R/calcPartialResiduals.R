@@ -1,4 +1,3 @@
-
 ## * documentation - calcPartialResiduals
 ##' @title Compute partial residuals for linear and linear mixed models.
 ##' @description Compute partial residuals for linear and linear mixed models.
@@ -46,6 +45,7 @@
 ##' @rdname calcPartialResiduals
 ##' @export
 calcPartialResiduals <- function(model,var,
+                                 keep.intercept = FALSE,
                                  conditional = FALSE,
                                  interval = "confidence",                                 
                                  level = 0.95,
@@ -165,7 +165,7 @@ calcPartialResiduals <- function(model,var,
     p <- length(name.X.df)
     newdata.fit <- as.data.frame(design.df)
 
-    var.set0 <- names(design.df)[which(names(newdata.fit) %in% var == TRUE)]    
+    var.set0 <- names(newdata.fit)[which(names(newdata.fit) %in% var == TRUE)]
     if(length(var.set0)){
         for(i0 in var.set0){ # i0 <- var.set0[1]
             if(design.numeric[i0]){
@@ -177,41 +177,32 @@ calcPartialResiduals <- function(model,var,
         }
     }
     # }}}
-
+    
     # {{{ intercept
     model.formula <- FUN.formula(model)
     beta <- FUN.coef(model)
     test.intercept <- as.logical(attr(terms(model.formula),"intercept"))
+    
     if(test.intercept){
-        name.intercept <- "(Intercept)"
-        var.intercept <- "(Intercept)"
-        intercept <- beta[name.intercept]        
-    }else{
-        if(any(design.factor)){ # find reference level
+      name.intercept <- "(Intercept)"
+    }else if(any(design.factor)){ # find reference level
             design.mat <- FUN.model.matrix(model.formula, data = design.df[1,,drop=FALSE])
             attr.assign <- attr(design.mat, "assign")
             indexRef <- which(tapply(attr.assign, attr.assign, function(x){any(duplicated(x))}))
             name.intercept <- names(beta)[match(indexRef, attr.assign)]
-
-            intercept <- beta[name.intercept]
-            var.intercept <- attr(terms(model.formula), "term.labels")[indexRef]
-             
-        }else{
-            name.intercept <- NULL
-            var.intercept <- NULL
-            intercept <- 0
-        }
+    }else{
+      name.intercept <- NULL
     }
     # }}}
 
     # {{{ partial residuals
     design.mat <- model.matrix(model.formula, data = newdata.fit)    
-    design.df$pFit <- as.numeric(design.mat %*% beta)
-    if(!is.null(var.intercept) && (var.intercept %in% var)){
-        # add the residual due to the intercept
-        # since it is among the variable of interest
-        design.df$pFit <- design.df$pFit-intercept
+    if(!is.null(name.intercept) && keep.intercept){
+      # add the residual due to the intercept
+      # since it is among the variable of interest
+      design.mat[,name.intercept] <- 0
     }
+    design.df$pFit <- as.numeric(design.mat %*% beta)
     design.df$pResiduals <- newdata.fit[[name.Y]] - design.df$pFit
     # }}}
     
@@ -246,7 +237,7 @@ calcPartialResiduals <- function(model,var,
     ## convert to design matrix
     design.grid.predict <- model.matrix(model.formula, grid.predict)
     ## remove intercept
-    if(!is.null(var.intercept) && (var.intercept %in% var == FALSE)){
+    if(!is.null(name.intercept) && keep.intercept == FALSE){
         # remive the intercept from the prediction
         # when it is not among the variable of interest
         design.grid.predict[,name.intercept] <- 0

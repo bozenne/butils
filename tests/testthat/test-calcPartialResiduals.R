@@ -33,50 +33,49 @@ dd <- data.frame(x0 = rnorm(n),
                  )
 dd$y <- 5 + 2*dd$x0 + 0.5*dd$x1 + -1*(dd$x2=="B")*dd$x1 + 0.5*(dd$x2=="B") + rnorm(n, sd=0.25)
 
-lm0 <- lm(y ~ x0 + x1*x2, dd)
-
-data(iris) 
-l <- lm(Sepal.Length ~ Sepal.Width*Species,iris)
-
-test_that("linear model - 1 variable", {
-    res1 <- calcPartialResiduals(lm0, var=c("x1"))
-    res2 <- calcPartialResiduals(lm0, var=c("x1"), predictFUN = "predict")
+test_that("linear model (1) - 1 variable", {
+    lm0 <- lm(y ~ x0 + x1*x2, dd)
+  
+    res1 <- calcPartialResiduals(lm0, var=c("x1"), keep.intercept = TRUE)
+    res2 <- calcPartialResiduals(lm0, var=c("x1"), keep.intercept = FALSE)
     resGS <- plotConf(lm0, var1 = "x1", plot = FALSE)
     
-    expect_equal(res1,res2)
-
+    expect_equal(res1$data$pResiduals, as.double(resGS$y))
+    expect_equal(res1$data$pResiduals,  res2$data$pResiduals + coef(lm0)[1])
+    
     # to get normal quantile instead of student to match lava
     cst <- qnorm(1 - (1 - 0.95)/2)/qt(1 - (1 - 0.95)/2, df = lm0$df.residual)
     res1$partialFit$fit.lower <- res1$partialFit$fit - cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
     res1$partialFit$fit.upper <- res1$partialFit$fit + cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
     
-    expect_equal(as.double(resGS$x),res1$data$x1)
-    ## expect_equal(as.double(resGS$y),res1$data$pResiduals)
-    ## expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
-    ## expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
-    ## expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
-    # dev.new()
-    # plot(res1)
-    # plotConf(lm0,var1="x1")
+    expect_equal(as.double(resGS$x),res1$partialFit$x1)
+    expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
+    expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
+    expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
+    expect_equal(res1$partialFit$fit,res2$partialFit$fit + coef(lm0)[1])
+})
 
-    res1 <- calcPartialResiduals(l, var=c("Sepal.Width"))
-    res2 <- calcPartialResiduals(l, var=c("Sepal.Width"), predictFUN = "predict")
-    resGS <- plotConf(l,var1="Sepal.Width", plot = FALSE)
-    # dev.new()
-    # plot(res1)
-    # plotConf(l,var1="Sepal.Width")
-
-    expect_equal(res1,res2)
+test_that("linear model (2) - 1 variable", {
+    data(iris) 
+    lm0 <- lm(Sepal.Length ~ Sepal.Width*Species,iris)
+    
+    res1 <- calcPartialResiduals(lm0, var=c("Sepal.Width"), keep.intercept = TRUE)
+    res2 <- calcPartialResiduals(lm0, var=c("Sepal.Width"), keep.intercept = FALSE)
+    resGS <- plotConf(lm0,var1="Sepal.Width", plot = FALSE)
+    
+    expect_equal(res1$data$pResiduals, as.double(resGS$y))
+    expect_equal(res1$data$pResiduals,  res2$data$pResiduals + coef(lm0)[1])
+    
     # to get normal quantile instead of student to match lava
-    cst <- qnorm(1 - (1 - 0.95)/2)/qt(1 - (1 - 0.95)/2, df = l$df.residual)
+    cst <- qnorm(1 - (1 - 0.95)/2)/qt(1 - (1 - 0.95)/2, df = lm0$df.residual)
     res1$partialFit$fit.lower <- res1$partialFit$fit - cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
     res1$partialFit$fit.upper <- res1$partialFit$fit + cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
 
-    # expect_equal(as.double(resGS$x),res1$data[["Sepal.Width"]])
-    ## expect_equal(as.double(resGS$y),res1$data$pResiduals)
-    ## expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
-    ## expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
-    ## expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
+    expect_equal(as.double(resGS$x),res1$partialFit$Sepal.Width)
+    expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
+    expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
+    expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
+    expect_equal(res1$partialFit$fit,res2$partialFit$fit + coef(lm0)[1])
 })
 
 test_that("linear model - 2 variables", {
@@ -303,48 +302,48 @@ test_that("lme no intercept", {
 
 
 ## # {{{ gls
-## set.seed(10)
-## n <- 100
-## dd <- data.frame(x0 = rnorm(n),
-##                  x1 = seq(-3,3, length.out=n),
-##                  x2 = factor(rep(c(1,2),each=n/2), labels=c("A","B"))
-##                  )
-## dd$y <- 5 + 2*dd$x0 + 0.5*dd$x1 + -1*(dd$x2=="B")*dd$x1 + 0.5*(dd$x2=="B") + rnorm(n, sd=0.25)
-## dd$Id <- rbinom(n, size = 3, prob = 0.3)
-## lm0 <- lm(y ~ x0 + x1*x2, dd)
-## gls0 <- gls(y ~ x0 + x1*x2, correlation = corCompSymm(form=~ 1|Id), dd)
+set.seed(10)
+n <- 100
+dd <- data.frame(x0 = rnorm(n),
+                 x1 = seq(-3,3, length.out=n),
+                 x2 = factor(rep(c(1,2),each=n/2), labels=c("A","B"))
+                 )
+dd$y <- 5 + 2*dd$x0 + 0.5*dd$x1 + -1*(dd$x2=="B")*dd$x1 + 0.5*(dd$x2=="B") + rnorm(n, sd=0.25)
+dd$Id <- rbinom(n, size = 3, prob = 0.3)
+lm0 <- lm(y ~ x0 + x1*x2, dd)
+gls0 <- gls(y ~ x0 + x1*x2, correlation = corCompSymm(form=~ 1|Id), dd)
 
-## test_that("gls", {
-##     res0 <- calcPartialResiduals(lm0, var=c("x2"))
-##     suppressWarnings(
-##         res1 <- calcPartialResiduals(gls0, var=c("x2"))
-##     )
-##     suppressWarnings(
-##         res3 <- calcPartialResiduals(gls0, var=c("x2"),
-##                                      FUN.predict = "predict_AICcmodavg")
-##     )
-##     expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-2)
-##     #  plot(res0)
-##     expect_equal(res1$partialFit$fit, res0$partialFit$fit, tol = 1e-2)
-##     expect_equal(res1$partialFit$fit, res3$partialFit$fit)
-##     expect_equal(res1$partialFit$fit.lower, res0$partialFit$fit.lower, tol = 1e-1)
-##     expect_equal(res1$partialFit$fit.lower, res3$partialFit$fit.lower)
+test_that("gls", {
+    res0 <- calcPartialResiduals(lm0, var=c("x2"))
+    suppressWarnings(
+        res1 <- calcPartialResiduals(gls0, var=c("x2"))
+    )
+    suppressWarnings(
+        res3 <- calcPartialResiduals(gls0, var=c("x2"),
+                                     FUN.predict = "predict_AICcmodavg")
+    )
+    expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-2)
+    #  plot(res0)
+    expect_equal(res1$partialFit$fit, res0$partialFit$fit, tol = 1e-2)
+    expect_equal(res1$partialFit$fit, res3$partialFit$fit)
+    expect_equal(res1$partialFit$fit.lower, res0$partialFit$fit.lower, tol = 1e-1)
+    expect_equal(res1$partialFit$fit.lower, res3$partialFit$fit.lower)
 
-##     res0 <- calcPartialResiduals(lm0, var=c("x1","x2"))
-##     suppressWarnings(
-##         res1 <- calcPartialResiduals(gls0, var=c("x1","x2"))
-##     )
-##     suppressWarnings(
-##         res3 <- calcPartialResiduals(gls0, var=c("x1","x2"),
-##                                      FUN.predict = "predict_AICcmodavg")
-##     )
-##     expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-3)
-##     # plot(res1)
-##     expect_equal(res1$partialFit$fit, res0$partialFit$fit, tol = 1e-2)
-##     expect_equal(res1$partialFit$fit, res3$partialFit$fit)
-##     expect_equal(res1$partialFit$fit.lower, res0$partialFit$fit.lower, tol = 1e-1)
-##     expect_equal(res1$partialFit$fit.lower, res3$partialFit$fit.lower)
-## })
+    res0 <- calcPartialResiduals(lm0, var=c("x1","x2"))
+    suppressWarnings(
+        res1 <- calcPartialResiduals(gls0, var=c("x1","x2"))
+    )
+    suppressWarnings(
+        res3 <- calcPartialResiduals(gls0, var=c("x1","x2"),
+                                     FUN.predict = "predict_AICcmodavg")
+    )
+    expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-3)
+    # plot(res1)
+    expect_equal(res1$partialFit$fit, res0$partialFit$fit, tol = 1e-2)
+    expect_equal(res1$partialFit$fit, res3$partialFit$fit)
+    expect_equal(res1$partialFit$fit.lower, res0$partialFit$fit.lower, tol = 1e-1)
+    expect_equal(res1$partialFit$fit.lower, res3$partialFit$fit.lower)
+})
 
 ## lm0 <- lm(y ~ 0 + x0 + x1*x2, dd)
 ## gls0 <- gls(y ~ 0 + x0 + x1*x2, correlation = corCompSymm(form=~ 1|Id), dd)
