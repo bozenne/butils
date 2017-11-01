@@ -14,6 +14,3 @@ evalInParentEnv(name, envir)
 \description{
 Internal function
 }
-\examples{
-
-}

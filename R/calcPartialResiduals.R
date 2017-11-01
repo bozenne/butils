@@ -6,6 +6,7 @@
 ##' 
 ##' @param model Model object (e.g. \code{lm})
 ##' @param var Variable relative to which the partial residual will be displayed.
+##' @param keep.intercept should the partial residual be computed keeping the contribution of the reference level?
 ##' @param conditional are the predictions conditional to the random effect? (if any)
 ##' @param interval Type of interval calculation ("confidence" or "prediction").
 ##' @param level Level of confidence limits (default 95\%)
@@ -15,7 +16,16 @@
 ##' @param \dots additional arguments to lower level functions
 ##' 
 ##' @details
-##' IMPORTANT: When using mixed models, the confidence and prediction intervals ignore the uncertainty of the covariance parameters.
+##' In a linear model:
+##' \deqn{Y = \alpha + \beta X + \gamma Z + \varepsilon}
+##' The partial residuals are defined by:
+##' \deqn{\varepsilon_{X} = \beta X + \varepsilon}
+##' or
+##' \deqn{\varepsilon_{X} = \alpha + \beta X + \varepsilon}
+##' depending on the value of the argument \code{keep.intercept}.
+##' 
+##' When using mixed models, the confidence and prediction intervals
+##' ignore the uncertainty of the covariance parameters.
 ##' 
 ##' @return list with following members:
 ##' \item{data}{Original dataset with an additional column containing the partial residuals}
