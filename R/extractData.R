@@ -74,8 +74,8 @@ extractData <- function(object, model.frame = FALSE, convert2dt = TRUE){
     }else if(any(class(object) %in% c("coxph","cph"))){
       
       requireNamespace("riskRegression")
-      data <- try(riskRegression::coxDesign(object), silent = TRUE)
-      strataVar <- riskRegression::coxVariableName(object)$stratavars.original
+      data <- try(riskRegression_coxDesign(object), silent = TRUE)
+      strataVar <- riskRegression_coxVariableName(object)$stratavars.original
       
       if(length(strataVar)>0){ 
         

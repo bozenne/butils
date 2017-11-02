@@ -123,7 +123,7 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
   . <- Utimes <- xxSTRATAxx <- n.event <- n.censor <- survival.lower <- survival.upper <- strata <- status <- survival <- NULL
 
   ## find all strata in the original object
-  coxInfo <- riskRegression::coxVariableName(object)
+  coxInfo <- riskRegression_coxVariableName(object)
   name.Xstrata <- coxInfo$strata.vars.original
   #terms.special <- prodlim::strip.terms(terms(coxFormula(object)), special = "strata")
   name.Xlp <- coxInfo$lpvars#attr(terms.special, "term.labels")
