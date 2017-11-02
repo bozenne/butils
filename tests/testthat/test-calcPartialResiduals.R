@@ -37,7 +37,7 @@ dd$y.center <- dd$y-mean(dd$y)
 
 ## * linear model
 test_that("linear model (1) - 1 variable", {
-    lm0 <- lm(y ~ x0 + x1*x2, dd)
+    lm0 <- lm(y ~ x0 + x1*x2, data = dd)
   
     res1 <- calcPartialResiduals(lm0, var=c("x1"), keep.intercept = TRUE)
     res2 <- calcPartialResiduals(lm0, var=c("x1"), keep.intercept = FALSE)
@@ -82,7 +82,7 @@ test_that("linear model (2) - 1 variable", {
 })
 
 test_that("linear model (1) - 2 variables", {
-    lm0 <- lm(y ~ x0 + x1*x2, dd)
+    lm0 <- lm(y ~ x0 + x1*x2, data = dd)
 
     res1 <- calcPartialResiduals(lm0, var=c("x1","x2"), keep.intercept = TRUE)
     res2 <- calcPartialResiduals(lm0, var=c("x1","x2"), keep.intercept = FALSE)
@@ -132,7 +132,7 @@ test_that("linear model (2) - 2 variables", {
 ## * linear model no intercept
 test_that("linear model - 1 variables no intercept", {
     ## only one continuous variable
-    lm0 <- lm(y ~ 0 + x0, dd)
+    lm0 <- lm(y ~ 0 + x0, data = dd)
     lm0.center <- lm(y.center ~ 0 +  x0, data = dd)
     
     res1 <- calcPartialResiduals(lm0, var=c("x0"))
@@ -145,7 +145,7 @@ test_that("linear model - 1 variables no intercept", {
     # plot(res1)
 
     ## only one categorical variable
-    lm0 <- lm(y ~ 0 + x2, dd)
+    lm0 <- lm(y ~ 0 + x2, data = dd)
     res1 <- calcPartialResiduals(lm0, var=c("x2"), keep.intercept = TRUE)
     expect_equal(res1$data$x2, dd$x2)
     expect_equal(res1$data$pResiduals, dd$y)
@@ -224,9 +224,9 @@ test_that("no random effect no intercept", {
 test_that("gls", {
     gls0 <- gls(y ~ x0 + x1*x2, correlation = corCompSymm(form=~ 1|Id), dd)
 
-    gls0.X <- model.matrix(formula(gls0),getData(gls0))
+    gls0.X <- model.matrix(y ~ x0 + x1*x2,dd)
     
-    res1 <- calcPartialResiduals(gls0, var=c("x0"), keep.intercept = FALSE)
+    res1 <- calcPartialResiduals(gls0,  var=c("x0"), keep.intercept = FALSE)
     res2 <- calcPartialResiduals(gls0, var=c("x0"), keep.intercept = TRUE)
     GS.F <- as.double(gls0.X[,"x0"] * coef(gls0)["x0"] + residuals(gls0))
     GS.T <- as.double(coef(gls0)["(Intercept)"] +  gls0.X[,"x0"] * coef(gls0)["x0"] + residuals(gls0))

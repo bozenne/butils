@@ -130,7 +130,15 @@ calcPartialResiduals <- function(model,var,
     }
     
     FUN.formula <- function(model){
-        formula(terms(model))
+      ff <- try(formula(terms(model)), silent = TRUE)
+      if("try-error" %in% class(ff)){
+        ff <- evalInParentEnv(model$call[[2]])
+      }
+      
+      if("formula" %in% class(ff) == FALSE){
+       stop("Unable to extract the formula from the model \n")
+      }
+      return(ff)
     }
     # }}}
 
