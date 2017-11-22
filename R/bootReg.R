@@ -259,7 +259,7 @@ bootReg.lme <- bootReg.gls
             stop("data must not contain a column \"XXnXX\" \n")
         }
     
-        dt.clusterByStrata <- data[,.(XXnXX=length(unique(.SD[[name.cluster]]))),by=strata]
+        dt.clusterByStrata <- data[,list(XXnXX=length(unique(.SD[[name.cluster]]))),by=strata]
         data <- data[dt.clusterByStrata,,on=strata]
     }
     
@@ -268,7 +268,7 @@ bootReg.lme <- bootReg.gls
             if(is.null(strata)){
                 new.cluster <- sample(n.cluster,replace=TRUE) # random of ids
             }else{
-                new.cluster <- unlist(data[,.(.(new.cluster = unique(.SD[[2]])[sample(.SD[[1]][1],replace=TRUE)])),
+                new.cluster <- unlist(data[,list(list(new.cluster = unique(.SD[[2]])[sample(.SD[[1]][1],replace=TRUE)])),
                                            by=strata,.SDcols = c("XXnXX",name.cluster)][[2]])
             }
             
