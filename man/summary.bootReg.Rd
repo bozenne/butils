@@ -34,4 +34,7 @@ to compute the confidence intervals.
 
 P.value are computed by finding the confidence level
 for which one bound of the confidence interval touches 0.
+
+When the number of bootstrap sample is too low, the function (in fact \code{boot.ci}) will return warnings like
+"extreme order statistics used as endpoints".
 }

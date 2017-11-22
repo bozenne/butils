@@ -14,17 +14,19 @@ bootReg(object, ...)
   FUN.stdError = NULL, data = NULL, load.library = NULL, ...)
 
 \method{bootReg}{gls}(object, cluster, type = "coef", FUN.estimate = NULL,
-  FUN.stdError = NULL, data = NULL, load.library = NULL, ...)
+  FUN.stdError = NULL, data = NULL, load.library = "nlme", ...)
 
 \method{bootReg}{lme}(object, cluster, type = "coef", FUN.estimate = NULL,
-  FUN.stdError = NULL, data = NULL, load.library = NULL, ...)
+  FUN.stdError = NULL, data = NULL, load.library = "nlme", ...)
 
-.bootReg(object, data, name.cluster, FUN.estimate, FUN.stdError,
-  FUN.resample = NULL, FUN.iid = NULL, n.boot = 1000, n.cpus = 1,
-  load.library, seed = 1, trace = TRUE)
+.bootReg(object, data, strata = NULL, name.cluster, FUN.estimate,
+  FUN.stdError, FUN.resample = NULL, FUN.iid = NULL, n.boot = 1000,
+  n.cpus = 1, load.library, seed = 1, trace = TRUE)
 }
 \arguments{
 \item{object}{the fitted model.}
+
+\item{...}{ignored}
 
 \item{type}{the type of test for which the bootstrap should be performed. Can be \code{"coef"}, \code{"anova"}, \code{"publish"}.
 Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.stdError}.}
@@ -39,7 +41,13 @@ Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.
 
 \item{cluster}{the variable indicating the level where the sample is i.i.d. Only required for gls with no correlation argument.}
 
+\item{strata}{if not \code{NULL}, a stratified bootstrap is performed according to this variable.}
+
+\item{name.cluster}{internal argument.}
+
 \item{FUN.resample}{the function used simulate new data under the model. Default is \code{NULL} which corresponds to a non-parametric bootstrap.}
+
+\item{FUN.iid}{the function used to extract the influence function from the model.}
 
 \item{n.boot}{the number of replications. Should be a large number.}
 

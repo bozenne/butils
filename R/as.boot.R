@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 22 2017 (09:41) 
 ## Version: 
-## Last-Updated: nov 22 2017 (16:23) 
+## Last-Updated: nov 22 2017 (17:49) 
 ##           By: Brice Ozenne
-##     Update #: 10
+##     Update #: 15
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -43,19 +43,20 @@
 #' @export
 as.boot.bootReg <- function(object){
 
+    n.boot.effective <- NROW(object$boot.estimate)
+    n.data <- NROW(object$data)
     out <- list(t0 = object$estimate,
                 t = object$boot.estimate,
-                R = object$n.boot,
+                R = n.boot.effective,
                 data = object$data,
                 seed = object$.Random.seed,
                 statistic = object$FUN.estimate,
                 sim = "ordinary",
                 call = quote(boot(data = XX, statistic = XX, R = XX)),
                 stype = "i",
-                strata = rep(1,object$n.boot),
-                weights = rep(1/object$n.boot, object$n.boot)
+                strata = object$strata,
+                weights = rep(1/n.data, n.data)
                 )
-        
     class(out) <- "boot"
     return(out)
  

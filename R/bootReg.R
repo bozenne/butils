@@ -6,6 +6,7 @@
 #' 
 #' @param object the fitted model.
 #' @param data the data that have been used to fit the model.
+#' @param strata if not \code{NULL}, a stratified bootstrap is performed according to this variable.
 #' @param type the type of test for which the bootstrap should be performed. Can be \code{"coef"}, \code{"anova"}, \code{"publish"}.
 #' Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.stdError}.
 #' @param cluster the variable indicating the level where the sample is i.i.d. Only required for gls with no correlation argument.
@@ -134,7 +135,7 @@ bootReg.gls <- function(object,
                         FUN.estimate = NULL,
                         FUN.stdError = NULL,
                         data = NULL,                        
-                        load.library = NULL,
+                        load.library = "nlme",
                         ...){
 
 ### ** extract data
@@ -214,7 +215,7 @@ bootReg.lme <- bootReg.gls
 ## * .bootReg function
 #' @rdname bootReg
 #' @export
-.bootReg <- function(object, data, name.cluster,
+.bootReg <- function(object, data, strata = NULL, name.cluster,
                      FUN.estimate, FUN.stdError, FUN.resample = NULL, FUN.iid = NULL,
                      n.boot = 1e3, n.cpus = 1, load.library, seed = 1,
                      trace = TRUE){
@@ -239,6 +240,7 @@ bootReg.lme <- bootReg.gls
     ls.index.cluster <- lapply(unique.cluster, function(x){
         which(data[[name.cluster]]==x)
     })
+    names(ls.index.cluster) <- unique.cluster
     n.obs.cluster <- unlist(lapply(ls.index.cluster,length))
 
     
@@ -249,15 +251,32 @@ bootReg.lme <- bootReg.gls
 ### ** non-parametric bootstrap simulation
     FUN.resample.save <- FUN.resample
     response.var <- NULL
+    if(!is.null(strata)){
+        if(any(strata %in% names(data) == FALSE)){
+            stop("argument \'strata\' contains names that are not in data \n")
+        }
+        if("XXnXX" %in% names(data)){
+            stop("data must not contain a column \"XXnXX\" \n")
+        }
+    
+        dt.clusterByStrata <- data[,.(XXnXX=length(unique(.SD[[name.cluster]]))),by=strata]
+        data <- data[dt.clusterByStrata,,on=strata]
+    }
     
     if(is.null(FUN.resample)){
         FUN.resample <- function(object, data, response.var, ...){
-            new.cluster <- sample(n.cluster,replace=TRUE) # random of ids    
+            if(is.null(strata)){
+                new.cluster <- sample(n.cluster,replace=TRUE) # random of ids
+            }else{
+                new.cluster <- unlist(data[,.(.(new.cluster = unique(.SD[[2]])[sample(.SD[[1]][1],replace=TRUE)])),
+                                           by=strata,.SDcols = c("XXnXX",name.cluster)][[2]])
+            }
+            
             data.new <- data[unlist(ls.index.cluster[new.cluster])] # randomly pick individuals to form the new dataset
             newID <- unlist(lapply(1:n.cluster, function(i){ # i <- 1
                 rep(i,n.obs.cluster[new.cluster[i]])
             })) # form unique ID for individuals
-            data.new[, (name.cluster) := newID] # set the new ids        
+            data.new[, (name.cluster) := newID] # set the new ids
             return(data.new)
         }
     }else if(identical(FUN.resample,"simulate")){
@@ -346,7 +365,11 @@ bootReg.lme <- bootReg.gls
     })))
     
     Mestimate.boot <- do.call("rbind",lapply(ls.boot[index.ok], function(iB){iB["estimate",]}))
-    MstdError.boot <- do.call("rbind",lapply(ls.boot[index.ok], function(iB){iB["stdError",]}))
+    if(!is.null(FUN.stdError)){
+        MstdError.boot <- do.call("rbind",lapply(ls.boot[index.ok], function(iB){iB["stdError",]}))
+    }else{
+        MstdError.boot <- NULL
+    }
 
     if(!is.null(FUN.iid)){
         iid <- do.call(FUN.iid, args = list(object))
@@ -355,6 +378,12 @@ bootReg.lme <- bootReg.gls
     }
     
 ### ** export
+    if(is.null(strata)){
+        strata <- 1:NROW(data)
+    }else{
+        strata <- data[,interaction(.SD), .SDcols = strata]
+    }
+    
     out <- list(call = object$call,
                 estimate = e.coef,
                 stdError = e.stdError,
@@ -364,6 +393,7 @@ bootReg.lme <- bootReg.gls
                 n.boot = n.boot,
                 data = data,
                 seed = seed,
+                strata = strata,
                 .Random.seed = .Random.seed_save,
                 FUN.estimate = FUN.estimate,
                 FUN.stdError = FUN.stdError,

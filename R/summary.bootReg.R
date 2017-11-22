@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 21 2017 (17:49) 
 ## Version: 
-## Last-Updated: nov 22 2017 (16:22) 
+## Last-Updated: nov 22 2017 (17:44) 
 ##           By: Brice Ozenne
-##     Update #: 165
+##     Update #: 196
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -35,6 +35,9 @@
 #' P.value are computed by finding the confidence level
 #' for which one bound of the confidence interval touches 0.
 #'
+#' When the number of bootstrap sample is too low, the function (in fact \code{boot.ci}) will return warnings like
+#' "extreme order statistics used as endpoints".
+#' 
 #' @method summary bootReg
 #' @export
 summary.bootReg <- function(object, p.value = TRUE,
@@ -92,14 +95,14 @@ summary.bootReg <- function(object, p.value = TRUE,
                              "stud" = "studentized",
                              "perc" = "percentile",
                              "bca" = "BCa")
-        cat("Confidence intervals estimated using ",label.type," boostrap - see help(boot.ci) \n")        
+        cat("Confidence intervals estimated using ",label.type," boostrap - see help(boot.ci) \n", sep = "")        
     }
 
 ### ** By subset
     if(!is.null(n.subset)){ # seq.length.out <- 5
         cat("\n\n") 
         
-        seqIndex <- round(seq(1,object$n.boot+1, length.out = n.subset+1))
+        seqIndex <- round(seq(1,boot.object$R+1, length.out = n.subset+1))
         M.index <- cbind(seqIndex[-length(seqIndex)],(seqIndex-1)[-1])
         n.Index <- NROW(M.index)
   
@@ -147,20 +150,39 @@ summary.bootReg <- function(object, p.value = TRUE,
     name.estimate <- names(boot.object$t0)
     n.estimate <- length(name.estimate)
 
+    index.lowerCI <- switch(type,
+                            "norm" = 2,
+                            "naive" = 4,
+                            "stud" = 4,
+                            "perc" = 4,
+                            "bca" = 4)
+    index.upperCI <- switch(type,
+                            "norm" = 3,
+                            "naive" = 5,
+                            "stud" = 5,
+                            "perc" = 5,
+                            "bca" = 5)
+
 ### ** functions
     calcCI <- function(boot.object, conf, type, index,
                        stdError, boot.stdError, iid,
                        slot.boot.ci, name.estimate){
-        
         ls.out <- lapply(index, function(iP){ # iP <- 1
-            iBoot.object <- boot.object
-            iBoot.object$t0 <- c(boot.object$t0[iP],stdError[iP])
-            iBoot.object$t <- cbind(boot.object$t[,iP,drop=FALSE],boot.stdError[,iP,drop=FALSE])
-            resBoot.ci <- boot::boot.ci(iBoot.object, conf = conf, type = type, index = 1:2,
-                                        var.t0 = stdError, var.t = boot.stdError[,iP],
-                                        t0 = boot.object$t0[iP], t = boot.object$t[,iP],
-                                        L = iid[,iP])
-            setNames(resBoot.ci[[slot.boot.ci]][4:5],c("lower","upper"))
+
+            if(type == "norm"){
+                resBoot.ci <- boot::boot.ci(boot.object, conf = conf, type = type, index = iP)
+            }else{
+                iBoot.object <- boot.object
+                iBoot.object$t0 <- c(boot.object$t0[iP],stdError[iP])
+                iBoot.object$t <- cbind(boot.object$t[,iP,drop=FALSE],boot.stdError[,iP,drop=FALSE])
+
+                resBoot.ci <- boot::boot.ci(iBoot.object, conf = conf, type = type, index = 1:2,
+                                            var.t0 = stdError, var.t = boot.stdError[,iP],
+                                            t0 = boot.object$t0[iP], t = boot.object$t[,iP],
+                                            L = iid[,iP])
+            }
+            out <- resBoot.ci[[slot.boot.ci]][index.lowerCI:index.upperCI]
+            return(setNames(out,c("lower","upper")))
         })
         out <- do.call(rbind,ls.out)
         rownames(out) <- name.estimate
@@ -181,17 +203,21 @@ summary.bootReg <- function(object, p.value = TRUE,
                 iBoot.object$t0 <- c(boot.object$t0[iP],stdError[iP])
                 iBoot.object$t <- cbind(boot.object$t[,iP,drop=FALSE],boot.stdError[,iP,drop=FALSE])
                 sign.estimate <- boot.object$t0[iP]>0
-                side.CI <- c(5,4)[(sign.estimate)+1]
+                side.CI <- c(index.upperCI,index.lowerCI)[(sign.estimate)+1]
 
                 ## search confidence level such that quantile of CI which is close to 0
                 optimum <- discreteRoot(fn=function(p.value){ 
                     if(p.value==1){
                         iRes <- iBoot.object$t0[1]
                     }else{ # p.value <- 0.55
-                        iRes <- boot::boot.ci(iBoot.object, conf = 1 - p.value, type = type, index = 1:2,
-                                              var.t0 = stdError[iP], var.t = boot.stdError[,iP],
-                                              t0 = boot.object$t0[iP], t = boot.object$t[,iP],
-                                              L = iid[,iP])[[slot.boot.ci]][side.CI]
+                        if(type == "norm"){
+                            iRes <- boot::boot.ci(boot.object, conf = conf, type = type, index = iP)[[slot.boot.ci]][side.CI]
+                        }else{
+                            iRes <- boot::boot.ci(iBoot.object, conf = 1 - p.value, type = type, index = 1:2,
+                                                  var.t0 = stdError[iP], var.t = boot.stdError[,iP],
+                                                  t0 = boot.object$t0[iP], t = boot.object$t[,iP],
+                                                  L = iid[,iP])[[slot.boot.ci]][side.CI]
+                        }
                     }
                     return(iRes)
                 }, grid = grid, increasing = (sign.estimate==1), check = FALSE)
