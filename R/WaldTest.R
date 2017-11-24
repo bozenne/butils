@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 23 2017 (14:57) 
 ## Version: 
-## Last-Updated: nov 24 2017 (09:30) 
+## Last-Updated: nov 24 2017 (09:46) 
 ##           By: Brice Ozenne
-##     Update #: 53
+##     Update #: 67
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,16 +15,19 @@
 ## 
 ### Code:
 
+## * WaldTest - documentation
 #' @title Testing independent linear hypotheses using a Wald test
 #' @description Use a contrast matrix to test several linear hypotheses on the coefficients using a Wald test.
 #' The hypotheses are assumed to be independent of each other.
-#'
+#' @name WaldTest
+#' 
 #' @param object a model. Currently only support \code{lme} objects.
 #' @param C a contrast matrix.
 #' Number of rows is the number of hypotheses.
 #' Number of columns should match the number of coefficients in the model.
 #' @param b a vector such that the hypothesis to test is: \eqn{C * \beta = b} where \eqn{\beta} are the model coefficients.
 #' @param df [optional] the degree of freedom associated to the variance of each coefficient.
+#' @param
 #' 
 #' @details
 #' Denoting \eqn{\beta} the estimated model coefficients,
@@ -38,14 +41,18 @@
 #' In such a case the degrees of freedom are computed using:
 #' \deqn{Cdf = C * df}
 #' This formula is probably a very crude approximation to the appropriate degrees of freedom of \eqn{diage(CSC)} (assuming they exists).
-#' 
+#'
+#' @export
 `WaldTest` <-
     function(object, ...) UseMethod("WaldTest")
 
+## * WaldTest.lme
+#' @rdname WaldTest
+#' @export
 WaldTest.lme <- function(object, C, b = rep(0,NROW(C)), df = NULL){
 
     beta <- fixef(object)
-    Sigma <- vcov(object)
+    Sigma <- stats::vcov(object)
     p <- length(beta)
     n <- object$dims$N
     Sigma.corrected <- Sigma * n/(n-p)
@@ -56,8 +63,8 @@ WaldTest.lme <- function(object, C, b = rep(0,NROW(C)), df = NULL){
     .WaldTest(beta = beta, Sigma = Sigma.corrected, C = C, b = b, df = df)
 }
 
+## * .WaldTest
 .WaldTest <- function(beta, Sigma, C, b, df){
-
 ### ** prepare
     name.coef <- names(beta)
     if(is.null(name.coef)){
@@ -84,9 +91,9 @@ WaldTest.lme <- function(object, C, b = rep(0,NROW(C)), df = NULL){
     diag.CSigmaC <- sqrt(diag(C %*% Sigma %*% t(C)))
     t.stat <- Cbeta/diag.CSigmaC
     if(is.null(df)){
-        p.value <- 2*(1-pnorm(abs(t.stat)))
+        p.value <- 2*(1-stats::pnorm(abs(t.stat)))
     }else{
-        p.value <- 2*(1-pt(abs(t.stat), df = Cdf))
+        p.value <- 2*(1-stats::pt(abs(t.stat), df = Cdf))
     }
     signif <- sapply(p.value, function(iP){
         if(iP<0.001){
