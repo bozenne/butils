@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 23 2017 (14:57) 
 ## Version: 
-## Last-Updated: nov 24 2017 (09:46) 
+## Last-Updated: nov 24 2017 (09:50) 
 ##           By: Brice Ozenne
-##     Update #: 67
+##     Update #: 68
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -27,7 +27,7 @@
 #' Number of columns should match the number of coefficients in the model.
 #' @param b a vector such that the hypothesis to test is: \eqn{C * \beta = b} where \eqn{\beta} are the model coefficients.
 #' @param df [optional] the degree of freedom associated to the variance of each coefficient.
-#' @param
+#' @param ... not used.
 #' 
 #' @details
 #' Denoting \eqn{\beta} the estimated model coefficients,

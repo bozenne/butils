@@ -2,12 +2,17 @@
 % Please edit documentation in R/WaldTest.R
 \name{WaldTest}
 \alias{WaldTest}
+\alias{WaldTest.lme}
 \title{Testing independent linear hypotheses using a Wald test}
 \usage{
 WaldTest(object, ...)
+
+\method{WaldTest}{lme}(object, C, b = rep(0, NROW(C)), df = NULL)
 }
 \arguments{
 \item{object}{a model. Currently only support \code{lme} objects.}
+
+\item{...}{not used.}
 
 \item{C}{a contrast matrix.
 Number of rows is the number of hypotheses.
