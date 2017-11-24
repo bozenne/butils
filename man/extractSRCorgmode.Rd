@@ -6,8 +6,8 @@
 \usage{
 extractSRCorgmode(file, file.header = "\\\\*",
   file.start.SRC = "\\\\#\\\\+BEGIN_SRC R",
-  file.end.SRC = "\\\\#\\\\+END_SRC", index.chunk = TRUE,
-  overwrite = FALSE)
+  file.end.SRC = "\\\\#\\\\+END_SRC", rm.export.none = TRUE,
+  index.chunk = TRUE, overwrite = FALSE)
 }
 \arguments{
 \item{file}{name of the org file}
@@ -17,6 +17,8 @@ extractSRCorgmode(file, file.header = "\\\\*",
 \item{file.start.SRC}{string indicating the start of a code block}
 
 \item{file.end.SRC}{string indicating the end of a code block}
+
+\item{rm.export.none}{should chunks of code with \code{:export none} be ignored?}
 
 \item{index.chunk}{should the code block be numbered in the .R file?}
 

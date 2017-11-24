@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 15 2017 (09:16) 
 ## Version: 
-## Last-Updated: nov 15 2017 (13:18) 
+## Last-Updated: nov 24 2017 (09:18) 
 ##           By: Brice Ozenne
-##     Update #: 47
+##     Update #: 59
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,6 +22,7 @@
 #' @param file.header string indicating headers
 #' @param file.start.SRC string indicating the start of a code block
 #' @param file.end.SRC string indicating the end of a code block
+#' @param rm.export.none should chunks of code with \code{:export none} be ignored?
 #' @param index.chunk should the code block be numbered in the .R file?
 #' @param overwrite Can the existing R file be overwritten?
 #' 
@@ -30,6 +31,7 @@ extractSRCorgmode <- function(file,
                               file.header = "\\*", 
                               file.start.SRC = "\\#\\+BEGIN_SRC R",
                               file.end.SRC = "\\#\\+END_SRC",
+                              rm.export.none = TRUE,
                               index.chunk = TRUE, overwrite = FALSE){
 
 
@@ -56,10 +58,10 @@ extractSRCorgmode <- function(file,
         
 ### ** find chunk (if any)
     index.start.chunk <- grep(paste0("^",file.start.SRC),
-                              x = file.line, value = TRUE)
+                              x = file.line, value = FALSE)
     index.end.chunk <- grep(paste0("^",file.end.SRC),
-                            x = file.line, value = TRUE)
-
+                            x = file.line, value = FALSE)
+    
     n.chunk <- length(index.start.chunk)
     if(length(index.end.chunk) != n.chunk){
         stop("Number of file.start.SRC does not match the number of file.end.src \n")
@@ -79,6 +81,10 @@ extractSRCorgmode <- function(file,
         iStart <- df.extract[iE,"index.start"]
         iEnd <- df.extract[iE,"index.stop"]
         if(iType == "chunk"){
+            test.export.none <- length(grep(":exports none",file.line[iStart],fixed = TRUE))
+            if(rm.export.none && test.export.none==1){
+                    next
+            }
             iStart <- iStart + 1
             iEnd <- iEnd - 1
         }
