@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 23 2017 (14:57) 
 ## Version: 
-## Last-Updated: nov 24 2017 (09:50) 
+## Last-Updated: nov 24 2017 (09:51) 
 ##           By: Brice Ozenne
-##     Update #: 68
+##     Update #: 69
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -49,7 +49,7 @@
 ## * WaldTest.lme
 #' @rdname WaldTest
 #' @export
-WaldTest.lme <- function(object, C, b = rep(0,NROW(C)), df = NULL){
+WaldTest.lme <- function(object, C, b = rep(0,NROW(C)), df = NULL, ...){
 
     beta <- fixef(object)
     Sigma <- stats::vcov(object)

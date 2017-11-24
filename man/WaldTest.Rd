@@ -7,7 +7,7 @@
 \usage{
 WaldTest(object, ...)
 
-\method{WaldTest}{lme}(object, C, b = rep(0, NROW(C)), df = NULL)
+\method{WaldTest}{lme}(object, C, b = rep(0, NROW(C)), df = NULL, ...)
 }
 \arguments{
 \item{object}{a model. Currently only support \code{lme} objects.}
