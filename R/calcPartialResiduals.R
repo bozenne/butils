@@ -71,7 +71,7 @@ calcPartialResiduals <- function(model,var,
     }
 
     out <- list()
-
+#
     # {{{ define class specific functions
     if(model.class %in% c("lme","lmerMod")){
         FUN.coef <- function(object, ...){
