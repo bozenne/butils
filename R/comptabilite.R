@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: dec  2 2017 (13:40) 
+## Last-Updated: dec  3 2017 (13:39) 
 ##           By: Brice Ozenne
-##     Update #: 94
+##     Update #: 111
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,6 +17,10 @@
 
 
 ## * createAccount
+#' @title Create an empty account
+#' @description Create an empty account.
+#' 
+#' @export
 createAccount <- function(){
     object <- list(table = NULL, nickName = NULL)
     class(object) <- "butilsAccount"
@@ -37,7 +41,7 @@ createAccount <- function(){
 #' myAcc
 #' @export
 `addNickName<-` <-
-    function(object, ...) UseMethod("addNickName<-")
+    function(object, value) UseMethod("addNickName<-")
 
 #' @rdname addActivity
 #' @export
@@ -91,7 +95,7 @@ createAccount <- function(){
 #' myAcc
 #' @export
 `addActivity<-` <-
-    function(object, ...) UseMethod("addActivity<-")
+    function(object, ..., value) UseMethod("addActivity<-")
 
 #' @rdname addActivity
 #' @export
@@ -99,6 +103,7 @@ createAccount <- function(){
                                           involved,
                                           type = as.character(NA),
                                           date = as.Date(NA),
+                                          ...,
                                           value){
 
 ### ** check consistency of the arguments
@@ -162,9 +167,10 @@ createAccount <- function(){
                            date = date,
                            type = type,
                            label = label)
-    newtable[, total.price := sum(paid)]
-    newtable[, n.participant := .N]
-    newtable[, participant.price := total.price/n.participant]
+    newtable[, c("total.price") := sum(.SD$paid), .SDcols = "paid"]
+    newtable[, c("n.participant") := .N]
+    newtable[, c("participant.price") := .SD$total.price/.SD$n.participant,
+             .SDcols = c("total.price","n.participant")]
     
     object$table <- rbind(object$table,
                           newtable)
@@ -184,30 +190,47 @@ print.butilsAccount <- function(x, ...){
 ## * summary
 summary.butilsAccount <- function(x,
                                   print = TRUE,
-                                  detail = TRUE,
+                                  detail = 1:2,
                                   keep.cols = c("paid","date","type","total.price","participant.price"),
                                   ...){
 
 ### ** Count
-    balance.print <- x$table[,.(paid = sum(paid), spent = sum(participant.price)),by = "name"]
-    balance.print[, balance :=  paid - spent]
-    tempo <- x$table[,.(.(.SD)), .SDcols = keep.cols, by = "name"]
-    detail.print <- setNames(tempo[[2]],tempo[[1]])
+    balance.print <- x$table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.price)),
+                             by = "name",
+                             .SDcols = c("paid","participant.price")]
+    balance.print[, c("balance") :=  .SD$paid - .SD$spent,
+                  .SDcols = c("paid","spent")]
+    
+    tempo1 <- x$table[,.(.(.SD)), .SDcols = keep.cols, by = "name"]
+    detail1.print <- setNames(tempo1[[2]],tempo1[[1]])
+
+    tempo2 <- x$table[,.(.(.SD)), .SDcols = keep.cols, by = "label"]
+    detail2.print <- setNames(tempo2[[2]],tempo2[[1]])
 
 ### ** Display
 
     cat("#### balance ####\n")
     print(balance.print)
     
-    if(detail){
-        cat("\n\n")
-        cat("#### detail of the spending by individual ####\n")
-        print(detail.print)
+    if(length(detail)>0){
+        
+        if(1 %in% detail){
+            cat("\n\n")
+            cat("#### detail of the spending by individual ####\n")
+            print(detail1.print)
+        }
+
+        if(2 %in% detail){
+            cat("\n")
+            cat("#### detail of the spending by activity ####\n")
+            print(detail2.print)
+        }
     }
     
 ### ** Export
     out <- list(balance = balance.print,
-                detail = detail.print)
+                detail.indiv = detail1.print,
+                detail.activity = detail2.print)
 
     return(invisible(out))
 

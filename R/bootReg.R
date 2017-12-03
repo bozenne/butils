@@ -163,12 +163,9 @@ bootReg.gls <- function(object,
             stop("Argument \'cluster\' must refer to a column in data when there is no groupping variable defined by the model \n")
         }
     }
-    
-    
-    
 
-### ** define default statistic
-    
+    ### ** define default statistic
+
     if(identical(type,"coef")){
         FUN.estimate <- function(x){
             return(summary(x)$tTable[,"Value"])
