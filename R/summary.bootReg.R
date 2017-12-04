@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 21 2017 (17:49) 
 ## Version: 
-## Last-Updated: nov 22 2017 (17:44) 
+## Last-Updated: dec  4 2017 (11:37) 
 ##           By: Brice Ozenne
-##     Update #: 196
+##     Update #: 208
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -163,12 +163,12 @@ summary.bootReg <- function(object, p.value = TRUE,
                             "perc" = 5,
                             "bca" = 5)
 
-### ** functions
+    ### ** functions
     calcCI <- function(boot.object, conf, type, index,
                        stdError, boot.stdError, iid,
                        slot.boot.ci, name.estimate){
         ls.out <- lapply(index, function(iP){ # iP <- 1
-
+          
             if(type == "norm"){
                 resBoot.ci <- boot::boot.ci(boot.object, conf = conf, type = type, index = iP)
             }else{
@@ -185,7 +185,7 @@ summary.bootReg <- function(object, p.value = TRUE,
             return(setNames(out,c("lower","upper")))
         })
         out <- do.call(rbind,ls.out)
-        rownames(out) <- name.estimate
+        rownames(out) <- name.estimate[index]
         return(out)
     }
 
@@ -194,11 +194,11 @@ summary.bootReg <- function(object, p.value = TRUE,
     calcPvalue <- function(boot.object, conf, type, index,
                            stdError, boot.stdError, iid,
                            slot.boot.ci, name.estimate){
-
+       
         out <- sapply(index, function(iP){ # iP <- 1
             if(abs(boot.object$t0[iP])<.Machine$double.eps^0.5){
                 return(0)
-            }else{                
+            }else{               
                 iBoot.object <- boot.object
                 iBoot.object$t0 <- c(boot.object$t0[iP],stdError[iP])
                 iBoot.object$t <- cbind(boot.object$t[,iP,drop=FALSE],boot.stdError[,iP,drop=FALSE])
@@ -213,6 +213,7 @@ summary.bootReg <- function(object, p.value = TRUE,
                         if(type == "norm"){
                             iRes <- boot::boot.ci(boot.object, conf = conf, type = type, index = iP)[[slot.boot.ci]][side.CI]
                         }else{
+                           
                             iRes <- boot::boot.ci(iBoot.object, conf = 1 - p.value, type = type, index = 1:2,
                                                   var.t0 = stdError[iP], var.t = boot.stdError[,iP],
                                                   t0 = boot.object$t0[iP], t = boot.object$t[,iP],
@@ -227,11 +228,11 @@ summary.bootReg <- function(object, p.value = TRUE,
             }
         })
 
-        out <- setNames(out, name.estimate)
+        out <- setNames(out, name.estimate[index])
         return(out)
     }
     
-### ** compute p values and CI for each subset
+    ### ** compute p values and CI for each subset
     resCI <- calcCI(boot.object = boot.object, conf = conf, type = type, index = index,
                     stdError = stdError, boot.stdError = boot.stdError, iid = iid,
                     slot.boot.ci = slot.boot.ci, name.estimate = name.estimate)
