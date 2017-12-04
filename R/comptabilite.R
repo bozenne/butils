@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: dec  3 2017 (13:39) 
+## Last-Updated: dec  4 2017 (09:40) 
 ##           By: Brice Ozenne
-##     Update #: 111
+##     Update #: 151
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -33,7 +33,7 @@ createAccount <- function(){
 #' 
 #' @param object the account.
 #' @param value a named vector.
-#'
+#' 
 #' @examples
 #' myAcc <- createAccount()
 #' addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
@@ -43,7 +43,7 @@ createAccount <- function(){
 `addNickName<-` <-
     function(object, value) UseMethod("addNickName<-")
 
-#' @rdname addActivity
+#' @rdname addNickName
 #' @export
 "addNickName<-.butilsAccount" <- function(object,
                                           value){
@@ -86,7 +86,8 @@ createAccount <- function(){
 #' @param type a character string describing the activity.
 #' @param date the date at which the activity happen.
 #' @param value a named vector describing name paid what.
-#'
+#' @param ... ignored.
+#' 
 #' @examples
 #' myAcc <- createAccount()
 #' addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
@@ -181,53 +182,81 @@ createAccount <- function(){
 ##----------------------------------------------------------------------
 ### comptabilite.R ends here
 
-## * print
+## * summary/print
+#' @title Summarizing an account.
+#' @description Summarizing an account.
+#' @name summary.butilsAccount
+#' 
+#' @param x an object of class butilsAccount.
+#' @param object an object of class butilsAccount.
+#' @param print should the summary be printed in the console.
+#' @param detail should the balance per individual (1) and by activity (2) be displayed.
+#' @param keep.cols the columns to be displayed in the detail.
+#' @param ... ignored
+#' 
+
+#' @rdname summary.butilsAccount
+#' @method print butilsAccount
+#' @export
 print.butilsAccount <- function(x, ...){
     out <- summary(x, print = TRUE, detail = FALSE)
     return(invisible(out))
 }
 
-## * summary
-summary.butilsAccount <- function(x,
+#' @rdname summary.butilsAccount
+#' @method summary butilsAccount
+#' @export
+summary.butilsAccount <- function(object,
                                   print = TRUE,
                                   detail = 1:2,
                                   keep.cols = c("paid","date","type","total.price","participant.price"),
                                   ...){
 
-### ** Count
-    balance.print <- x$table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.price)),
-                             by = "name",
-                             .SDcols = c("paid","participant.price")]
-    balance.print[, c("balance") :=  .SD$paid - .SD$spent,
-                  .SDcols = c("paid","spent")]
+    ### ** Count
+    if(!is.null(object$table)){
+        text.cat <- "#### balance ####\n"
+        
+        balance.print <- object$table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.price)),
+                                      by = "name",
+                                      .SDcols = c("paid","participant.price")]
+        balance.print[, c("balance") :=  .SD$paid - .SD$spent,
+                      .SDcols = c("paid","spent")]
     
-    tempo1 <- x$table[,.(.(.SD)), .SDcols = keep.cols, by = "name"]
+    tempo1 <- object$table[,list(list(.SD)), .SDcols = keep.cols, by = "name"]
     detail1.print <- setNames(tempo1[[2]],tempo1[[1]])
 
-    tempo2 <- x$table[,.(.(.SD)), .SDcols = keep.cols, by = "label"]
+    tempo2 <- object$table[,list(list(.SD)), .SDcols = keep.cols, by = "label"]
     detail2.print <- setNames(tempo2[[2]],tempo2[[1]])
+    }else{
+        text.cat <- "the account is empty \n"
+        balance.print <- NULL
+        detail <- NULL
+        detail1.print <- NULL
+        detail2.print <- NULL
+    }
+    
+    ### ** Display
 
-### ** Display
-
-    cat("#### balance ####\n")
-    print(balance.print)
+    cat(text.cat)
+    if(!is.null(balance.print)){
+        print(balance.print)
+    }
     
     if(length(detail)>0){
-        
         if(1 %in% detail){
             cat("\n\n")
             cat("#### detail of the spending by individual ####\n")
-            print(detail1.print)
+            print(detail1.print[])
         }
 
         if(2 %in% detail){
             cat("\n")
             cat("#### detail of the spending by activity ####\n")
-            print(detail2.print)
+            print(detail2.print[])
         }
     }
-    
-### ** Export
+
+    ### ** Export
     out <- list(balance = balance.print,
                 detail.indiv = detail1.print,
                 detail.activity = detail2.print)

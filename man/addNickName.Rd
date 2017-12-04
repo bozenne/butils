@@ -3,9 +3,12 @@
 \name{addNickName}
 \alias{addNickName}
 \alias{addNickName<-}
+\alias{addNickName<-.butilsAccount}
 \title{Add nick name to the account.}
 \usage{
 addNickName(object) <- value
+
+\method{addNickName}{butilsAccount}(object) <- value
 }
 \arguments{
 \item{object}{the account.}
