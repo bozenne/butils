@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: dec  4 2017 (09:40) 
+## Last-Updated: dec 20 2017 (18:36) 
 ##           By: Brice Ozenne
-##     Update #: 151
+##     Update #: 154
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -104,6 +104,7 @@ createAccount <- function(){
                                           involved,
                                           type = as.character(NA),
                                           date = as.Date(NA),
+                                          note = "",
                                           ...,
                                           value){
 
@@ -166,6 +167,7 @@ createAccount <- function(){
     newtable <- data.table(paid = as.double(value.full),
                            name = involved,
                            date = date,
+                           note = note,
                            type = type,
                            label = label)
     newtable[, c("total.price") := sum(.SD$paid), .SDcols = "paid"]
@@ -179,8 +181,6 @@ createAccount <- function(){
 ### ** return
     return(object)
 }
-##----------------------------------------------------------------------
-### comptabilite.R ends here
 
 ## * summary/print
 #' @title Summarizing an account.
@@ -265,3 +265,5 @@ summary.butilsAccount <- function(object,
 
 }
 
+##----------------------------------------------------------------------
+### comptabilite.R ends here
