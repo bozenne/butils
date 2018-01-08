@@ -2,6 +2,7 @@
 
 S3method("addActivity<-",butilsAccount)
 S3method("addNickName<-",butilsAccount)
+S3method(WaldTest,gls)
 S3method(WaldTest,lme)
 S3method(as.boot,bootReg)
 S3method(bootReg,gls)

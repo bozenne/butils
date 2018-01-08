@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 22 2017 (09:41) 
 ## Version: 
-## Last-Updated: nov 22 2017 (17:49) 
+## Last-Updated: jan  8 2018 (10:53) 
 ##           By: Brice Ozenne
-##     Update #: 15
+##     Update #: 22
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,7 +19,8 @@
 #' @name as.boot
 #'  
 #' @param object a bootReg object
-#'
+#' @param index [optional] index of the observation to keep.
+#' 
 #' @examples
 #' #### data  ####
 #' n <- 1e2
@@ -36,17 +37,21 @@
 #' 
 #' @export
 `as.boot` <-
-  function(object) UseMethod("as.boot")
+  function(object, index) UseMethod("as.boot")
 
 ## * as.boot.bootReg
 #' @rdname as.boot
 #' @export
-as.boot.bootReg <- function(object){
+as.boot.bootReg <- function(object, index = NULL){
 
+    if(is.null(index)){
+        index <- 1:length(object$estimate)
+    }
+    
     n.boot.effective <- NROW(object$boot.estimate)
     n.data <- NROW(object$data)
-    out <- list(t0 = object$estimate,
-                t = object$boot.estimate,
+    out <- list(t0 = object$estimate[index],
+                t = object$boot.estimate[,index,drop=FALSE],
                 R = n.boot.effective,
                 data = object$data,
                 seed = object$.Random.seed,

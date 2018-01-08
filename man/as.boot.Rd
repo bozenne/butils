@@ -5,12 +5,14 @@
 \alias{as.boot.bootReg}
 \title{Convertion to boot object}
 \usage{
-as.boot(object)
+as.boot(object, index)
 
-\method{as.boot}{bootReg}(object)
+\method{as.boot}{bootReg}(object, index = NULL)
 }
 \arguments{
 \item{object}{a bootReg object}
+
+\item{index}{[optional] index of the observation to keep.}
 }
 \description{
 Convertion to boot object

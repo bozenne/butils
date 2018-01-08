@@ -5,7 +5,7 @@
 \title{Display the result fo the bootstrap computation}
 \usage{
 \method{summary}{bootReg}(object, p.value = TRUE, conf = 0.95,
-  type = NULL, index = NULL, trace = TRUE, n.subset = NULL, ...)
+  type = NULL, index = NULL, print = TRUE, n.subset = NULL, ...)
 }
 \arguments{
 \item{object}{object obtained with the function \code{bootReg}}
@@ -19,7 +19,7 @@ See the documentation of \code{boot::boot.ci}.}
 
 \item{index}{for which parameters confidence intervals/p.values should be computed? Default is for all parameters.}
 
-\item{trace}{should the confidence intervals/p.values be displayed?}
+\item{print}{should the summary be displayed in the terminal?}
 
 \item{n.subset}{if not \code{NULL} display in addition intervals/p.values for subset of the bootstrap samples.}
 

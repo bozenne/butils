@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 21 2017 (17:49) 
 ## Version: 
-## Last-Updated: dec  4 2017 (11:37) 
+## Last-Updated: jan  8 2018 (10:16) 
 ##           By: Brice Ozenne
-##     Update #: 208
+##     Update #: 261
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -25,7 +25,7 @@
 #' @param type the method used to compute the confidence intervals.
 #' See the documentation of \code{boot::boot.ci}.
 #' @param index for which parameters confidence intervals/p.values should be computed? Default is for all parameters.
-#' @param trace should the confidence intervals/p.values be displayed?
+#' @param print should the summary be displayed in the terminal?
 #' @param n.subset if not \code{NULL} display in addition intervals/p.values for subset of the bootstrap samples.
 #' @param ... not used
 #'
@@ -42,7 +42,7 @@
 #' @export
 summary.bootReg <- function(object, p.value = TRUE,
                             conf = 0.95, type = NULL, index = NULL,
-                            trace = TRUE, n.subset = NULL, ...){
+                            print = TRUE, n.subset = NULL, ...){
 
     if(is.null(index)){
         index <- 1:length(object$estimate)
@@ -60,23 +60,23 @@ summary.bootReg <- function(object, p.value = TRUE,
         }
     }
     
-### ** Convert to boot
-    boot.object <- as.boot(object)
+    ### ** Convert to boot
+    boot.object <- as.boot(object, index = index)
 
-### ** Compute confidence intervals and p.values
-    resStat.full <- .calcCIP(boot.object, conf = conf, type = type, index = index,
+    ### ** Compute confidence intervals and p.values
+    resStat.full <- .calcCIP(boot.object, conf = conf, type = type, index = 1:length(index),
                              p.value = p.value,
-                             stdError = object$stdError,
-                             iid = object$iid,
-                             boot.stdError = object$boot.stdError)
+                             stdError = object$stdError[index],
+                             iid = object$iid[,index,drop=FALSE],
+                             boot.stdError = object$boot.stdError[,index,drop=FALSE])
     
-### ** Display results
-    rowM <- cbind(estimate = object$estimate,
-                  estimate.boot = apply(object$boot.estimate,2,median,na.rm = TRUE),
+    ### ** Display results
+    rowM <- cbind(estimate = object$estimate[index],
+                  estimate.boot = apply(object$boot.estimate[,index,drop=FALSE],2,median,na.rm = TRUE),
                   resStat.full,
-                  nBoot.effective = colSums(!is.na(object$boot.estimate)))
+                  nBoot.effective = colSums(!is.na(object$boot.estimate[,index,drop=FALSE])))
 
-    if(trace==TRUE){
+    if(print==TRUE){
         print(object$call)
         cat("\n")
         print(rowM)
@@ -135,8 +135,6 @@ summary.bootReg <- function(object, p.value = TRUE,
                      stdError, boot.stdError, iid,
                      ...){
 
-    
-    
     type <- match.arg(type, c("norm","basic","stud","perc","bca"))
     slot.boot.ci <- switch(type,
                            "norm" = "normal",
@@ -152,13 +150,13 @@ summary.bootReg <- function(object, p.value = TRUE,
 
     index.lowerCI <- switch(type,
                             "norm" = 2,
-                            "naive" = 4,
+                            "basic" = 4,
                             "stud" = 4,
                             "perc" = 4,
                             "bca" = 4)
     index.upperCI <- switch(type,
                             "norm" = 3,
-                            "naive" = 5,
+                            "basic" = 5,
                             "stud" = 5,
                             "perc" = 5,
                             "bca" = 5)
@@ -176,7 +174,7 @@ summary.bootReg <- function(object, p.value = TRUE,
                 iBoot.object$t0 <- c(boot.object$t0[iP],stdError[iP])
                 iBoot.object$t <- cbind(boot.object$t[,iP,drop=FALSE],boot.stdError[,iP,drop=FALSE])
 
-                resBoot.ci <- boot::boot.ci(iBoot.object, conf = conf, type = type, index = 1:2,
+                resBoot.ci <- boot::boot.ci(iBoot.object, conf = conf, type = type,
                                             var.t0 = stdError, var.t = boot.stdError[,iP],
                                             t0 = boot.object$t0[iP], t = boot.object$t[,iP],
                                             L = iid[,iP])
@@ -206,12 +204,13 @@ summary.bootReg <- function(object, p.value = TRUE,
                 side.CI <- c(index.upperCI,index.lowerCI)[(sign.estimate)+1]
 
                 ## search confidence level such that quantile of CI which is close to 0
-                optimum <- discreteRoot(fn=function(p.value){ 
+                optimum <- discreteRoot(fn=function(p.value){ ## p.value <- 0.5
                     if(p.value==1){
                         iRes <- iBoot.object$t0[1]
                     }else{ # p.value <- 0.55
                         if(type == "norm"){
-                            iRes <- boot::boot.ci(boot.object, conf = conf, type = type, index = iP)[[slot.boot.ci]][side.CI]
+                            iRes <- boot::boot.ci(iBoot.object, conf = 1 - p.value, type = type,
+                                                  index = 1:2)[[slot.boot.ci]][side.CI]                            
                         }else{
                            
                             iRes <- boot::boot.ci(iBoot.object, conf = 1 - p.value, type = type, index = 1:2,
@@ -223,11 +222,9 @@ summary.bootReg <- function(object, p.value = TRUE,
                     return(iRes)
                 }, grid = grid, increasing = (sign.estimate==1), check = FALSE)
 
-                return(optimum$par)
-                
+                return(optimum$par)                
             }
         })
-
         out <- setNames(out, name.estimate[index])
         return(out)
     }
@@ -247,9 +244,6 @@ summary.bootReg <- function(object, p.value = TRUE,
 ### ** export
     return(resCI)
 }
-
-
-
 
 
 

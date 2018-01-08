@@ -75,8 +75,13 @@ df.data <- data.frame(Y = rnorm(n),
 
 #### lm ####
 m.lm <- lm(Y ~ group*gender, data = df.data)
-resBoot <- bootReg(m.lm, n.boot = 1e3)
+resBoot <- bootReg(m.lm, n.boot = 1e2)
 resBoot
+summary(resBoot, type = "norm")
+summary(resBoot, type = "basic")
+summary(resBoot, type = "stud")
+summary(resBoot, type = "perc")
+summary(resBoot, type = "bca")
 
 resBoot <- bootReg(m.lm, FUN.resample = "simulate", n.boot = 1e1)
 resBoot
@@ -85,12 +90,11 @@ resBoot
 library(nlme)
 e.gls <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
              data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
-resBoot <- bootReg(e.gls, n.boot = 1e3)
-intervals(e.gls)
+resBoot <- bootReg(e.gls, n.boot = 1e1)
+
 #### lme ####
 e.lme <- lme(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
              data = Ovary, random =~ 1 | Mare)
-resBoot <- bootReg(e.lme, n.boot = 1e1)
 resBoot <- bootReg(e.lme, n.boot = 1e1)
 
 }

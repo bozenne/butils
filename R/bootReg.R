@@ -37,8 +37,13 @@
 #' 
 #' #### lm ####
 #' m.lm <- lm(Y ~ group*gender, data = df.data)
-#' resBoot <- bootReg(m.lm, n.boot = 1e3)
+#' resBoot <- bootReg(m.lm, n.boot = 1e2)
 #' resBoot
+#' summary(resBoot, type = "norm")
+#' summary(resBoot, type = "basic")
+#' summary(resBoot, type = "stud")
+#' summary(resBoot, type = "perc")
+#' summary(resBoot, type = "bca")
 #' 
 #' resBoot <- bootReg(m.lm, FUN.resample = "simulate", n.boot = 1e1)
 #' resBoot
@@ -47,13 +52,11 @@
 #' library(nlme)
 #' e.gls <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
 #'              data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
-#' resBoot <- bootReg(e.gls, n.boot = 1e3)
-#' intervals(e.gls)
+#' resBoot <- bootReg(e.gls, n.boot = 1e1)
+#'
 #' #### lme ####
 #' e.lme <- lme(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
 #'              data = Ovary, random =~ 1 | Mare)
-#' resBoot <- bootReg(e.lme, n.boot = 1e1)
-
 #' resBoot <- bootReg(e.lme, n.boot = 1e1)
 #' 
 #' @export
@@ -252,12 +255,6 @@ bootReg.lme <- bootReg.gls
         if(any(strata %in% names(data) == FALSE)){
             stop("argument \'strata\' contains names that are not in data \n")
         }
-        if("XXnXX" %in% names(data)){
-            stop("data must not contain a column \"XXnXX\" \n")
-        }
-    
-        dt.clusterByStrata <- data[,list(XXnXX=length(unique(.SD[[name.cluster]]))),by=strata]
-        data <- data[dt.clusterByStrata,,on=strata]
     }
     
     if(is.null(FUN.resample)){
@@ -265,8 +262,12 @@ bootReg.lme <- bootReg.gls
             if(is.null(strata)){
                 new.cluster <- sample(n.cluster,replace=TRUE) # random of ids
             }else{
-                new.cluster <- unlist(data[,list(list(new.cluster = unique(.SD[[2]])[sample(.SD[[1]][1],replace=TRUE)])),
-                                           by=strata,.SDcols = c("XXnXX",name.cluster)][[2]])
+                ## unique(.SD[[2]])   : contains the different ids of the patients (e.g. 1:10)
+                ## .SD[[1]][1] (or .N): contains the number of rows (e.g. 10)
+                ## sample(x = .N, replace=TRUE): randomly draw integers (e.g. 2, 5, 10, ...)
+                res.sample <- data[,list(list(new.cluster = unique(.SD[[name.cluster]])[sample(x = .N, replace=TRUE)])),
+                                   by=strata, .SDcols = name.cluster]
+                new.cluster <- unlist(res.sample[[2]])
             }
             
             data.new <- data[unlist(ls.index.cluster[new.cluster])] # randomly pick individuals to form the new dataset
@@ -376,7 +377,7 @@ bootReg.lme <- bootReg.gls
     
 ### ** export
     if(is.null(strata)){
-        strata <- 1:NROW(data)
+        strata <- rep(1,NROW(data))
     }else{
         strata <- data[,interaction(.SD), .SDcols = strata]
     }
