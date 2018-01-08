@@ -20,6 +20,7 @@
 #' @param seed set the random number generator
 #' @param trace should the execution of the bootstrap be displayed using a progress bar?
 #' @param name.cluster internal argument.
+#' @param rejectIfWarning Should the estimate be ignored if a warning is returned by the estimation routine?
 #' @param ... ignored
 #' 
 #' @details
@@ -90,8 +91,10 @@ bootReg.lm <- function(object,
     name.cluster <- "XXclusterXX"
 
 ### ** define default statistic
-    
-    if(identical(type,"coef")){
+
+    if(!is.null(FUN.estimate)){
+        
+    }else if(identical(type,"coef")){
         FUN.stdError <- function(x){
             return(summary(x)$coef[,"Std. Error"])
         }        
@@ -111,9 +114,9 @@ bootReg.lm <- function(object,
             return(setNames(res$rawTable$Coefficient, res$rawTable$Variable))
         }
         
-    }else if(is.null(FUN.estimate)){
-            stop("arguments \'FUN.estimate\' must be specified \n",
-                 "when type is not \"coef\" \"anova\" \"publish\" \n")
+    }else{
+        stop("arguments \'FUN.estimate\' must be specified \n",
+             "when type is not \"coef\" \"anova\" \"publish\" \n")
     }
 
 ### ** run boostratp
@@ -169,7 +172,9 @@ bootReg.gls <- function(object,
 
     ### ** define default statistic
 
-    if(identical(type,"coef")){
+    if(!is.null(FUN.estimate)){
+        
+    }else if(identical(type,"coef")){
         FUN.estimate <- function(x){
             return(summary(x)$tTable[,"Value"])
         }
@@ -189,9 +194,9 @@ bootReg.gls <- function(object,
             res <- Publish::publish(x, print = FALSE)
             return(setNames(res$rawTable$Coefficient, res$rawTable$Variable))
         }        
-    }else if(is.null(FUN.estimate)){
-            stop("arguments \'FUN.estimate\' must be specified \n",
-                 "when type is not \"coef\" \"anova\" \"publish\" \n")
+    }else{
+        stop("arguments \'FUN.estimate\' must be specified \n",
+             "when type is not \"coef\" \"anova\" \"publish\" \n")
     }
 
 ### ** run boostratp
@@ -212,12 +217,66 @@ bootReg.gls <- function(object,
 #' @export
 bootReg.lme <- bootReg.gls
 
+## * bootReg.lvmfit
+#' @rdname bootReg
+#' @export
+bootReg.lvmfit <- function(object,
+                           type = "coef",
+                           FUN.estimate = NULL,
+                           FUN.stdError = NULL,
+                           data = NULL,
+                           load.library = "lava",
+                           ...){    
+    
+    ### ** extract data
+    if(is.null(data)){
+        data <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+    }else{
+        data <- copy(as.data.table(data))
+    }
+
+    ### ** add cluster variable
+    if("XXclusterXX" %in% names(data)){
+        stop("\"XXclusterXX\" must not be the name of any column in data \n")
+    }
+    data$XXclusterXX <- 1:NROW(data)
+    name.cluster <- "XXclusterXX"
+
+    ### ** define default statistic
+    if(!is.null(FUN.estimate)){
+        
+    }else if(identical(type,"coef")){
+        FUN.stdError <- function(x){
+            return(summary(x)$coef[names(x$opt$estimate),"Std. Error"])
+        }        
+        FUN.estimate <- function(x){
+            return(summary(x)$coef[names(x$opt$estimate),"Estimate"])
+        }
+    }else{
+        stop("arguments \'FUN.estimate\' must be specified \n",
+             "when type is not \"coef\" \n")
+    }
+
+    ### ** run boostratp    
+    out <- .bootReg(object,
+                    data = data, name.cluster = name.cluster,
+                    FUN.estimate = FUN.estimate,
+                    FUN.stdError = FUN.stdError,
+                    load.library = load.library,
+                    ...)
+
+### ** export
+    return(out)
+    
+}
+
 ## * .bootReg function
 #' @rdname bootReg
 #' @export
 .bootReg <- function(object, data, strata = NULL, name.cluster,
                      FUN.estimate, FUN.stdError, FUN.resample = NULL, FUN.iid = NULL,
-                     n.boot = 1e3, n.cpus = 1, load.library, seed = 1,
+                     n.boot = 1e3, n.cpus = 1, load.library, seed = 1, rejectIfWarning = TRUE,
+
                      trace = TRUE){
 
     .Random.seed_save <- .Random.seed
@@ -357,11 +416,18 @@ bootReg.lme <- bootReg.gls
       
   }
 
-### ** postprocess results
+    ### ** postprocess results
     index.ok <- which(unlist(lapply(ls.boot, function(iB){
         is.null(attr(iB,"error"))
     })))
-    
+    if(rejectIfWarning){
+        index.ok <- intersect(index.ok,
+                              which(unlist(lapply(ls.boot, function(iB){
+                                  is.null(attr(iB,"warning"))
+                              })))
+                              )
+    }
+
     Mestimate.boot <- do.call("rbind",lapply(ls.boot[index.ok], function(iB){iB["estimate",]}))
     if(!is.null(FUN.stdError)){
         MstdError.boot <- do.call("rbind",lapply(ls.boot[index.ok], function(iB){iB["stdError",]}))
