@@ -303,11 +303,15 @@ bootReg.lvmfit <- function(object,
     n.obs.cluster <- unlist(lapply(ls.index.cluster,length))
 
     
-### ** seed
-    if (!is.null(seed)){set.seed(seed)}
-    bootseeds <- sample(1:max(1e6,seed),size=n.boot,replace=FALSE)
-
-### ** non-parametric bootstrap simulation
+    ### ** seed
+    if (!is.null(seed)){
+        set.seed(seed)
+        bootseeds <- sample(1:max(1e6,seed),size=n.boot,replace=FALSE)
+    }else{
+        bootseeds <- NULL
+    }
+    
+    ### ** non-parametric bootstrap simulation
     FUN.resample.save <- FUN.resample
     response.var <- NULL
     if(!is.null(strata)){
@@ -346,9 +350,11 @@ bootReg.lvmfit <- function(object,
         }
     }
 
-### ** boostrap function
+    ### ** boostrap function
     FUN.boostrap <- function(iB){
-        set.seed(bootseeds[iB])
+        if(!is.null(bootseeds)){
+            set.seed(bootseeds[iB])
+        }
         
         object$call$data <- do.call(FUN.resample, args = list(object = object, data = data, response.var = response.var))
 
@@ -446,6 +452,12 @@ bootReg.lvmfit <- function(object,
         strata <- rep(1,NROW(data))
     }else{
         strata <- data[,interaction(.SD), .SDcols = strata]
+    }
+
+    if(!is.null(seed)){
+        assign(x = ".Random.seed",
+               value = .Random.seed_save,
+               envir = globalenv())
     }
     
     out <- list(call = object$call,

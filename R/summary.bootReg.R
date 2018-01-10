@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 21 2017 (17:49) 
 ## Version: 
-## Last-Updated: jan  8 2018 (10:16) 
+## Last-Updated: jan  9 2018 (15:54) 
 ##           By: Brice Ozenne
-##     Update #: 261
+##     Update #: 268
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -196,6 +196,7 @@ summary.bootReg <- function(object, p.value = TRUE,
         out <- sapply(index, function(iP){ # iP <- 1
             if(abs(boot.object$t0[iP])<.Machine$double.eps^0.5){
                 return(0)
+                
             }else{               
                 iBoot.object <- boot.object
                 iBoot.object$t0 <- c(boot.object$t0[iP],stdError[iP])
@@ -207,18 +208,19 @@ summary.bootReg <- function(object, p.value = TRUE,
                 optimum <- discreteRoot(fn=function(p.value){ ## p.value <- 0.5
                     if(p.value==1){
                         iRes <- iBoot.object$t0[1]
-                    }else{ # p.value <- 0.55
+                    }else if(p.value==0){ # p.value <- 0.55
+                        iRes <- -sign(boot.object$t0[iP]) * Inf
+                    }else{
                         if(type == "norm"){
                             iRes <- boot::boot.ci(iBoot.object, conf = 1 - p.value, type = type,
                                                   index = 1:2)[[slot.boot.ci]][side.CI]                            
                         }else{
-                           
                             iRes <- boot::boot.ci(iBoot.object, conf = 1 - p.value, type = type, index = 1:2,
                                                   var.t0 = stdError[iP], var.t = boot.stdError[,iP],
                                                   t0 = boot.object$t0[iP], t = boot.object$t[,iP],
-                                                  L = iid[,iP])[[slot.boot.ci]][side.CI]
+                                                  L = iid[,iP])[[slot.boot.ci]][side.CI]                           
                         }
-                    }
+                    }                
                     return(iRes)
                 }, grid = grid, increasing = (sign.estimate==1), check = FALSE)
 

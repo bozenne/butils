@@ -5,6 +5,7 @@
 \alias{bootReg.lm}
 \alias{bootReg.gls}
 \alias{bootReg.lme}
+\alias{bootReg.lvmfit}
 \alias{.bootReg}
 \title{Perform bootstrap computation on an object}
 \usage{
@@ -19,9 +20,13 @@ bootReg(object, ...)
 \method{bootReg}{lme}(object, cluster, type = "coef", FUN.estimate = NULL,
   FUN.stdError = NULL, data = NULL, load.library = "nlme", ...)
 
+\method{bootReg}{lvmfit}(object, type = "coef", FUN.estimate = NULL,
+  FUN.stdError = NULL, data = NULL, load.library = "lava", ...)
+
 .bootReg(object, data, strata = NULL, name.cluster, FUN.estimate,
   FUN.stdError, FUN.resample = NULL, FUN.iid = NULL, n.boot = 1000,
-  n.cpus = 1, load.library, seed = 1, trace = TRUE)
+  n.cpus = 1, load.library, seed = 1, rejectIfWarning = TRUE,
+  trace = TRUE)
 }
 \arguments{
 \item{object}{the fitted model.}
@@ -54,6 +59,8 @@ Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.
 \item{n.cpus}{the number of cpu to use.}
 
 \item{seed}{set the random number generator}
+
+\item{rejectIfWarning}{Should the estimate be ignored if a warning is returned by the estimation routine?}
 
 \item{trace}{should the execution of the bootstrap be displayed using a progress bar?}
 }
