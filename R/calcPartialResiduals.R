@@ -146,7 +146,7 @@ calcPartialResiduals <- function(model,var,
 
     interval <- match.arg(interval, c("confidence","prediction"))
 
-    design.df <- extractData(model, model.frame = TRUE, convert2dt = TRUE)
+    design.df <- as.data.table(extractData(model, model.frame = TRUE))
     
     design.numeric <- sapply(design.df, is.numeric)
     design.factor <- sapply(design.df, is.factor)

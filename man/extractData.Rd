@@ -4,15 +4,13 @@
 \alias{extractData}
 \title{Extract data from a model}
 \usage{
-extractData(object, model.frame = FALSE, convert2dt = TRUE)
+extractData(object, model.frame = FALSE)
 }
 \arguments{
 \item{object}{the fitted model.}
 
 \item{model.frame}{should the data be extracted after transformation (e.g. using model frame)
 or should the original dataset be extracted.}
-
-\item{convert2dt}{should the object containing the data be converted into a data.table?}
 }
 \description{
 Extract data from a model using \code{nlme::getData}, \code{riskRegression::coxDesign} or \code{model.frame}.. 

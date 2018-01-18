@@ -78,7 +78,7 @@ bootReg.lm <- function(object,
 
 ### ** extract data
     if(is.null(data)){
-        data <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+        data <- as.data.table(extractData(object, model.frame = FALSE))
     }else{
         data <- copy(as.data.table(data))
     }
@@ -146,7 +146,7 @@ bootReg.gls <- function(object,
 
 ### ** extract data
     if(is.null(data)){
-        data <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+        data <- as.data.table(extractData(object, model.frame = FALSE))
     }else{
         data <- copy(as.data.table(data))
     }
@@ -230,7 +230,7 @@ bootReg.lvmfit <- function(object,
     
     ### ** extract data
     if(is.null(data)){
-        data <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+        data <- as.data.table(extractData(object, model.frame = FALSE))
     }else{
         data <- copy(as.data.table(data))
     }

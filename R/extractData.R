@@ -6,7 +6,6 @@
 #' @param object the fitted model.
 #' @param model.frame should the data be extracted after transformation (e.g. using model frame)
 #' or should the original dataset be extracted.
-#' @param convert2dt should the object containing the data be converted into a data.table?
 #'  
 #' @examples
 #' set.seed(10)
@@ -53,10 +52,9 @@
 #' }
 #' fct1(m.gls)
 #' @export
-extractData <- function(object, model.frame = FALSE, convert2dt = TRUE){
+extractData <- function(object, model.frame = FALSE){
   
   ## check arguments
-  validLogical(convert2dt, valid.length = 1)
   validLogical(model.frame, valid.length = 1)
 
     if(model.frame){ ## use extractors 
@@ -108,14 +106,6 @@ extractData <- function(object, model.frame = FALSE, convert2dt = TRUE){
             stop("Could not extract the data from the model \n")
         }      
     }  
-    ## conversion to data.table
-    if(convert2dt){
-        if(data.table::is.data.table(data)){
-            data <- copy(data)
-        }else{
-            data <- as.data.table(data)
-        }
-    }
   
   ## export
   return(data)

@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: maj 26 2017 (13:56) 
 ## Version: 
-## last-updated: okt  5 2017 (10:43) 
+## last-updated: jan 18 2018 (15:53) 
 ##           By: Brice Ozenne
-##     Update #: 8
+##     Update #: 9
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -53,7 +53,7 @@ getSigmaGLS <- function(gls, data = NULL, type = "covariance", upper = NULL, ind
   validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "getSigmaGLS")
   validCharacter(type, valid.values = c("correlation","covariance"), valid.length = 1, method = "getSigmaGLS")
   if(is.null(data)){
-    data <- extractData(gls, model.frame = FALSE, convert2dt = FALSE)
+    data <- as.data.table(extractData(gls, model.frame = FALSE))
   }
   
   #### rebuilt the matrix of correlation
