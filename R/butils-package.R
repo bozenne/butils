@@ -24,6 +24,7 @@
 #' @importFrom proftools plotProfileCallGraph readProfileData
 #' @importFrom qqtest qqtest
 #' @importFrom stats anova as.formula coef cov cov2cor delete.response formula IQR lm logLik mad median model.frame model.matrix na.omit optim pnorm pt predict qnorm qt quantile sd setNames simulate terms time vcov update
+#' @importFrom tmvtnorm rtmvnorm
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils Rprof setTxtProgressBar summaryRprof txtProgressBar  
 NULL
