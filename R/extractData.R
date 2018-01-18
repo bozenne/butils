@@ -61,13 +61,13 @@ extractData <- function(object, model.frame = FALSE){
         if(any(class(object) %in% c("gls","gnls","lme","lmList","nlme","nls"))){ # nlme package
       
       
-      # assign the dataset to the object if not in the current environment
-      name.data <- as.character(object$call$data)
-      if((length(name.data) == 1) && (name.data %in% ls() == FALSE)){
-        object$data <- evalInParentEnv(object$call$data, environment())
-      }
+            # assign the dataset to the object if not in the current environment
+            name.data <- as.character(object$call$data)
+            if((length(name.data) == 1) && (name.data %in% ls() == FALSE)){
+                object$data <- evalInParentEnv(object$call$data, environment())
+            }
       
-      data <- try(nlme::getData(object), silent = TRUE)
+            data <- try(nlme::getData(object), silent = TRUE)
       
     }else if(any(class(object) %in% c("coxph","cph"))){
       
@@ -77,10 +77,9 @@ extractData <- function(object, model.frame = FALSE){
       
       if(length(strataVar)>0){ 
         
-        data2 <- evalInParentEnv(object$call$data, environment())
-        
-        data2 <- as.data.table(data2)
-        data <- cbind(data, data2[,.SD,.SDcols = strataVar])
+          data2 <- evalInParentEnv(object$call$data, environment())
+          data <- cbind(as.data.frame(data),
+                        as.data.frame(data2)[,strataVar,drop=FALSE])
         
       }
     }else{
@@ -107,7 +106,7 @@ extractData <- function(object, model.frame = FALSE){
         }      
     }  
   
-  ## export
-  return(data)
+    ## export
+    return(as.data.frame(data))
 }
 
