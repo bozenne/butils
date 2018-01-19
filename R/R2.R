@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug  8 2017 (14:03) 
 ## Version: 
-## last-updated: jan 18 2018 (15:52) 
+## last-updated: jan 19 2018 (16:43) 
 ##           By: Brice Ozenne
-##     Update #: 102
+##     Update #: 103
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -101,7 +101,7 @@ calcR2 <- function(model, data = NULL, trace = FALSE){
     
     ff <- formula(model)
     if(is.null(data)){
-      data <- as.data.table(extractData(model, model.frame = FALSE))
+      data <- as.data.table(extractData(model, design.matrix = FALSE))
     }else{
       data <- copy(as.data.table(data))
     }
