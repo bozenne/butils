@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: okt  5 2017 (10:48) 
 ## Version: 
-## last-updated: okt 10 2017 (13:47) 
+## last-updated: jan 19 2018 (17:00) 
 ##           By: Brice Ozenne
-##     Update #: 7
+##     Update #: 8
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,7 +21,8 @@
 #' 
 #' @param name character string containing the name of the object to get.
 #' @param envir the environment from which to look for the object.
-#' 
+#'
+#' @export
 evalInParentEnv <- function(name, envir){
   
   ### ** find parent environments

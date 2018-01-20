@@ -202,7 +202,6 @@ extractData.gls <- function(object, design.matrix = FALSE, as.data.frame = TRUE)
 
     ## ** extract data
     if(design.matrix){
-
         # assign the dataset to the object if not in the current environment
         name.data <- as.character(object$call$data)
         if((length(name.data) == 1) && (name.data %in% ls() == FALSE)){
