@@ -20,6 +20,7 @@
 #' @param seed set the random number generator
 #' @param trace should the execution of the bootstrap be displayed using a progress bar?
 #' @param name.cluster internal argument.
+#' @param rejectIfWarning Should the estimate be ignored if a warning is returned by the estimation routine?
 #' @param ... ignored
 #' 
 #' @details
@@ -37,8 +38,13 @@
 #' 
 #' #### lm ####
 #' m.lm <- lm(Y ~ group*gender, data = df.data)
-#' resBoot <- bootReg(m.lm, n.boot = 1e3)
+#' resBoot <- bootReg(m.lm, n.boot = 1e2)
 #' resBoot
+#' summary(resBoot, type = "norm")
+#' summary(resBoot, type = "basic")
+#' summary(resBoot, type = "stud")
+#' summary(resBoot, type = "perc")
+#' summary(resBoot, type = "bca")
 #' 
 #' resBoot <- bootReg(m.lm, FUN.resample = "simulate", n.boot = 1e1)
 #' resBoot
@@ -47,13 +53,11 @@
 #' library(nlme)
 #' e.gls <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
 #'              data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
-#' resBoot <- bootReg(e.gls, n.boot = 1e3)
-#' intervals(e.gls)
+#' resBoot <- bootReg(e.gls, n.boot = 1e1)
+#'
 #' #### lme ####
 #' e.lme <- lme(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
 #'              data = Ovary, random =~ 1 | Mare)
-#' resBoot <- bootReg(e.lme, n.boot = 1e1)
-
 #' resBoot <- bootReg(e.lme, n.boot = 1e1)
 #' 
 #' @export
@@ -74,7 +78,7 @@ bootReg.lm <- function(object,
 
 ### ** extract data
     if(is.null(data)){
-        data <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+        data <- as.data.table(extractData(object, design.matrix = FALSE))
     }else{
         data <- copy(as.data.table(data))
     }
@@ -87,8 +91,10 @@ bootReg.lm <- function(object,
     name.cluster <- "XXclusterXX"
 
 ### ** define default statistic
-    
-    if(identical(type,"coef")){
+
+    if(!is.null(FUN.estimate)){
+        
+    }else if(identical(type,"coef")){
         FUN.stdError <- function(x){
             return(summary(x)$coef[,"Std. Error"])
         }        
@@ -108,9 +114,9 @@ bootReg.lm <- function(object,
             return(setNames(res$rawTable$Coefficient, res$rawTable$Variable))
         }
         
-    }else if(is.null(FUN.estimate)){
-            stop("arguments \'FUN.estimate\' must be specified \n",
-                 "when type is not \"coef\" \"anova\" \"publish\" \n")
+    }else{
+        stop("arguments \'FUN.estimate\' must be specified \n",
+             "when type is not \"coef\" \"anova\" \"publish\" \n")
     }
 
 ### ** run boostratp
@@ -140,7 +146,7 @@ bootReg.gls <- function(object,
 
 ### ** extract data
     if(is.null(data)){
-        data <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+        data <- as.data.table(extractData(object, design.matrix = FALSE))
     }else{
         data <- copy(as.data.table(data))
     }
@@ -166,7 +172,9 @@ bootReg.gls <- function(object,
 
     ### ** define default statistic
 
-    if(identical(type,"coef")){
+    if(!is.null(FUN.estimate)){
+        
+    }else if(identical(type,"coef")){
         FUN.estimate <- function(x){
             return(summary(x)$tTable[,"Value"])
         }
@@ -186,9 +194,9 @@ bootReg.gls <- function(object,
             res <- Publish::publish(x, print = FALSE)
             return(setNames(res$rawTable$Coefficient, res$rawTable$Variable))
         }        
-    }else if(is.null(FUN.estimate)){
-            stop("arguments \'FUN.estimate\' must be specified \n",
-                 "when type is not \"coef\" \"anova\" \"publish\" \n")
+    }else{
+        stop("arguments \'FUN.estimate\' must be specified \n",
+             "when type is not \"coef\" \"anova\" \"publish\" \n")
     }
 
 ### ** run boostratp
@@ -209,12 +217,66 @@ bootReg.gls <- function(object,
 #' @export
 bootReg.lme <- bootReg.gls
 
+## * bootReg.lvmfit
+#' @rdname bootReg
+#' @export
+bootReg.lvmfit <- function(object,
+                           type = "coef",
+                           FUN.estimate = NULL,
+                           FUN.stdError = NULL,
+                           data = NULL,
+                           load.library = "lava",
+                           ...){    
+    
+    ### ** extract data
+    if(is.null(data)){
+        data <- as.data.table(extractData(object, design.matrix = FALSE))
+    }else{
+        data <- copy(as.data.table(data))
+    }
+
+    ### ** add cluster variable
+    if("XXclusterXX" %in% names(data)){
+        stop("\"XXclusterXX\" must not be the name of any column in data \n")
+    }
+    data$XXclusterXX <- 1:NROW(data)
+    name.cluster <- "XXclusterXX"
+
+    ### ** define default statistic
+    if(!is.null(FUN.estimate)){
+        
+    }else if(identical(type,"coef")){
+        FUN.stdError <- function(x){
+            return(summary(x)$coef[names(x$opt$estimate),"Std. Error"])
+        }        
+        FUN.estimate <- function(x){
+            return(summary(x)$coef[names(x$opt$estimate),"Estimate"])
+        }
+    }else{
+        stop("arguments \'FUN.estimate\' must be specified \n",
+             "when type is not \"coef\" \n")
+    }
+
+    ### ** run boostratp    
+    out <- .bootReg(object,
+                    data = data, name.cluster = name.cluster,
+                    FUN.estimate = FUN.estimate,
+                    FUN.stdError = FUN.stdError,
+                    load.library = load.library,
+                    ...)
+
+### ** export
+    return(out)
+    
+}
+
 ## * .bootReg function
 #' @rdname bootReg
 #' @export
 .bootReg <- function(object, data, strata = NULL, name.cluster,
                      FUN.estimate, FUN.stdError, FUN.resample = NULL, FUN.iid = NULL,
-                     n.boot = 1e3, n.cpus = 1, load.library, seed = 1,
+                     n.boot = 1e3, n.cpus = 1, load.library, seed = 1, rejectIfWarning = TRUE,
+
                      trace = TRUE){
 
     .Random.seed_save <- .Random.seed
@@ -241,23 +303,21 @@ bootReg.lme <- bootReg.gls
     n.obs.cluster <- unlist(lapply(ls.index.cluster,length))
 
     
-### ** seed
-    if (!is.null(seed)){set.seed(seed)}
-    bootseeds <- sample(1:max(1e6,seed),size=n.boot,replace=FALSE)
-
-### ** non-parametric bootstrap simulation
+    ### ** seed
+    if (!is.null(seed)){
+        set.seed(seed)
+        bootseeds <- sample(1:max(1e6,seed),size=n.boot,replace=FALSE)
+    }else{
+        bootseeds <- NULL
+    }
+    
+    ### ** non-parametric bootstrap simulation
     FUN.resample.save <- FUN.resample
     response.var <- NULL
     if(!is.null(strata)){
         if(any(strata %in% names(data) == FALSE)){
             stop("argument \'strata\' contains names that are not in data \n")
         }
-        if("XXnXX" %in% names(data)){
-            stop("data must not contain a column \"XXnXX\" \n")
-        }
-    
-        dt.clusterByStrata <- data[,list(XXnXX=length(unique(.SD[[name.cluster]]))),by=strata]
-        data <- data[dt.clusterByStrata,,on=strata]
     }
     
     if(is.null(FUN.resample)){
@@ -265,8 +325,12 @@ bootReg.lme <- bootReg.gls
             if(is.null(strata)){
                 new.cluster <- sample(n.cluster,replace=TRUE) # random of ids
             }else{
-                new.cluster <- unlist(data[,list(list(new.cluster = unique(.SD[[2]])[sample(.SD[[1]][1],replace=TRUE)])),
-                                           by=strata,.SDcols = c("XXnXX",name.cluster)][[2]])
+                ## unique(.SD[[2]])   : contains the different ids of the patients (e.g. 1:10)
+                ## .SD[[1]][1] (or .N): contains the number of rows (e.g. 10)
+                ## sample(x = .N, replace=TRUE): randomly draw integers (e.g. 2, 5, 10, ...)
+                res.sample <- data[,list(list(new.cluster = unique(.SD[[name.cluster]])[sample(x = .N, replace=TRUE)])),
+                                   by=strata, .SDcols = name.cluster]
+                new.cluster <- unlist(res.sample[[2]])
             }
             
             data.new <- data[unlist(ls.index.cluster[new.cluster])] # randomly pick individuals to form the new dataset
@@ -286,9 +350,11 @@ bootReg.lme <- bootReg.gls
         }
     }
 
-### ** boostrap function
+    ### ** boostrap function
     FUN.boostrap <- function(iB){
-        set.seed(bootseeds[iB])
+        if(!is.null(bootseeds)){
+            set.seed(bootseeds[iB])
+        }
         
         object$call$data <- do.call(FUN.resample, args = list(object = object, data = data, response.var = response.var))
 
@@ -356,11 +422,18 @@ bootReg.lme <- bootReg.gls
       
   }
 
-### ** postprocess results
+    ### ** postprocess results
     index.ok <- which(unlist(lapply(ls.boot, function(iB){
         is.null(attr(iB,"error"))
     })))
-    
+    if(rejectIfWarning){
+        index.ok <- intersect(index.ok,
+                              which(unlist(lapply(ls.boot, function(iB){
+                                  is.null(attr(iB,"warning"))
+                              })))
+                              )
+    }
+
     Mestimate.boot <- do.call("rbind",lapply(ls.boot[index.ok], function(iB){iB["estimate",]}))
     if(!is.null(FUN.stdError)){
         MstdError.boot <- do.call("rbind",lapply(ls.boot[index.ok], function(iB){iB["stdError",]}))
@@ -376,9 +449,15 @@ bootReg.lme <- bootReg.gls
     
 ### ** export
     if(is.null(strata)){
-        strata <- 1:NROW(data)
+        strata <- rep(1,NROW(data))
     }else{
         strata <- data[,interaction(.SD), .SDcols = strata]
+    }
+
+    if(!is.null(seed)){
+        assign(x = ".Random.seed",
+               value = .Random.seed_save,
+               envir = globalenv())
     }
     
     out <- list(call = object$call,

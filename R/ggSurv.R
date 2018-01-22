@@ -131,7 +131,7 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
   
   ## extract the data used to fit the model
   if(is.null(data)){
-      originalData <- extractData(object, model.frame = FALSE, convert2dt = TRUE)
+      originalData <- as.data.table(extractData(object, design.matrix = FALSE))
       ## cannot use model.frame = TRUE otherwise the strata variable are combined into one
   }else{
       originalData <- copy(as.data.table(data))

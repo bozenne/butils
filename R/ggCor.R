@@ -37,7 +37,7 @@ ggCor <- function(data, type = "correlation", legend_title = NULL, plot = TRUE, 
     }
   }
   
-  data2 <- melt(data2)
+  data2 <- data.table::melt(data2)
   out <- ggHeatmap(data2, 
                    name.x = "Var1", name.y = "Var2", name.fill = "value", 
                    legend_title = legend_title, ...)
@@ -125,7 +125,7 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, ro
             name.fill <- "fill"
         }
 
-        data <- melt(data.table(XXIdXX = level.x, data), id.vars = "XXIdXX")
+        data <- data.table::melt(data.table(XXIdXX = level.x, data), id.vars = "XXIdXX")
         data[,XXIdXX := factor(XXIdXX,  levels = level.x, labels = row.names)]
         #data[,variable := factor(variable,  levels = level.y, labels = col.names)]
         setnames(data, old = names(data),new = c(name.x,name.y,name.fill))

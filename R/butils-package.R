@@ -4,6 +4,7 @@
 #' @description Miscellaneous function for working in R
 #' 
 #' @import data.table
+#' @import lava
 #' @import ggplot2
 #' @import parallel
 #' @importFrom boot empinf freq.array
@@ -18,10 +19,15 @@
 #' @importFrom Matrix bdiag
 #' @importFrom merTools predictInterval
 #' @importFrom nlme fixef getData getGroupsFormula ranef
+#' @importFrom optimx optimx
 #' @importFrom profvis profvis
 #' @importFrom proftools plotProfileCallGraph readProfileData
+#' @importFrom qqtest qqtest
 #' @importFrom stats anova as.formula coef cov cov2cor delete.response formula IQR lm logLik mad median model.frame model.matrix na.omit optim pnorm pt predict qnorm qt quantile sd setNames simulate terms time vcov update
+#' @importFrom tmvtnorm rtmvnorm
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils Rprof setTxtProgressBar summaryRprof txtProgressBar  
 NULL
+
+
 

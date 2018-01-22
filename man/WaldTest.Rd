@@ -2,10 +2,13 @@
 % Please edit documentation in R/WaldTest.R
 \name{WaldTest}
 \alias{WaldTest}
+\alias{WaldTest.gls}
 \alias{WaldTest.lme}
 \title{Testing independent linear hypotheses using a Wald test}
 \usage{
 WaldTest(object, ...)
+
+\method{WaldTest}{gls}(object, C, b = rep(0, NROW(C)), df = NULL, ...)
 
 \method{WaldTest}{lme}(object, C, b = rep(0, NROW(C)), df = NULL, ...)
 }
@@ -38,4 +41,31 @@ and compute the p.value using the Gaussian distribution (\code{df=NULL}) or a st
 In such a case the degrees of freedom are computed using:
 \deqn{Cdf = C * df}
 This formula is probably a very crude approximation to the appropriate degrees of freedom of \eqn{diage(CSC)} (assuming they exists).
+}
+\examples{
+library(nlme)
+
+## gls
+fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), Ovary,
+               correlation = corAR1(form = ~ 1 | Mare))
+
+name.coef <- names(coef(fm1))
+n.coef <- length(name.coef)
+C <- matrix(0, nrow = n.coef, ncol = n.coef,
+            dimnames = list(name.coef, name.coef))
+diag(C) <- 1
+WaldTest(fm1, C)
+summary(fm1)$tTable
+
+## lme
+fm2 <- lme(distance ~ age + Sex, data = Orthodont, random = ~ 1)
+
+name.coef <- names(coef(fm2))
+n.coef <- length(name.coef)
+C <- matrix(0, nrow = n.coef, ncol = n.coef,
+            dimnames = list(name.coef, name.coef))
+diag(C) <- 1
+WaldTest(fm2, C)
+summary(fm2)$tTable
+
 }

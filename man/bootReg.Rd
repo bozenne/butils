@@ -5,6 +5,7 @@
 \alias{bootReg.lm}
 \alias{bootReg.gls}
 \alias{bootReg.lme}
+\alias{bootReg.lvmfit}
 \alias{.bootReg}
 \title{Perform bootstrap computation on an object}
 \usage{
@@ -19,9 +20,13 @@ bootReg(object, ...)
 \method{bootReg}{lme}(object, cluster, type = "coef", FUN.estimate = NULL,
   FUN.stdError = NULL, data = NULL, load.library = "nlme", ...)
 
+\method{bootReg}{lvmfit}(object, type = "coef", FUN.estimate = NULL,
+  FUN.stdError = NULL, data = NULL, load.library = "lava", ...)
+
 .bootReg(object, data, strata = NULL, name.cluster, FUN.estimate,
   FUN.stdError, FUN.resample = NULL, FUN.iid = NULL, n.boot = 1000,
-  n.cpus = 1, load.library, seed = 1, trace = TRUE)
+  n.cpus = 1, load.library, seed = 1, rejectIfWarning = TRUE,
+  trace = TRUE)
 }
 \arguments{
 \item{object}{the fitted model.}
@@ -55,6 +60,8 @@ Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.
 
 \item{seed}{set the random number generator}
 
+\item{rejectIfWarning}{Should the estimate be ignored if a warning is returned by the estimation routine?}
+
 \item{trace}{should the execution of the bootstrap be displayed using a progress bar?}
 }
 \description{
@@ -75,8 +82,13 @@ df.data <- data.frame(Y = rnorm(n),
 
 #### lm ####
 m.lm <- lm(Y ~ group*gender, data = df.data)
-resBoot <- bootReg(m.lm, n.boot = 1e3)
+resBoot <- bootReg(m.lm, n.boot = 1e2)
 resBoot
+summary(resBoot, type = "norm")
+summary(resBoot, type = "basic")
+summary(resBoot, type = "stud")
+summary(resBoot, type = "perc")
+summary(resBoot, type = "bca")
 
 resBoot <- bootReg(m.lm, FUN.resample = "simulate", n.boot = 1e1)
 resBoot
@@ -85,12 +97,11 @@ resBoot
 library(nlme)
 e.gls <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
              data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
-resBoot <- bootReg(e.gls, n.boot = 1e3)
-intervals(e.gls)
+resBoot <- bootReg(e.gls, n.boot = 1e1)
+
 #### lme ####
 e.lme <- lme(follicles ~ sin(2*pi*Time) + cos(2*pi*Time),
              data = Ovary, random =~ 1 | Mare)
-resBoot <- bootReg(e.lme, n.boot = 1e1)
 resBoot <- bootReg(e.lme, n.boot = 1e1)
 
 }

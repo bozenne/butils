@@ -2,10 +2,10 @@
 
 language: R
 cache: packages
-## compiler: gcc
-## dist: trusty
 r_check_args: --as-cran
 sudo: required
+
+cache: packages
 
 repos:
   CRAN: http://cran.rstudio.com 
