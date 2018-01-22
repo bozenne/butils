@@ -8,8 +8,9 @@
 \usage{
 addActivity(object, ...) <- value
 
-\method{addActivity}{butilsAccount}(object, involved, type = as.character(NA),
-  date = as.Date(NA), ...) <- value
+\method{addActivity}{butilsAccount}(object, involved = NULL,
+  type = as.character(NA), date = as.Date(NA), note = "", label = NULL,
+  ...) <- value
 }
 \arguments{
 \item{object}{the account.}
@@ -23,14 +24,29 @@ addActivity(object, ...) <- value
 \item{type}{a character string describing the activity.}
 
 \item{date}{the date at which the activity happen.}
+
+\item{note}{additional text.}
 }
 \description{
 Add a new entry to the account.
 }
 \examples{
+#### Create an account ####
 myAcc <- createAccount()
+
+#### Ease input with short names ####
 addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
                            "Sebastian Holst" = c("Seb","Sebastian"))
-addActivity(myAcc, involved = c("Brice","Sebastian"), type = "Court") <- c("Sebastian" = 95)
+
+#### Add activity paid by one person for others ####
+addActivity(myAcc, involved = c("Brice","Sebastian"), type = "Court") <- c("Sebastian" = 200)
+
+#### Add expense, i.e. activity paid by nobody ####
+addActivity(myAcc, involved = c("Brice","Sebastian"), type = "Shuttlecock") <- 100
+
+#### Add contribution from one member ####
+addActivity(myAcc, type = "Shuttlecock") <- c("Brice" = 100)
+
+####
 myAcc
 }

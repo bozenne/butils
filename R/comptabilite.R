@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: dec 20 2017 (18:36) 
+## Last-Updated: jan 21 2018 (01:05) 
 ##           By: Brice Ozenne
-##     Update #: 154
+##     Update #: 370
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -85,14 +85,28 @@ createAccount <- function(){
 #' @param involved who was involved in the activity?
 #' @param type a character string describing the activity.
 #' @param date the date at which the activity happen.
+#' @param note additional text.
 #' @param value a named vector describing name paid what.
 #' @param ... ignored.
 #' 
 #' @examples
+#' #### Create an account ####
 #' myAcc <- createAccount()
+#'
+#' #### Ease input with short names ####
 #' addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
 #'                            "Sebastian Holst" = c("Seb","Sebastian"))
-#' addActivity(myAcc, involved = c("Brice","Sebastian"), type = "Court") <- c("Sebastian" = 95)
+#'
+#' #### Add activity paid by one person for others ####
+#' addActivity(myAcc, involved = c("Brice","Sebastian"), type = "Court") <- c("Sebastian" = 200)
+#'
+#' #### Add expense, i.e. activity paid by nobody ####
+#' addActivity(myAcc, involved = c("Brice","Sebastian"), type = "Shuttlecock") <- 100
+#'
+#' #### Add contribution from one member ####
+#' addActivity(myAcc, type = "Shuttlecock") <- c("Brice" = 100)
+#'
+#' ####
 #' myAcc
 #' @export
 `addActivity<-` <-
@@ -101,80 +115,126 @@ createAccount <- function(){
 #' @rdname addActivity
 #' @export
 "addActivity<-.butilsAccount" <- function(object,
-                                          involved,
+                                          involved = NULL,
                                           type = as.character(NA),
                                           date = as.Date(NA),
                                           note = "",
+                                          label = NULL,
                                           ...,
                                           value){
 
-### ** check consistency of the arguments
-    if(!is.character(involved)){
+    ### ** normalize arguments
+    if(identical(names(value),"")){
+        names(value) <- NULL
+    }
+    who.paid <- names(value)
+    
+    test.cost <- !is.null(involved)    
+    test.paid <- !is.null(who.paid)
+    
+    ### ** check consistency of the arguments
+    if(length(value)!=1){
+        stop("Argument \'value\' must have length 1 \n")
+    }
+    
+    if(is.null(involved) && is.null(who.paid)){
+        stop("argument \'involved\' must be specified or argument \'value\' must be named \n")
+    }
+    
+    if(!is.null(involved) && !is.character(involved)){
         stop("argument \'involved\' should be a character vector \n")
-    }    
+    }
+    
     if(!is.character(type)){
         stop("argument \'type\' should be a character vector \n")
     }
+    
     if("Date" %in% class(date) == FALSE){
         stop("argument \'Date\' should inherit from the class \"Date\" \n")
     }
-    if(is.null(names(value))){
-        stop("argument \'value\' should be named to know name has paid what \n")
-    }
-    if(any(names(value) %in% involved == FALSE)){
+    
+    if(!is.null(who.paid) && !is.null(involved) && any(names(value) %in% involved == FALSE)){
         stop("names of argument \'value\' are not consistent with argument \'involved\' \n")
     }
-
-### ** Convert to real name
-    name.value <- names(value)
+    
+    ### ** Convert nick names to real names
     if(!is.null(object$nickName)){
 
-        for(iName in names(object$nickName)){
-            nickNames <- paste(object$nickName[[iName]], collapse = "|")
+        for(iName in names(object$nickName)){ ## iName <- names(object$nickName)[1]
+            nickNames <- paste0("^",paste(object$nickName[[iName]], collapse = "$|^"),"$")
 
-            index <- grep(pattern = nickNames, x = involved)
-            if(length(index)>1){
-                stop("Two names matches the same nickName \n",
-                     "Full name: \"",iName,"\"\n",
-                     "Proposed name: \"",paste(involved[index], collapse = "\" \""),"\" \n")
-            }            
-            involved[index] <- iName
+            if(!is.null(involved)){
+                index <- grep(pattern = nickNames, x = involved)
+                if(length(index)>0){
+                    involved[index] <- iName
+                }
+            }
 
-            index <- grep(pattern = nickNames, x = name.value)
-            if(length(index)>1){
-                stop("Two names matches the same nickName \n",
-                     "Full name: \"",iName,"\"\n",
-                     "Proposed name: \"",paste(name.value[index], collapse = "\" \""),"\" \n")
-            }            
-            name.value[index] <- iName
+            if(!is.null(who.paid)){
+                index <- grep(pattern = nickNames, x = who.paid)
+                if(length(index)>0){
+                    who.paid <- iName
+                }
+            }
         }
 
-
-
     }
 
-### ** fill the table
-    value.full <- setNames(rep(0, length(involved)), involved)
-    value.full[name.value] <- as.double(value)
+    ### ** prepare
+    
+    ### *** payment
+    all.involved <- union(involved, who.paid)
+    vec.paid <- rep(0, length(all.involved))
 
-    if(is.null(object$table)){
-        label <- 1
+    if(test.paid){
+        ## Contribution of one of the member
+        vec.paid[who.paid == all.involved] <- as.double(value)
     }else{
-        label <- max(object$table$label)+1
+        ## No contribution from the members
+        ## e.g. 10 shuttlecocks have been used
+        ## vec.paid stay at 0 for everybody
+    }
+
+    
+    
+    ### *** cost
+    if(test.cost){
+        ## Cost related to the activity
+        ## the total cost will be shared among the people involved (see below)
+        total.cost <- as.double(value)
+    }else{
+        ## Contribution of one of the member (nobody is involved)
+        ## e.g. Brice buy shuttlecock for 100 kr. They have not yet been used thought.
+        ##      It does not (yet) corresponds to an expanse for anybody
+        ##      This is why total cost is set to 0
+        total.cost <- 0
     }
     
-    
-    newtable <- data.table(paid = as.double(value.full),
-                           name = involved,
+    ### *** Unique identifier for each entry
+    if(is.null(object$table)){
+        id.entry <- 1
+    }else{
+        id.entry <- max(object$table$id.entry)+1
+    }
+
+    if(is.null(label)){
+        label <- id.entry
+    }
+
+    ### ** fill the table
+    newtable <- data.table(paid = vec.paid,
+                           name = all.involved,
                            date = date,
                            note = note,
                            type = type,
-                           label = label)
-    newtable[, c("total.price") := sum(.SD$paid), .SDcols = "paid"]
-    newtable[, c("n.participant") := .N]
-    newtable[, c("participant.price") := .SD$total.price/.SD$n.participant,
-             .SDcols = c("total.price","n.participant")]
-    
+                           label = label,
+                           id.entry = id.entry)
+
+    newtable[, "total.cost" := total.cost]
+    newtable[, "n.participant" := .N]
+    newtable[, "participant.cost" := .SD$total.cost/.SD$n.participant,
+             .SDcols = c("total.cost","n.participant")]
+
     object$table <- rbind(object$table,
                           newtable)
 
@@ -208,28 +268,36 @@ print.butilsAccount <- function(x, ...){
 #' @export
 summary.butilsAccount <- function(object,
                                   print = TRUE,
-                                  detail = 1:2,
-                                  keep.cols = c("paid","date","type","total.price","participant.price"),
+                                  detail = 0:2,
+                                  keep.cols = c("paid","date","type","total.cost","participant.cost"),
+                                  digit = 1,
                                   ...){
 
     ### ** Count
     if(!is.null(object$table)){
         text.cat <- "#### balance ####\n"
         
-        balance.print <- object$table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.price)),
+        balance.print <- object$table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.cost)),
                                       by = "name",
-                                      .SDcols = c("paid","participant.price")]
+                                      .SDcols = c("paid","participant.cost")]
         balance.print[, c("balance") :=  .SD$paid - .SD$spent,
                       .SDcols = c("paid","spent")]
-    
-    tempo1 <- object$table[,list(list(.SD)), .SDcols = keep.cols, by = "name"]
-    detail1.print <- setNames(tempo1[[2]],tempo1[[1]])
 
-    tempo2 <- object$table[,list(list(.SD)), .SDcols = keep.cols, by = "label"]
-    detail2.print <- setNames(tempo2[[2]],tempo2[[1]])
+        setkeyv(object$table, c("date","id.entry"))
+        tempo1 <- object$table[,list(list(.SD)), .SDcols = keep.cols, by = "name"]
+        detail1.print <- setNames(tempo1[[2]],tempo1[[1]])
+
+        setkeyv(object$table, c("label", "paid"))
+
+        Ulab <- as.character(object$table[,1,by="label"][,label])
+        n.label <- length(Ulab)
+        detail2.print <- vector(mode = "list", length = n.label)
+        names(detail2.print) <- Ulab
+        for(iLab in 1:n.label){ ## iLab <- 1  
+            detail2.print[[Ulab[iLab]]] <- object$table[label == Ulab[iLab],.SD[1], .SDcols = setdiff(keep.cols, "paid"), by = "id.entry"]                   
+        }
     }else{
         text.cat <- "the account is empty \n"
-        balance.print <- NULL
         detail <- NULL
         detail1.print <- NULL
         detail2.print <- NULL
@@ -237,22 +305,50 @@ summary.butilsAccount <- function(object,
     
     ### ** Display
 
-    cat(text.cat)
-    if(!is.null(balance.print)){
-        print(balance.print)
-    }
     
-    if(length(detail)>0){
+    if(!is.null(detail)){
+        if(0 %in% detail){
+            cat(text.cat)
+            balance.print[, paid := round(paid, digits = digit)]
+            balance.print[, spent := round(spent, digits = digit)]
+            balance.print[, balance := round(balance, digits = digit)]
+            balance.print <- as.data.frame(balance.print)
+            print(balance.print)
+        }
+        
         if(1 %in% detail){
-            cat("\n\n")
-            cat("#### detail of the spending by individual ####\n")
-            print(detail1.print[])
+            if(0 %in% detail){
+                cat("\n\n")
+            }
+            
+            cat("#### detail of the spending by individual ####")
+            detail1.print <- lapply(detail1.print, as.data.frame)
+            for(iName in names(detail1.print)){
+                cat("\n ")
+                iDF <- detail1.print[[iName]]
+                cat("> name: ",iName,"\n", sep = "")
+                iDF$paid <- round(iDF$paid, digits = digit)
+                iDF$total.cost <- round(iDF$total.cost, digits = digit)
+                iDF$participant.cost <- round(iDF$participant.cost, digits = digit)
+                print(iDF)
+            }
         }
 
         if(2 %in% detail){
-            cat("\n")
+            if(any(0:1 %in% detail)){
+                cat("\n\n")
+            }
+            
             cat("#### detail of the spending by activity ####\n")
-            print(detail2.print[])
+            detail2.print <- lapply(detail2.print, as.data.frame)
+            for(iAct in names(detail2.print)){
+                cat("\n ")
+                iDF <- detail2.print[[iAct]]
+                cat("> activity: ",iAct,"\n", sep = "")
+                iDF$total.cost <- round(iDF$total.cost, digits = digit)
+                iDF$participant.cost <- round(iDF$participant.cost, digits = digit)
+                print(iDF)
+            }
         }
     }
 

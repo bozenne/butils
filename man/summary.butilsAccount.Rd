@@ -8,9 +8,9 @@
 \usage{
 \method{print}{butilsAccount}(x, ...)
 
-\method{summary}{butilsAccount}(object, print = TRUE, detail = 1:2,
-  keep.cols = c("paid", "date", "type", "total.price", "participant.price"),
-  ...)
+\method{summary}{butilsAccount}(object, print = TRUE, detail = 0:2,
+  keep.cols = c("paid", "date", "type", "total.cost", "participant.cost"),
+  digit = 1, ...)
 }
 \arguments{
 \item{x}{an object of class butilsAccount.}
