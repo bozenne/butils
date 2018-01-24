@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: jan 21 2018 (01:05) 
+## Last-Updated: jan 24 2018 (17:49) 
 ##           By: Brice Ozenne
-##     Update #: 370
+##     Update #: 382
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -82,11 +82,13 @@ createAccount <- function(){
 #' @name addActivity
 #' 
 #' @param object the account.
-#' @param involved who was involved in the activity?
-#' @param type a character string describing the activity.
-#' @param date the date at which the activity happen.
-#' @param note additional text.
-#' @param value a named vector describing name paid what.
+#' @param involved [vector of characters] who was involved in the activity?
+#' @param type [character] the name of the activity.
+#' @param date [date] the date at which the activity happen.
+#' @param note [character] additional text.
+#' @param value [numeric] a named vector describing name paid what.
+#' @param label [label] a label associated with the activity. When
+#' displayed activities are sorted by labels.
 #' @param ... ignored.
 #' 
 #' @examples
@@ -249,9 +251,10 @@ createAccount <- function(){
 #' 
 #' @param x an object of class butilsAccount.
 #' @param object an object of class butilsAccount.
-#' @param print should the summary be printed in the console.
-#' @param detail should the balance per individual (1) and by activity (2) be displayed.
-#' @param keep.cols the columns to be displayed in the detail.
+#' @param print [logical] should the summary be printed in the console.
+#' @param detail [logical] should the balance per individual (1) and by activity (2) be displayed.
+#' @param keep.cols [character vector] the columns to be displayed in the detail.
+#' @param digit [integer] the number of decimal to be displayed.
 #' @param ... ignored
 #' 
 
@@ -273,6 +276,8 @@ summary.butilsAccount <- function(object,
                                   digit = 1,
                                   ...){
 
+    balance <- label <- paid <- spent <- NULL ## [:CRAN checks] data.table
+    
     ### ** Count
     if(!is.null(object$table)){
         text.cat <- "#### balance ####\n"
@@ -299,8 +304,9 @@ summary.butilsAccount <- function(object,
     }else{
         text.cat <- "the account is empty \n"
         detail <- NULL
+        balance.print <- NULL
         detail1.print <- NULL
-        detail2.print <- NULL
+        detail2.print <- NULL       
     }
     
     ### ** Display

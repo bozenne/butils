@@ -8,6 +8,7 @@
 \alias{extractData.lvmfit}
 \alias{extractData.gls}
 \alias{extractData.lme}
+\alias{extractData.merMod}
 \title{Extract Data From a Model}
 \usage{
 extractData(object, design.matrix, as.data.frame)
@@ -28,6 +29,9 @@ extractData(object, design.matrix, as.data.frame)
   as.data.frame = TRUE)
 
 \method{extractData}{lme}(object, design.matrix = FALSE,
+  as.data.frame = TRUE)
+
+\method{extractData}{merMod}(object, design.matrix = FALSE,
   as.data.frame = TRUE)
 }
 \arguments{
@@ -50,18 +54,25 @@ Y1 <- rnorm(n, mean = 0)
 Y2 <- rnorm(n, mean = 0.3)
 Id <- findInterval(runif(n), seq(0.1,1,0.1))
 data.df <- rbind(data.frame(Y=Y1,G="1",Id = Id),
-           data.frame(Y=Y2,G="2",Id = Id)
+           data.frame(Y=Y2,G="2",Id = Id)#'            
            )
+data.df$oh <- 1
 m.lm <- lm(Y ~ G, data = data.df)
 a <- extractData(m.lm, design.matrix = TRUE)
 b <- extractData(m.lm, design.matrix = FALSE)
 
+#### mixed models ####
 library(nlme)
 m.gls <- gls(Y ~ G, weights = varIdent(form = ~ 1|Id), data = data.df)
 c <- extractData(m.gls)
 m.lme <- lme(Y ~ G, random = ~ 1|Id, data = data.df)
 d <- extractData(m.lme)
 
+library(lme4)
+m.lmer <- lmer(Y ~ G + (1|Id), data = data.df)
+d <- extractData(m.lmer)
+
+#### latent variable models ####
 library(lava)
 e.lvm <- estimate(lvm(Y ~ G), data = data.df)
 e <- extractData(e.lvm)

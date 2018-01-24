@@ -19,11 +19,13 @@
 
 \item{object}{an object of class butilsAccount.}
 
-\item{print}{should the summary be printed in the console.}
+\item{print}{[logical] should the summary be printed in the console.}
 
-\item{detail}{should the balance per individual (1) and by activity (2) be displayed.}
+\item{detail}{[logical] should the balance per individual (1) and by activity (2) be displayed.}
 
-\item{keep.cols}{the columns to be displayed in the detail.}
+\item{keep.cols}{[character vector] the columns to be displayed in the detail.}
+
+\item{digit}{[integer] the number of decimal to be displayed.}
 }
 \description{
 Summarizing an account.

@@ -17,15 +17,18 @@ addActivity(object, ...) <- value
 
 \item{...}{ignored.}
 
-\item{value}{a named vector describing name paid what.}
+\item{value}{[numeric] a named vector describing name paid what.}
 
-\item{involved}{who was involved in the activity?}
+\item{involved}{[vector of characters] who was involved in the activity?}
 
-\item{type}{a character string describing the activity.}
+\item{type}{[character] the name of the activity.}
 
-\item{date}{the date at which the activity happen.}
+\item{date}{[date] the date at which the activity happen.}
 
-\item{note}{additional text.}
+\item{note}{[character] additional text.}
+
+\item{label}{[label] a label associated with the activity. When
+displayed activities are sorted by labels.}
 }
 \description{
 Add a new entry to the account.

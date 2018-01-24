@@ -1,3 +1,4 @@
+## * Documentation
 #' @title Extract Data From a Model
 #' 
 #' @description Extract data from a model using \code{nlme::getData}, \code{riskRegression::coxDesign} or \code{model.frame}.. 
@@ -16,18 +17,25 @@
 #' Y2 <- rnorm(n, mean = 0.3)
 #' Id <- findInterval(runif(n), seq(0.1,1,0.1))
 #' data.df <- rbind(data.frame(Y=Y1,G="1",Id = Id),
-#'            data.frame(Y=Y2,G="2",Id = Id)
+#'            data.frame(Y=Y2,G="2",Id = Id)#'            
 #'            )
+#' data.df$oh <- 1
 #' m.lm <- lm(Y ~ G, data = data.df)
 #' a <- extractData(m.lm, design.matrix = TRUE)
 #' b <- extractData(m.lm, design.matrix = FALSE)
-#' 
+#'
+#' #### mixed models ####
 #' library(nlme)
 #' m.gls <- gls(Y ~ G, weights = varIdent(form = ~ 1|Id), data = data.df)
 #' c <- extractData(m.gls)
 #' m.lme <- lme(Y ~ G, random = ~ 1|Id, data = data.df)
 #' d <- extractData(m.lme)
-#' 
+#'
+#' library(lme4)
+#' m.lmer <- lmer(Y ~ G + (1|Id), data = data.df)
+#' d <- extractData(m.lmer)
+#'
+#' #### latent variable models ####
 #' library(lava)
 #' e.lvm <- estimate(lvm(Y ~ G), data = data.df)
 #' e <- extractData(e.lvm)
@@ -167,7 +175,7 @@ extractData.lvmfit <- function(object, design.matrix = FALSE, as.data.frame = TR
     ## ** extract data
     if(design.matrix){
         data <- object$data$model.frame
-        keep.cols <- intersect(c("(Intercept)",vars(object)), names(data))
+        keep.cols <- intersect(c("(Intercept)",lava::vars(object)), names(data))
         data <- data[,keep.cols,drop=FALSE]
     }else{
         data <- evalInParentEnv(object$call$data, environment())
@@ -236,3 +244,36 @@ extractData.gls <- function(object, design.matrix = FALSE, as.data.frame = TRUE)
 #' @rdname extractData
 #' @export
 extractData.lme <- extractData.gls
+
+## * method extractData.lmer
+#' @rdname extractData
+#' @export
+extractData.merMod <- function(object, design.matrix = FALSE, as.data.frame = TRUE){
+    ## ** check arguments
+    validLogical(design.matrix, valid.length = 1)
+    validLogical(as.data.frame, valid.length = 1)
+
+    ## ** extract data
+    if(design.matrix){
+        data <- try(model.matrix(object), silent = TRUE)
+    }else{
+        data <- evalInParentEnv(object@call$data, environment())
+        
+        if("function" %in% class(data)){
+            stop("data has the same name as a function \n",
+                 "consider renaming data before generating object \n")
+        }
+        if(!inherits(data, "data.frame")){
+            stop("Could not extract the data from the model \n")
+        } 
+    }
+
+    ## ** normalize data
+    if(as.data.frame){
+        data <- as.data.frame(data)        
+    }
+
+    ## ** export
+    return(data)
+    
+}
