@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: jan 21 2018 (01:05) 
+## Last-Updated: jan 27 2018 (09:47) 
 ##           By: Brice Ozenne
-##     Update #: 370
+##     Update #: 389
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -153,10 +153,6 @@ createAccount <- function(){
         stop("argument \'Date\' should inherit from the class \"Date\" \n")
     }
     
-    if(!is.null(who.paid) && !is.null(involved) && any(names(value) %in% involved == FALSE)){
-        stop("names of argument \'value\' are not consistent with argument \'involved\' \n")
-    }
-    
     ### ** Convert nick names to real names
     if(!is.null(object$nickName)){
 
@@ -201,13 +197,13 @@ createAccount <- function(){
     if(test.cost){
         ## Cost related to the activity
         ## the total cost will be shared among the people involved (see below)
-        total.cost <- as.double(value)
+        cost <- as.double(value)
     }else{
         ## Contribution of one of the member (nobody is involved)
         ## e.g. Brice buy shuttlecock for 100 kr. They have not yet been used thought.
         ##      It does not (yet) corresponds to an expanse for anybody
         ##      This is why total cost is set to 0
-        total.cost <- 0
+        cost <- 0
     }
     
     ### *** Unique identifier for each entry
@@ -230,10 +226,10 @@ createAccount <- function(){
                            label = label,
                            id.entry = id.entry)
 
-    newtable[, "total.cost" := total.cost]
-    newtable[, "n.participant" := .N]
-    newtable[, "participant.cost" := .SD$total.cost/.SD$n.participant,
-             .SDcols = c("total.cost","n.participant")]
+    newtable[, c("total.cost","n.participant","participant.cost") := 0]
+    newtable[name %in% involved, "total.cost" := cost]
+    newtable[name %in% involved, "n.participant" := .N]
+    newtable[name %in% involved, "participant.cost" := .SD$total.cost/.SD$n.participant]
 
     object$table <- rbind(object$table,
                           newtable)
@@ -326,7 +322,7 @@ summary.butilsAccount <- function(object,
             for(iName in names(detail1.print)){
                 cat("\n ")
                 iDF <- detail1.print[[iName]]
-                cat("> name: ",iName,"\n", sep = "")
+                cat("*** name: ",iName,"\n", sep = "")
                 iDF$paid <- round(iDF$paid, digits = digit)
                 iDF$total.cost <- round(iDF$total.cost, digits = digit)
                 iDF$participant.cost <- round(iDF$participant.cost, digits = digit)
@@ -339,12 +335,12 @@ summary.butilsAccount <- function(object,
                 cat("\n\n")
             }
             
-            cat("#### detail of the spending by activity ####\n")
+            cat("#### detail of the spending by activity ####")
             detail2.print <- lapply(detail2.print, as.data.frame)
             for(iAct in names(detail2.print)){
                 cat("\n ")
                 iDF <- detail2.print[[iAct]]
-                cat("> activity: ",iAct,"\n", sep = "")
+                cat("*** activity: ",iAct,"\n", sep = "")
                 iDF$total.cost <- round(iDF$total.cost, digits = digit)
                 iDF$participant.cost <- round(iDF$participant.cost, digits = digit)
                 print(iDF)
