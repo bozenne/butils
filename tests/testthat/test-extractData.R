@@ -11,29 +11,30 @@ df.sim <- rbind(data.frame(Y=Y1,G=1,Id = 1:5),
            )
 m.lm <- lm(Y ~ G, data = df.sim)
 test_that("extractData (lm)", {
-    expect_named(extractData(m.lm, model.frame = TRUE),
-                 expected = c("Y","G"))
+    expect_named(extractData(m.lm, design.matrix = TRUE),
+                 expected = c("(Intercept)","G"))
 })
 
 
 library(nlme)
+library(lme4)
 test_that("extractData (gls/lme/lmer)", {
   m.gls <- gls(Y ~ G, weights = varIdent(form = ~ 1|Id), data = df.sim)
-  expect_named(extractData(m.gls, model.frame = TRUE),
+  expect_named(extractData(m.gls, design.matrix = TRUE),
                expected = c("Y","G","Id"))
   m.lme <- lme(Y ~ G, random = ~ 1|Id, data = df.sim)
-  expect_named(extractData(m.lme, model.frame = TRUE),
+  expect_named(extractData(m.lme, design.matrix = TRUE),
                expected = c("Y","G","Id"))
   m.lmer <- lmer(Y ~ G + (1|Id), data = df.sim)
-  expect_named(extractData(m.lmer, model.frame = TRUE),
-               expected = c("Y","G","Id"))
+  expect_named(extractData(m.lmer, design.matrix = TRUE),
+               expected = c("(Intercept)","G"))
 })
 
 
 library(lava)
 test_that("extractData (lvm)", {
   e <- estimate(lvm(Y ~ G), data = df.sim)
-  expect_named(extractData(e, model.frame = TRUE),
+  expect_named(extractData(e, design.matrix = TRUE),
                expected = c("Y","G"))
 })
 
@@ -45,12 +46,12 @@ dt.sim <- sampleData(n, outcome = "survival")
 test_that("extractData (survival)", {
   # no strata
   m.cox <- coxph(Surv(time, event) ~ X1 + X2, data = dt.sim, x = TRUE, y = TRUE)
-  expect_named(extractData(m.cox, model.frame = TRUE),
+  expect_named(extractData(m.cox, design.matrix = TRUE),
                expected = c("start","stop","status","X1","X2"))
   # strata
   m.cox <- coxph(Surv(time, event) ~ strata(X1) + X2, data = dt.sim, x = TRUE, y = TRUE)
-  expect_named(extractData(m.cox, model.frame = TRUE),
+  expect_named(extractData(m.cox, design.matrix = TRUE),
                expected = c("start","stop","status","X2","strata"))
-    expect_named(extractData(m.cox, model.frame = FALSE),
+    expect_named(extractData(m.cox, design.matrix = FALSE),
                expected = names(dt.sim))
 })
