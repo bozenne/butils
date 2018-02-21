@@ -3,15 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-<<<<<<< HEAD
-## Last-Updated: jan 27 2018 (09:47) 
+## Last-Updated: feb 18 2018 (16:42) 
 ##           By: Brice Ozenne
-##     Update #: 389
-=======
-## Last-Updated: jan 24 2018 (17:49) 
-##           By: Brice Ozenne
-##     Update #: 382
->>>>>>> 353a43fc960661d965b707c988f254de25639cb9
+##     Update #: 453
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -235,9 +229,9 @@ createAccount <- function(){
                            id.entry = id.entry)
 
     newtable[, c("total.cost","n.participant","participant.cost") := 0]
-    newtable[name %in% involved, "total.cost" := cost]
-    newtable[name %in% involved, "n.participant" := .N]
-    newtable[name %in% involved, "participant.cost" := .SD$total.cost/.SD$n.participant]
+    newtable[newtable$name %in% involved, "total.cost" := cost]
+    newtable[newtable$name %in% involved, "n.participant" := .N]
+    newtable[newtable$name %in% involved, "participant.cost" := .SD$total.cost/.SD$n.participant]
 
     object$table <- rbind(object$table,
                           newtable)
@@ -246,6 +240,115 @@ createAccount <- function(){
     return(object)
 }
 
+## * addMatch
+#' @title Add a new match to the account
+#' @description Add a new match to the account.
+#' @name addMatch
+#' 
+#' @param object the account.
+#' @param involved [vector of characters] the names of the players.
+#' @param date [date] the date at which the activity happen.
+#' @param shuttlecock [interger > 0] the number of shuttlecock used.
+#' @param price.shuttlecock [numeric] the price of a single shuttlecock.
+#' @param refound [list] A named list indicating who has refounded who.
+#' @param note [character] additional text.
+#' @param value [numeric] a named vector describing name paid what.
+#' @param print.balance [logical] should the balance for the match be displayed.
+#' @param replace.entry [logical] erase any entry that have the same name.
+#' @param ... ignored.
+#' 
+#' @examples
+#' #### Create an account ####
+#' myAcc <- createAccount()
+#'
+#' #### Ease input with short names ####
+#' addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
+#'                            "Sebastian Holst" = c("Seb","Sebastian"))
+#'
+#' #### Add a single - no shuttlecock ####
+#' addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+#' addMatch(myAcc, date = "15-06-17", shuttlecock = 5, 
+#'                 involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+#'
+#' @export
+`addMatch<-` <-
+    function(object, ..., value) UseMethod("addMatch<-")
+
+#' @rdname addMatch
+#' @export
+"addMatch<-.butilsAccount" <- function(object,
+                                       involved = NULL,
+                                       date = as.Date(NA),
+                                       shuttlecock = NULL,
+                                       price.shuttlecock = 170/12,
+                                       refound = NULL,
+                                       note = "",
+                                       print.balance = TRUE,
+                                       replace.entry = FALSE,
+                                       ...,
+                                       value){
+
+    if("character" %in% class(date)){
+        date <- as.Date(date)
+        if(is.na(date)){
+            stop("Could not convert the characters encoding the date to the Date format \n")
+        }
+    }
+    n.involved <- length(involved)
+    if(n.involved==2){
+        type <- "single"
+    }else if(n.involved == 3){
+        type <- "double"
+    }else if(n.involved == 4){
+        type <- "double"
+    }else{
+        stop("length(involved)>4, too many players \n")
+    }
+    newlabel <- paste0(type,":",as.character(date))
+    if(newlabel %in% object$table$label){
+        if(replace.entry){
+            object$table <- object$table[object$table$label != newlabel]
+        }else{
+            stop("Existing label in account \n")
+        }
+    }
+    
+    if(!is.null(value)){
+        addActivity(object,
+                    involved = involved,
+                    date = date,
+                    label = newlabel,
+                    type = "Court") <- value
+    }
+    if(!is.null(shuttlecock)){
+        addActivity(object,
+                    involved = involved,
+                    date = date,
+                    note = paste(shuttlecock," shuttlecock"),
+                    label = newlabel,
+                    type = "Shuttlecock") <- shuttlecock*price.shuttlecock
+    }
+    if(!is.null(refound)){
+        n.refound <- length(refound)
+        for(iRefound in 1:n.refound){
+            addActivity(object,
+                        involved = names(refound)[iRefound],
+                        date = date,
+                        label = newlabel,
+                        type = "Refound") <- refound[[iRefound]]
+        }        
+    }
+
+    if(print.balance){
+        object.red <- object
+        object.red$table <- object$table[object$table$label==newlabel]
+
+        summary(object.red, detail = 0:1)
+    }
+    
+    
+    return(object)
+}
 ## * summary/print
 #' @title Summarizing an account.
 #' @description Summarizing an account.
