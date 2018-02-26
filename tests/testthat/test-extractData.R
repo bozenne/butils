@@ -44,14 +44,15 @@ library(riskRegression)
 library(survival)
 dt.sim <- sampleData(n, outcome = "survival")
 test_that("extractData (survival)", {
-  # no strata
-  m.cox <- coxph(Surv(time, event) ~ X1 + X2, data = dt.sim, x = TRUE, y = TRUE)
-  expect_named(extractData(m.cox, design.matrix = TRUE),
-               expected = c("start","stop","status","X1","X2"))
-  # strata
-  m.cox <- coxph(Surv(time, event) ~ strata(X1) + X2, data = dt.sim, x = TRUE, y = TRUE)
-  expect_named(extractData(m.cox, design.matrix = TRUE),
-               expected = c("start","stop","status","X2","strata"))
+    # no strata
+    m.cox <- coxph(Surv(time, event) ~ X6 + X7, data = dt.sim, x = TRUE, y = TRUE)
+    test.data <- extractData(m.cox, design.matrix = TRUE)
+    expect_named(test.data,
+                 expected = c("start","stop","status","X6","X7"))
+    # strata
+    m.cox <- coxph(Surv(time, event) ~ strata(X1) + X6, data = dt.sim, x = TRUE, y = TRUE)
+    expect_named(extractData(m.cox, design.matrix = TRUE),
+                 expected = c("start","stop","status","X6","strata"))
     expect_named(extractData(m.cox, design.matrix = FALSE),
-               expected = names(dt.sim))
+                 expected = names(dt.sim))
 })
