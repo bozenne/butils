@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 22 2018 (09:24) 
 ## Version: 
-## Last-Updated: mar 22 2018 (09:33) 
+## Last-Updated: mar 22 2018 (09:37) 
 ##           By: Brice Ozenne
-##     Update #: 5
+##     Update #: 6
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -36,6 +36,7 @@
 ##' so that they can be combined.
 ##' @return A \code{data.table} object.
 ##' @author Brice Ozenne
+##' @export
 sinkDirectory <- function(path, string.keep = NULL, string.exclude = NULL,
                           addMissingCol = FALSE,
                           trace = TRUE){

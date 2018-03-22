@@ -20,6 +20,9 @@ the other, the necessary empty columns are added to it with \code{NA} as values.
 \item{trace}{[logical] should a progress bar be displayed tracking how many files
 have been imported.}
 }
+\value{
+A \code{data.table} object.
+}
 \description{
 Import all .rds files in a directory.
 }
