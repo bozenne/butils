@@ -2,21 +2,21 @@
 % Please edit documentation in R/discreteRoot.R
 \name{discreteRoot}
 \alias{discreteRoot}
-\title{Dichotimic search for monotone function}
+\title{Dichotomic search for monotone function}
 \usage{
 discreteRoot(fn, grid, increasing = TRUE, check = TRUE,
   tol = .Machine$double.eps^0.5)
 }
 \arguments{
-\item{fn}{objective function to minimize in absolute value}
+\item{fn}{[function] objective function to minimize in absolute value.}
 
-\item{grid}{a vector of values}
+\item{grid}{[vector] possible minimizers.}
 
-\item{increasing}{is the function fn increasing?}
+\item{increasing}{[logical] is the function fn increasing?}
 
-\item{check}{should the program check that fn takes a different sign for the first vs. the last value of the grid?}
+\item{check}{[logical] should the program check that fn takes a different sign for the first vs. the last value of the grid?}
 
-\item{tol}{The absolute convergence tolerance}
+\item{tol}{[numeric] the absolute convergence tolerance.}
 }
 \description{
 Find the root of a monotone function on a discrete grid of value using dichotomic search
@@ -55,5 +55,4 @@ fctIC <- function(x){
    return( IC.tempo[["coef"]][3,"upper"])
 }
 discreteRoot(fctIC,grid = seq(0,1-1/1000,0.001))$par
-
 }
