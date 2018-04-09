@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: feb 21 2018 (23:03) 
+## Last-Updated: apr  9 2018 (08:01) 
 ##           By: Brice Ozenne
-##     Update #: 454
+##     Update #: 474
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,11 +19,16 @@
 ## * createAccount
 #' @title Create an empty account
 #' @description Create an empty account.
+#'
+#' @param nickName a named list to be passed to \code{addNickName<-}.
 #' 
 #' @export
-createAccount <- function(){
+createAccount <- function(nickName = NULL){
     object <- list(table = NULL, nickName = NULL)
     class(object) <- "butilsAccount"
+    if(!is.null(nickName)){
+        addNickName(object) <- nickName
+    }
     return(object)
 }
 ## * addNickName
@@ -32,7 +37,7 @@ createAccount <- function(){
 #' @name addNickName
 #' 
 #' @param object the account.
-#' @param value a named vector.
+#' @param value a named list.
 #' 
 #' @examples
 #' myAcc <- createAccount()
@@ -48,6 +53,20 @@ createAccount <- function(){
 "addNickName<-.butilsAccount" <- function(object,
                                           value){
 
+### ** Extract value
+    n.nickName <- unlist(lapply(value,length))
+    indexNoNickName <- which(names(value)=="")
+    if(is.null(names(value))){
+        indexNoNickName <- 1:length(value)
+    }
+    if(any(n.nickName[indexNoNickName]>1)){
+        stop("Missing name relative to nickNames \n")
+    }
+    if(length(indexNoNickName)>0){
+        names(value)[indexNoNickName] <- unlist(value[indexNoNickName])
+        value[indexNoNickName] <- NA
+    }
+    
 ### ** Update
     if(is.null(object$nickName)){
         object$nickName <- value    
@@ -61,7 +80,7 @@ createAccount <- function(){
         stop("duplicated full names \n",
              "\"",paste(unique(vec.name1[duplicated(vec.name1)]), collapse = "\" \""),"\"\n")
     }
-    vec.name2 <- as.character(unlist(object$nickName))
+    vec.name2 <- as.character(na.omit(unlist(object$nickName)))
     if(any(duplicated(vec.name2))){
         stop("duplicated nick names \n",
              "\"",paste(unique(vec.name1[duplicated(vec.name2)]), collapse = "\" \""),"\"\n")
@@ -133,7 +152,14 @@ createAccount <- function(){
     
     test.cost <- !is.null(involved)    
     test.paid <- !is.null(who.paid)
-    
+
+    if("character" %in% class(date)){
+        date <- as.Date(date)
+        if(is.na(date)){
+            stop("Could not convert the characters encoding the date to the Date format \n")
+        }
+    }
+
     ### ** check consistency of the arguments
     if(length(value)!=1){
         stop("Argument \'value\' must have length 1 \n")
@@ -155,10 +181,11 @@ createAccount <- function(){
         stop("argument \'Date\' should inherit from the class \"Date\" \n")
     }
     
-    ### ** Convert nick names to real names
+### ** Convert nick names to real names
     if(!is.null(object$nickName)){
 
         for(iName in names(object$nickName)){ ## iName <- names(object$nickName)[1]
+            if(all(is.na(object$nickName[[iName]]))){next}
             nickNames <- paste0("^",paste(object$nickName[[iName]], collapse = "$|^"),"$")
 
             if(!is.null(involved)){
