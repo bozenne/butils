@@ -13,7 +13,7 @@ addNickName(object) <- value
 \arguments{
 \item{object}{the account.}
 
-\item{value}{a named vector.}
+\item{value}{a named list.}
 }
 \description{
 Add nick name to the account.

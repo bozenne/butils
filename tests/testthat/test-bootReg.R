@@ -11,7 +11,7 @@ set.seed(10)
 n <- 1e2
 mSim <- lvm()
 regression(mSim, Y~X1+X2+X3+X4+X5) <- c(2,1,0,0,-1)
-df.data <- sim(mSim, n)
+df.data <- lava::sim(mSim, n)
 
 e.lm <- lm(Y~X1+X2+X3+X4+X5, data = df.data)
 boot.lm <- bootReg(e.lm, n.boot = 5e2)

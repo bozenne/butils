@@ -96,10 +96,12 @@ bootReg.lm <- function(object,
         
     }else if(identical(type,"coef")){
         FUN.stdError <- function(x){
-            return(summary(x)$coef[,"Std. Error"])
+            M <- summary(x)$coef
+            return(setNames(M[,"Std. Error"],rownames(M)))
         }        
         FUN.estimate <- function(x){
-            return(summary(x)$coef[,"Estimate"])
+            M <- summary(x)$coef
+            return(setNames(M[,"Estimate"],rownames(M)))
         }
     }else if(identical(type,"anova")){
         FUN.estimate <- function(x){ # x <- object
@@ -176,10 +178,12 @@ bootReg.gls <- function(object,
         
     }else if(identical(type,"coef")){
         FUN.estimate <- function(x){
-            return(summary(x)$tTable[,"Value"])
+            M <- summary(x)$tTable
+            return(setNames(M[,"Value"],rownames(M)))
         }
         FUN.stdError <- function(x){
-            return(summary(x)$tTable[,"Std.Error"])
+            M <- summary(x)$tTable
+            return(setNames(M[,"Std.Error"],rownames(M)))
         }
     }else if(identical(type,"anova")){
         FUN.estimate <- function(x){ # x <- object
@@ -247,10 +251,12 @@ bootReg.lvmfit <- function(object,
         
     }else if(identical(type,"coef")){
         FUN.stdError <- function(x){
-            return(summary(x)$coef[names(x$opt$estimate),"Std. Error"])
+            M <- summary(x)$coef
+            return(setNames(M[names(x$opt$estimate),"Std. Error"],rownames(M)))
         }        
         FUN.estimate <- function(x){
-            return(summary(x)$coef[names(x$opt$estimate),"Estimate"])
+            M <- summary(x)$coef
+            return(setNames(M[names(x$opt$estimate),"Estimate"],rownames(M)))
         }
     }else{
         stop("arguments \'FUN.estimate\' must be specified \n",
@@ -355,7 +361,7 @@ bootReg.lvmfit <- function(object,
         if(!is.null(bootseeds)){
             set.seed(bootseeds[iB])
         }
-        
+
         object$call$data <- do.call(FUN.resample, args = list(object = object, data = data, response.var = response.var))
 
         objectBoot <- matrix(NA, nrow = 2, ncol = n.coef,
@@ -391,7 +397,7 @@ bootReg.lvmfit <- function(object,
           progress <- function(n){ setTxtProgressBar(pb, n) }
           
           ls.boot <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),
-                                                         .options.snow = list(progress = progress), .export = vec.export), {          
+                                                         .options.snow = list(progress = progress), .export = vec.export), {
                                                              return(FUN.boostrap(b))
                                                          })
           
@@ -399,7 +405,7 @@ bootReg.lvmfit <- function(object,
           cl <- parallel::makeCluster(n.cpus)
           doParallel::registerDoParallel(cl)
           ls.boot <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),
-                                                         .export = vec.export), {          
+                                                         .export = vec.export), {
               return(FUN.boostrap(b))
           })
       }

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 22 2018 (09:24) 
 ## Version: 
-## Last-Updated: apr  5 2018 (15:35) 
+## Last-Updated: apr 11 2018 (16:39) 
 ##           By: Brice Ozenne
-##     Update #: 19
+##     Update #: 20
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -24,7 +24,7 @@
 ##' @param addMissingCol  [logical] if a dataset does not have the same columns as
 ##' the other, the necessary empty columns are added to it with \code{NA} as values.
 ##' @param fixed [logical] If \code{TRUE}, \code{pattern} is a string to be matched as is.
-##' Argument passed to \code{\link{rgrep}}.
+##' Argument passed to \code{\link{grep}}.
 ##' @param trace [logical] should a progress bar be displayed tracking how many files
 ##' have been imported.
 ##'
