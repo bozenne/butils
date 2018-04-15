@@ -1,3 +1,12 @@
+# -*- mode: org -*-
+
+* Version 1.3.2
+** User visble changes 
+- New function: object2script
+
+** Internal changes
+- fix bugs ...
+
 * Version 1.3.1
-** NEW FEATURES
+** User visble changes 
 - integrate new functions: cvCheck, qqplot2, residplot (previously in lavaSearch2)

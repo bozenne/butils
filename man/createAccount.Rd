@@ -4,7 +4,10 @@
 \alias{createAccount}
 \title{Create an empty account}
 \usage{
-createAccount()
+createAccount(nickName = NULL)
+}
+\arguments{
+\item{nickName}{a named list to be passed to \code{addNickName<-}.}
 }
 \description{
 Create an empty account.
