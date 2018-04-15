@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 22 2017 (09:41) 
 ## Version: 
-## Last-Updated: jan  8 2018 (10:53) 
+## Last-Updated: apr 11 2018 (15:31) 
 ##           By: Brice Ozenne
-##     Update #: 22
+##     Update #: 26
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -51,7 +51,9 @@ as.boot.bootReg <- function(object, index = NULL){
     n.boot.effective <- NROW(object$boot.estimate)
     n.data <- NROW(object$data)
     out <- list(t0 = object$estimate[index],
+                var.t0 = object$stdError[index]^2,
                 t = object$boot.estimate[,index,drop=FALSE],
+                var.t = object$boot.stdError[,index,drop=FALSE]^2,
                 R = n.boot.effective,
                 data = object$data,
                 seed = object$.Random.seed,

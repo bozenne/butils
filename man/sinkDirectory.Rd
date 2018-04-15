@@ -5,7 +5,7 @@
 \title{Import All .rds Files in a Directory.}
 \usage{
 sinkDirectory(path, string.keep = NULL, string.exclude = NULL,
-  addMissingCol = FALSE, trace = TRUE)
+  addMissingCol = FALSE, fixed = FALSE, trace = TRUE)
 }
 \arguments{
 \item{path}{[character] path to the directory.}
@@ -16,6 +16,9 @@ sinkDirectory(path, string.keep = NULL, string.exclude = NULL,
 
 \item{addMissingCol}{[logical] if a dataset does not have the same columns as
 the other, the necessary empty columns are added to it with \code{NA} as values.}
+
+\item{fixed}{[logical] If \code{TRUE}, \code{pattern} is a string to be matched as is.
+Argument passed to \code{\link{grep}}.}
 
 \item{trace}{[logical] should a progress bar be displayed tracking how many files
 have been imported.}
