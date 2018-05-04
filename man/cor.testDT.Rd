@@ -4,37 +4,41 @@
 \alias{cor.testDT}
 \title{Perform pairwise correlation tests between matrix columns}
 \usage{
-cor.testDT(data, format, names = NULL, lower.tri = TRUE,
-  method.cor = "cor.test", use.pairwiseNNA = TRUE, reorder = "AOE",
-  imput.value = 0, hclust.method = "complete", trace = TRUE,
-  plot = TRUE, args.plot = list(), output = "data.table", ...)
+cor.testDT(data, format, col.value = NULL, col.group = NULL,
+  lower.tri = TRUE, method.cor = "cor.test", use.pairwiseNNA = TRUE,
+  reorder = "AOE", imput.value = 0, hclust.method = "complete",
+  trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table",
+  ...)
 }
 \arguments{
 \item{data}{the dataset.}
 
-\item{format}{the format of data. Can be \code{"wide"} or \code{"long"}}
+\item{format}{[character] the format of data. Can be \code{"wide"} or \code{"long"}}
 
-\item{names}{the names of the column in the dataset to be analysed. If \code{NULL}, all the columns will be used.}
+\item{col.value}{[character vector] columns containing the values to be analyzed.
+In wide format, all the columns will be used if \code{NULL}.}
 
-\item{lower.tri}{should only the lower traingle of the matrix be filled?}
+\item{col.group}{[character] column defining the groups of observations between which the correlation will be computed.}
 
-\item{method.cor}{the method used to compute the correlation.}
+\item{lower.tri}{[logical] should only the lower traingle of the matrix be filled?}
 
-\item{use.pairwiseNNA}{If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
+\item{method.cor}{[character] the method used to compute the correlation.}
 
-\item{reorder}{argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.}
+\item{use.pairwiseNNA}{[logical]] If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
 
-\item{imput.value}{the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median).}
+\item{reorder}{[character] argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.}
 
-\item{hclust.method}{argument hclust.method of corrMatOrder.}
+\item{imput.value}{[numeric] the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median).}
 
-\item{trace}{should the progression of the computation of the correlation be displayed. \emph{logical}.}
+\item{hclust.method}{[character] argument hclust.method of corrMatOrder.}
 
-\item{plot}{should the correlation matrix be displayed. \emph{logical}.}
+\item{trace}{[logical] should the progression of the computation of the correlation be displayed. \emph{logical}.}
 
-\item{args.plot}{a list of arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed}
+\item{plot}{[logical] should the correlation matrix be displayed. \emph{logical}.}
 
-\item{output}{how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.}
+\item{args.plot}{[list] arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed}
+
+\item{output}{[character] how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.}
 
 \item{...}{additional arguments to be passed to method.cor}
 }

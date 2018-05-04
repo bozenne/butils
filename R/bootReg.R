@@ -390,26 +390,23 @@ bootReg.lvmfit <- function(object,
       vec.export <- c("object","tryWithWarnings")
       b <- NULL ## for CRAN check
       
+      cl <- snow::makeSOCKcluster(n.cpus)
+      doSNOW::registerDoSNOW(cl)
       if(trace){
-          cl <- snow::makeSOCKcluster(n.cpus)
-          doSNOW::registerDoSNOW(cl)
           pb <- txtProgressBar(min=1, max=n.boot, style=3)
-          progress <- function(n){ setTxtProgressBar(pb, n) }
-          
-          ls.boot <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),
-                                                         .options.snow = list(progress = progress), .export = vec.export), {
-                                                             return(FUN.boostrap(b))
-                                                         })
-          
+          option <- list(progress = function(n){ setTxtProgressBar(pb, n) })
       }else{
-          cl <- parallel::makeCluster(n.cpus)
-          doParallel::registerDoParallel(cl)
-          ls.boot <- foreach::`%dopar%`(foreach::foreach(b=1:n.boot,.packages=c(load.library,"data.table"),
-                                                         .export = vec.export), {
-              return(FUN.boostrap(b))
-          })
+          option <- NULL
       }
-
+      
+      ls.boot <- foreach::`%dopar%`(
+                              foreach::foreach(b=1:n.boot,
+                                               .packages=c(load.library,"data.table"),
+                                               .options.snow = option,
+                                               .export = vec.export), {
+                                                   return(FUN.boostrap(b))
+                                               })
+      
       stopCluster(cl)
       
       

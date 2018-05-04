@@ -3,18 +3,20 @@
 #' @description Compute pairwise correlation between multiple outcomes. Can reorder the outcomes according to a clustering of the obtained correlations.
 #' 
 #' @param data the dataset. 
-#' @param format the format of data. Can be \code{"wide"} or \code{"long"} 
-#' @param names the names of the column in the dataset to be analysed. If \code{NULL}, all the columns will be used.
-#' @param lower.tri should only the lower traingle of the matrix be filled?
-#' @param method.cor the method used to compute the correlation. 
-#' @param use.pairwiseNNA If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
-#' @param reorder argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.
-#' @param imput.value the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median). 
-#' @param hclust.method argument hclust.method of corrMatOrder.
-#' @param trace should the progression of the computation of the correlation be displayed. \emph{logical}.
-#' @param plot should the correlation matrix be displayed. \emph{logical}.
-#' @param args.plot a list of arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed
-#' @param output how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.
+#' @param format [character] the format of data. Can be \code{"wide"} or \code{"long"} 
+#' @param col.value [character vector] columns containing the values to be analyzed.
+#' In wide format, all the columns will be used if \code{NULL}.
+#' @param col.group [character] column defining the groups of observations between which the correlation will be computed.
+#' @param lower.tri [logical] should only the lower traingle of the matrix be filled?
+#' @param method.cor [character] the method used to compute the correlation. 
+#' @param use.pairwiseNNA [logical]] If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
+#' @param reorder [character] argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.
+#' @param imput.value [numeric] the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median). 
+#' @param hclust.method [character] argument hclust.method of corrMatOrder.
+#' @param trace [logical] should the progression of the computation of the correlation be displayed. \emph{logical}.
+#' @param plot [logical] should the correlation matrix be displayed. \emph{logical}.
+#' @param args.plot [list] arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed
+#' @param output [character] how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.
 #' @param ... additional arguments to be passed to method.cor
 #' 
 #' @details 
@@ -40,52 +42,63 @@
 #' @keywords function correlation test
 #' 
 #' @export
-cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
+cor.testDT <- function(data, format,
+                       col.value = NULL, col.group = NULL, lower.tri = TRUE,
                        method.cor = "cor.test", use.pairwiseNNA = TRUE, 
                        reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
   
-  validCharacter(format, valid.values = c("wide","long"), valid.length = 1, method = "cor.test.data.table")
-  validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "cor.test.data.table")
+    validCharacter(format, valid.values = c("wide","long"), valid.length = 1, method = "cor.test.data.table")
+    validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "cor.test.data.table")
+    validNames(col.value, refuse.NULL = (format == "long"), valid.values = names(data))
+    if(format == "long"){
+        validNames(col.group, refuse.NULL = TRUE, valid.values = names(data))
+    }else if(!is.null(col.group)){
+        warning("Argument \'col.group\' is ignored when argument \'format\' is set to \"wide\"\n")
+    }
+    
+    ## data format
+    if(is.data.table(data) == FALSE){
+        data <- as.data.table(data)
+    }else{
+        data <- copy(data)
+    }
   
-  ## data format
-  if(is.data.table(data) == FALSE){
-    data <- as.data.table(data)
-  }else{
-    data <- copy(data)
-  }
-  
-  ## reduce data
-  if(is.null(names)){
-    names <- names(data)
-  }else{
-    validNames(names, valid.values = names(data))
-  }
-  n.name <- length(names)
-  
-  ## reshape data
-  n <- nrow(data)
-  if(format == "wide"){
-    dataL <- data.table::melt(data, id.vars = NULL, measure.vars = names, value.name = "value", variable.name = "variable")
-    name.variable <- "variable"
-    name.value <- "value"
-  }else{
-    name.variable <- names[1]
-    name.value <- names[2]
-    dataL <- data
-  }
-  setkeyv(dataL, name.variable)
+    ## reshape data
+    n <- nrow(data)
+    if(format == "wide"){
+        if(is.null(col.value)){
+            col.value <- names(data)
+        }
+        dataL <- data.table::melt(data,
+                                  id.vars = NULL,
+                                  measure.vars = col.value,
+                                  value.name = "value",
+                                  variable.name = "variable")
+        name.group <- "variable"
+        name.value <- "value"
+    }else{
+        name.group <- col.group
+        name.value <- col.value
+        dataL <- data
+    }
+    level.group <- levels(as.factor(dataL[[name.group]]))
+    nlevel.group <- length(level.group)
+    setkeyv(dataL, name.group)
   
   ## compute the correlation
-  cor.array <- array(NA, dim = c(n.name, n.name, 6), dimnames = list(names, names, c("n.NNA", "n.NA", "correlation", "CIinf", "CIsup", "p.value")))
-  if(trace){ pb <- utils::txtProgressBar(max = n.name*n.name) }
+    cor.array <- array(NA, dim = c(nlevel.group, nlevel.group, 6),
+                       dimnames = list(level.group,
+                                       level.group,
+                                       c("n.NNA", "n.NA", "correlation", "CIinf", "CIsup", "p.value")))
+  if(trace){ pb <- utils::txtProgressBar(max = nlevel.group*nlevel.group) }
   
-  for(iterName1 in 1:n.name){
-    for(iterName2 in iterName1:n.name){
-      col1 <- dataL[names[iterName1]][[name.value]]
-      col2 <- dataL[names[iterName2]][[name.value]]
-      index.NNA <- intersect(which(!is.na(col1)), which(!is.na(col2)))
-      n.NNA <- length(index.NNA)
+    for(iterName1 in 1:nlevel.group){
+        for(iterName2 in iterName1:nlevel.group){
+            col1 <- dataL[level.group[iterName1]][[name.value]]
+            col2 <- dataL[level.group[iterName2]][[name.value]]
+            index.NNA <- intersect(which(!is.na(col1)), which(!is.na(col2)))
+            n.NNA <- length(index.NNA)
       
       if((n == n.NNA) || (n.NNA>0 && use.pairwiseNNA) ){
         test <- do.call(method.cor, args = list(x = col1[index.NNA], y = col2[index.NNA], ...)) 
@@ -102,11 +115,11 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
                        p.value = NA)
       }
       # cor.dt <- rbind(cor.dt, c(variable1 =  names[iterName2], variable2 = names[iterName1], newValues))
-      cor.array[names[iterName2],names[iterName1],] <- unlist(newValues)
-      cor.array[names[iterName1],names[iterName2],] <- unlist(newValues)
+      cor.array[level.group[iterName2],level.group[iterName1],] <- unlist(newValues)
+      cor.array[level.group[iterName1],level.group[iterName2],] <- unlist(newValues)
       # cor.dt <- rbind(cor.dt, c(variable1 =  names[iterName1], variable2 = names[iterName2], newValues))
       
-      if(trace){ utils::setTxtProgressBar(pb = pb, value = (iterName1-1)*n.name+iterName2)}
+      if(trace){ utils::setTxtProgressBar(pb = pb, value = (iterName1-1)*nlevel.group+iterName2)}
     } 
   }
   
@@ -145,13 +158,13 @@ cor.testDT <- function(data, format, names = NULL, lower.tri = TRUE,
                                    if(x>1){dt[, c("Var1","Var2") := NULL]}
                                    return(dt)
                                  }))
-  setnames(cor.dt, old = c("Var1", "Var2"), new = paste0(name.variable,1:2))
+  setnames(cor.dt, old = c("Var1", "Var2"), new = paste0(name.group,1:2))
   
   #### display
   if(plot || output == "plot"){
     gg <- do.call("ggHeatmap", args = c(list(data = cor.dt), 
-                                        list(name.x = paste0(name.variable,1)), 
-                                        list(name.y = paste0(name.variable,2)), 
+                                        list(name.x = paste0(name.group,1)), 
+                                        list(name.y = paste0(name.group,2)), 
                                         list(name.fill = "correlation"), 
                                         args.plot))
     if(output != "plot"){print(gg)}
