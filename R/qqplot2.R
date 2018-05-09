@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug 30 2017 (09:26) 
 ## Version: 
-## last-updated: maj  9 2018 (15:40) 
+## last-updated: maj  9 2018 (15:57) 
 ##           By: Brice Ozenne
-##     Update #: 40
+##     Update #: 54
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -58,9 +58,11 @@ qqplot2 <- function (object, ...) {
 ## * qqplot2.lvmfit
 #' @rdname qqplot2
 #' @export
-qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL, mfrow = NULL, mar = c(2,2,2,2),
+qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL,
+                           plot = TRUE, mfrow = NULL, mar = c(2,2,2,2),
                            type = "qqtest", name.model = "", centralPercents = 0.95,...){
 
+    ## ** prepare
     if(is.null(residuals)){
         residuals <- stats::predict(object, residual = TRUE)
     }
@@ -84,28 +86,48 @@ qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL, mfrow = N
     if(is.null(mfrow)){
         mfrow <- c(round(sqrt(n.var)), ceiling(n.var/round(sqrt(n.var))))
     }
-    op <- graphics::par(mfrow = mfrow, mar = mar)
-    sapply(1:n.var, function(row){
-        resid <- stats::na.omit(residuals[,row])
-        iMain <- paste0(name.model,": ",name.vars[row])
-        if(all(resid < 1e-5)){
-            graphics::plot(0,0, col = "white", axes = FALSE, xlab = "", ylab = "", main = iMain)
-            graphics::text(0,0,"all residuals < 1e-5")
-        }else if(type == "qqtest"){
-            qqtest::qqtest(resid, main = iMain,
-                           centralPercents = centralPercents,
-                           ...)
-        }else if(type == "qqnorm"){
-            stats::qqnorm(residuals[,row], main = iMain)
-        }
-    })
-    graphics::par(op)
 
-    return(invisible(residuals))
+    ## ** wraper
+    warper_display <- function(envir){
+        op <- graphics::par(mfrow = envir$mfrow, mar = envir$mar)
+        sapply(1:envir$n.var, function(row){
+            resid <- stats::na.omit(envir$residuals[,row])
+            iMain <- paste0(envir$name.model,": ",envir$name.vars[row])
+            if(all(resid < 1e-5)){
+                graphics::plot(0,0, col = "white", axes = FALSE, xlab = "", ylab = "", main = iMain)
+                graphics::text(0,0,"all residuals < 1e-5")
+            }else if(envir$type == "qqtest"){
+                qqtest::qqtest(resid, main = iMain,
+                               centralPercents = envir$centralPercents,
+                               ...)
+            }else if(envir$type == "qqnorm"){
+                stats::qqnorm(resid, main = iMain)
+            }
+        })
+        graphics::par(op)
+    }
+
+    ## ** gather
+    ls.data <- list(mfrow = mfrow,
+                    mar = mar,
+                    n.var = n.var,
+                    residuals = residuals,
+                    name.model = name.model,
+                    name.vars = name.vars,
+                    centralPercents = centralPercents,
+                    type = type)
+    
+    if(plot){
+        warper_display(ls.data)
+    }
+    
+    ## export
+    return(invisible(list(plot = warper_display,
+                          data = ls.data)))
 }
 
 ## * qqplot2.multigroupfit
-qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, ...){
+qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, plot = TRUE, ...){
     if(is.null(residuals)){
         residuals <- stats::residuals(object)    
     }
@@ -121,11 +143,13 @@ qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, .
     
     out <- vector(mode = "list", length = n.group)
     for(iG in 1:n.group){
-        dev.new()
+        if(plot == TRUE){ dev.new() }
         out[[iG]] <- qqplot2.lvmfit(object,
                                     name.model = name.model[iG],
                                     residuals = residuals[[iG]],
-                                    variables = colnames(residuals[[iG]]), ...)  
+                                    variables = colnames(residuals[[iG]]),
+                                    plot = plot,
+                                    ...)  
     }
 
     return(invisible(out))
