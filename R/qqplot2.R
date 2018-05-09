@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug 30 2017 (09:26) 
 ## Version: 
-## last-updated: jan 18 2018 (16:01) 
+## last-updated: maj  9 2018 (15:40) 
 ##           By: Brice Ozenne
-##     Update #: 19
+##     Update #: 40
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,8 +22,12 @@
 #' @name qqplot2
 #'
 #' @param object a lvm model.
+#' @param residuals [matrix] the residuals relative to each endogenous variable.
 #' @param variables the variable for which the residuals should be displayed.
-#' @param mfrow how to divide the window. See \code{mfrow}.
+#' @param name.model [character vector] character string to be displayed before the variable name in the title of the plot.#' 
+#' @param mfrow how to divide the window. See \code{par}.
+#' @param mar [numeric vector] the number of lines of margin
+#' to be specified on the four sides of the plot (bottom, left, top, right).
 #' @param type the function used to display the qqplot. Can be qqtest or qqnorm.
 #' @param centralPercents argument passed to \code{qqtest}. See the help of \code{\link{qqtest}}.
 #' @param ... additional arguments to be passed to qqtest.
@@ -54,11 +58,13 @@ qqplot2 <- function (object, ...) {
 ## * qqplot2.lvmfit
 #' @rdname qqplot2
 #' @export
-qqplot2.lvmfit <- function(object, variables = NULL, mfrow = NULL,
-                           type = "qqtest",  centralPercents = 0.95,...){
+qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL, mfrow = NULL, mar = c(2,2,2,2),
+                           type = "qqtest", name.model = "", centralPercents = 0.95,...){
 
-    M.res <- stats::predict(object, residual = TRUE)
-    name.vars <- colnames(M.res)
+    if(is.null(residuals)){
+        residuals <- stats::predict(object, residual = TRUE)
+    }
+    name.vars <- colnames(residuals)
     
     if(!is.null(variables)){
         if(any(variables %in% name.vars == FALSE)){
@@ -66,7 +72,7 @@ qqplot2.lvmfit <- function(object, variables = NULL, mfrow = NULL,
                  "endogenous variables: ",paste(endogenous(object), collapse = " "),"\n",
                  "latent variables: ",paste(latent(object), collapse = " "),"\n")
         }
-        M.res <- M.res[,variables,drop=FALSE]
+        residuals <- residuals[,variables,drop=FALSE]
         name.vars <- variables
     }
     if(type %in% c("qqtest","qqnorm") == FALSE){
@@ -74,29 +80,56 @@ qqplot2.lvmfit <- function(object, variables = NULL, mfrow = NULL,
              "must be \"qqtest\" or \"qqnorm\" \n")
     }
 
-    n.var <- NCOL(M.res)       
+    n.var <- NCOL(residuals)       
     if(is.null(mfrow)){
         mfrow <- c(round(sqrt(n.var)), ceiling(n.var/round(sqrt(n.var))))
     }
-    op <- graphics::par(mfrow = mfrow)
+    op <- graphics::par(mfrow = mfrow, mar = mar)
     sapply(1:n.var, function(row){
-        resid <- stats::na.omit(M.res[,row])
-        main <- name.vars[row]
+        resid <- stats::na.omit(residuals[,row])
+        iMain <- paste0(name.model,": ",name.vars[row])
         if(all(resid < 1e-5)){
-            graphics::plot(0,0, col = "white", axes = FALSE, xlab = "", ylab = "", main = main)
+            graphics::plot(0,0, col = "white", axes = FALSE, xlab = "", ylab = "", main = iMain)
             graphics::text(0,0,"all residuals < 1e-5")
         }else if(type == "qqtest"){
-            qqtest::qqtest(resid, main = name.vars[row],
+            qqtest::qqtest(resid, main = iMain,
                            centralPercents = centralPercents,
                            ...)
         }else if(type == "qqnorm"){
-            stats::qqnorm(M.res[,row], main = name.vars[row])
+            stats::qqnorm(residuals[,row], main = iMain)
         }
     })
     graphics::par(op)
 
-    return(invisible(M.res))
+    return(invisible(residuals))
 }
 
-#----------------------------------------------------------------------
+## * qqplot2.multigroupfit
+qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, ...){
+    if(is.null(residuals)){
+        residuals <- stats::residuals(object)    
+    }
+    n.group <- length(residuals)
+    if(is.null(name.model)){
+        if(!is.null(object$model$names)){
+            name.model <- object$model$names
+        }else{
+            name.model <- 1:n.group
+        }
+    }
+
+    
+    out <- vector(mode = "list", length = n.group)
+    for(iG in 1:n.group){
+        dev.new()
+        out[[iG]] <- qqplot2.lvmfit(object,
+                                    name.model = name.model[iG],
+                                    residuals = residuals[[iG]],
+                                    variables = colnames(residuals[[iG]]), ...)  
+    }
+
+    return(invisible(out))
+}
+
+##----------------------------------------------------------------------
 ### qqplot2.R ends here
