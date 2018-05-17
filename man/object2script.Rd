@@ -52,6 +52,9 @@ object2script(M)
 colnames(M) <- c("a","b","c","d")
 object2script(M)
 
+rownames(M) <- c("a","b","c","d")
+object2script(M)
+
 ## data.frame
 df <- data.frame(matrix(rnorm(16), 4, 4),"a")
 object2script(df, digits = 5)

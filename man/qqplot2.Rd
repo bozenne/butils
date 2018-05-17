@@ -3,12 +3,21 @@
 \name{qqplot2}
 \alias{qqplot2}
 \alias{qqplot2.lvmfit}
+\alias{qqplot2.list}
+\alias{qqplot2.multigroupfit}
 \title{QQplot for the Residuals of a LVM Object}
 \usage{
 qqplot2(object, ...)
 
-\method{qqplot2}{lvmfit}(object, variables = NULL, mfrow = NULL,
-  type = "qqtest", centralPercents = 0.95, ...)
+\method{qqplot2}{lvmfit}(object, variables = NULL, residuals = NULL,
+  plot = TRUE, mfrow = NULL, mar = c(2, 2, 2, 2), type = "qqtest",
+  name.model = "", centralPercents = 0.95, ...)
+
+\method{qqplot2}{list}(object, plot = TRUE, mfrow = NULL, mar = c(2, 2, 2,
+  2), type = "qqtest", name.model = "", centralPercents = 0.95, ...)
+
+\method{qqplot2}{multigroupfit}(object, residuals = NULL, name.model = NULL,
+  plot = TRUE, ...)
 }
 \arguments{
 \item{object}{a lvm model.}
@@ -17,9 +26,18 @@ qqplot2(object, ...)
 
 \item{variables}{the variable for which the residuals should be displayed.}
 
-\item{mfrow}{how to divide the window. See \code{mfrow}.}
+\item{residuals}{[matrix] the residuals relative to each endogenous variable.}
+
+\item{plot}{[logical] should the graphic be displayed?}
+
+\item{mfrow}{how to divide the window. See \code{par}.}
+
+\item{mar}{[numeric vector] the number of lines of margin
+to be specified on the four sides of the plot (bottom, left, top, right).}
 
 \item{type}{the function used to display the qqplot. Can be qqtest or qqnorm.}
+
+\item{name.model}{[character vector] character string to be displayed before the variable name in the title of the plot.#'}
 
 \item{centralPercents}{argument passed to \code{qqtest}. See the help of \code{\link{qqtest}}.}
 }
@@ -33,6 +51,7 @@ QQplot for the residuals of a lvm object.
 Simulation is based on a multivariate truncated normal law (even though it is not satifying for the variance components)
 }
 \examples{
+#### lvm object ####
 library(lava)
 m <- lvm(list(y~v1+v2+v3+v4,c(v1,v2,v3,v4)~x))
 latent(m) <- ~ x
@@ -41,8 +60,11 @@ set.seed(10)
 dd <- sim(m,100) ## Simulate 100 observations from model
 e <- estimate(m, dd) ## Estimate parameters
 
-coef(e)
-
 qqplot2(e)
+
+#### multigroup object ####
+e2 <- estimate(list(m1=m,m2=m), split(dd, dd$v1>0)) ## Estimate parameters
+
+qqplot2(e2)
 
 }

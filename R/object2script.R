@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: apr 15 2018 (16:52) 
 ## Version: 
-## Last-Updated: apr 15 2018 (17:47) 
+## Last-Updated: maj 16 2018 (16:32) 
 ##           By: Brice Ozenne
-##     Update #: 93
+##     Update #: 109
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -38,6 +38,9 @@
 ##'
 ##' colnames(M) <- c("a","b","c","d")
 ##' object2script(M)
+##' 
+##' rownames(M) <- c("a","b","c","d")
+##' object2script(M)
 ##'
 ##' ## data.frame
 ##' df <- data.frame(matrix(rnorm(16), 4, 4),"a")
@@ -60,6 +63,14 @@
 ##' @export
 object2script.numeric <- function(object, digits = NULL, print = TRUE, final.space = "\n", ...){
 
+    ## ** check
+    dots <- list(...)
+    if(length(dots)>0){
+        txt.s <- if(length(dots)>1){"s"}else{""}
+        txt <- paste0("\"",paste0(names(dots), collapse = "\" \""),"\"")
+        stop("Unknown argument",txt.s,": ",txt,"\n")
+    }
+    
     if(is.vector(object)){
         name.object <- names(object)
         
@@ -89,6 +100,14 @@ object2script.numeric <- function(object, digits = NULL, print = TRUE, final.spa
 ##' @export
 object2script.matrix <- function(object, digits = NULL, print = TRUE, final.space = "\n", ...){
 
+    ## ** check
+    dots <- list(...)
+    if(length(dots)>0){
+        txt.s <- if(length(dots)>1){"s"}else{""}
+        txt <- paste0("\"",paste0(names(dots), collapse = "\" \""),"\"")
+        stop("Unknown argument",txt.s,": ",txt,"\n")
+    }
+    
     object.rownames <- rownames(object)
     object.colnames <- colnames(object)
     n.col <- NCOL(object)
@@ -110,10 +129,12 @@ object2script.matrix <- function(object, digits = NULL, print = TRUE, final.spac
 
     if(type == "matrix"){
         value.txt <- paste0(as.double(object), collapse = ", ")
-        rownames.txt <- paste(object.rownames,collapse=", ")
-        colnames.txt <- paste(object.colnames,collapse=", ")
-        M.txt <- paste0("matrix(",value.txt,
-                        ", dimnames = list(",rownames.txt,",",colnames.txt,"))") 
+        rownames.txt <- paste0("\"",paste(object.rownames,collapse="\", \""),"\"")
+        colnames.txt <- paste0("\"",paste(object.colnames,collapse="\", \""),"\"")
+        M.txt <- paste0("matrix(c(",value.txt,"), \n",
+                        "nrow = ",length(object.rownames),", \n",
+                        "ncol = ",length(object.colnames),", \n",                        
+                        "dimnames = list(c(",rownames.txt,"),c(",colnames.txt,")) \n) \n") 
     }else if(type == "row"){
         end <- c(rep(",", n.row-1),"\n)")
         value.txt <- apply(object,1,paste,collapse = ", ")
@@ -143,6 +164,14 @@ object2script.matrix <- function(object, digits = NULL, print = TRUE, final.spac
 ##' @export
 object2script.data.frame <- function(object, digits = NULL, print = TRUE, final.space = "\n", ...){
 
+    ## ** check
+    dots <- list(...)
+    if(length(dots)>0){
+        txt.s <- if(length(dots)>1){"s"}else{""}
+        txt <- paste0("\"",paste0(names(dots), collapse = "\" \""),"\"")
+        stop("Unknown argument",txt.s,": ",txt,"\n")
+    }
+    
     object.names <- names(object)
     object.class <- sapply(object, class)
     n.col <- NCOL(object)
@@ -173,6 +202,14 @@ object2script.data.frame <- function(object, digits = NULL, print = TRUE, final.
 ##' @export
 object2script.data.table <- function(object, digits = NULL, print = TRUE, final.space = "\n", ...){
 
+    ## ** check
+    dots <- list(...)
+    if(length(dots)>0){
+        txt.s <- if(length(dots)>1){"s"}else{""}
+        txt <- paste0("\"",paste0(names(dots), collapse = "\" \""),"\"")
+        stop("Unknown argument",txt.s,": ",txt,"\n")
+    }
+    
     object.names <- names(object)
     object.class <- sapply(object, class)
     n.col <- NCOL(object)
@@ -203,7 +240,14 @@ object2script.data.table <- function(object, digits = NULL, print = TRUE, final.
 ##' @export
 object2script.list <- function(object, digits = NULL, print = TRUE, ...){
 
-
+    ## ** check
+    dots <- list(...)
+    if(length(dots)>0){
+        txt.s <- if(length(dots)>1){"s"}else{""}
+        txt <- paste0("\"",paste0(names(dots), collapse = "\" \""),"\"")
+        stop("Unknown argument",txt.s,": ",txt,"\n")
+    }
+    
     name.list <- names(object)
     n.list <- length(object)
 
