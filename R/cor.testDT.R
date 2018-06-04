@@ -17,7 +17,7 @@
 #' @param plot [logical] should the correlation matrix be displayed. \emph{logical}.
 #' @param args.plot [list] arguments to be passed to \code{ggHeatmap} to specify how the correlation matrix should be displayed
 #' @param output [character] how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.
-#' @param ... additional arguments to be passed to method.cor
+#' @param ... additional arguments to be passed to method.cor.
 #' 
 #' @details 
 #' data must be coercible to data.table. \cr
@@ -38,6 +38,9 @@
 #' @examples 
 #' M <- matrix(rnorm(1e3),100,10)
 #' cor.testDT(M, format = "wide")
+#' 
+#' cor.testDT(M, format = "wide",
+#'            args.plot = list(add.text = "correlation", round = 1))
 #' 
 #' @keywords function correlation test
 #' 
@@ -167,7 +170,6 @@ cor.testDT <- function(data, format,
                                         list(name.y = paste0(name.group,2)), 
                                         list(name.fill = "correlation"), 
                                         args.plot))
-    if(output != "plot"){print(gg)}
   }
   
   #### output

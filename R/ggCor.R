@@ -167,25 +167,27 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, ro
     if(is.null(limits)){
         limits <- range(data[[name.fill]], na.rm = TRUE)
     }
-  
-    #### plot
-    gg <- ggplot(data, aes_string(x = name.x, y = name.y, fill = name.fill)) + geom_tile()
-    gg <- gg + ggtitle(title)
-    gg <- gg + xlab(xlab) + ylab(ylab) +  scale_y_discrete(limits = rev(levels(data[[name.x]])))
-    gg <- gg + scale_fill_gradient2(low = col_low, mid = col_midpoint, high = col_high, 
-                                    name = legend_title, 
-                                    midpoint = midpoint, na.value = na.value, limits = limits)
-    gg <- gg + theme(text = element_text(size=text.size), axis.text.x = element_text(angle = angle.x, hjust = 1))
-    gg <- gg + theme(legend.key.height=unit(0.1,"npc"),
-                     legend.key.width=unit(0.08,"npc"))
-    if(!missing(add.text)){
-        gg <- gg +  geom_text(aes_string(fill = name.fill, label = "add.text"))  
-    }
+
+#### plot
+  gg <- ggplot(data, aes_string(x = name.x, y = name.y)) 
+  gg <- gg + geom_tile(aes_string(fill = name.fill))
+  gg <- gg + ggtitle(title)
+  gg <- gg + xlab(xlab) + ylab(ylab) +  scale_y_discrete(limits = rev(levels(data[[name.x]])))
+  gg <- gg + scale_fill_gradient2(low = col_low, mid = col_midpoint, high = col_high, 
+                                  name = legend_title, 
+                                  midpoint = midpoint, na.value = na.value, limits = limits)
+  gg <- gg + theme(text = element_text(size=text.size), axis.text.x = element_text(angle = angle.x, hjust = 1))
+  gg <- gg + theme(legend.key.height=unit(0.1,"npc"),
+                   legend.key.width=unit(0.08,"npc"))
+  if(!missing(add.text)){
+      gg <- gg + geom_text(aes_string(x = name.x, y = name.y, label = "add.text"))  
+  }
     
     #### export
     if(plot == TRUE){
         print(gg)
     }
+  
     return(invisible(list(plot = gg,
                           data = data)))
 }
