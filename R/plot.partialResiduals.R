@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr  4 2017 (15:45) 
 ## Version: 
-## last-updated: okt  5 2017 (10:09) 
+## last-updated: jun  4 2018 (15:19) 
 ##           By: Brice Ozenne
-##     Update #: 167
+##     Update #: 169
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -90,26 +90,32 @@ plot.partialResiduals <- function(x, alpha.ggplot = 0.25, ...){
     }
     
 ### ** display
-    gg <- ggplot()
+    gg <- ggplot2::ggplot()
     if(is.null(var2) && !is.numeric(x$partialFit[[var1]])){
-        gg <- gg + geom_point(data = x$data,
-                              aes_string(x = var1, y = "pResiduals", color = var2), alpha = alpha.ggplot)
-        gg <- gg + geom_point(data = x$partialFit,
-                              aes_string(x = var1, y = "fit"), shape = 4, size = 4, color = "blue") 
-        gg <- gg + geom_errorbar(data = x$partialFit,
-                                 aes_string(x = var1, linetype = "type",  ymin = "fit.lower", ymax = "fit.upper"), color = "blue")
-        gg <- gg + scale_linetype_manual("", values = 1)
+        gg <- gg + ggplot2::geom_point(data = x$data,
+                                       aes_string(x = var1, y = "pResiduals", color = var2),
+                                       alpha = alpha.ggplot)
+        gg <- gg + ggplot2::geom_point(data = x$partialFit,
+                                       aes_string(x = var1, y = "fit"),
+                                       shape = 4,
+                                       size = 4,
+                                       color = "blue") 
+        gg <- gg + ggplot2::geom_errorbar(data = x$partialFit,
+                                          aes_string(x = var1, linetype = "type",  ymin = "fit.lower", ymax = "fit.upper"),
+                                          color = "blue")
+        gg <- gg + ggplot2::scale_linetype_manual("", values = 1)
         
     }else{
-        gg <- gg + geom_point(data = x$data,
-                              aes_string(x = var1, y = "pResiduals", color = var2))
-        gg <- gg + geom_line(data = x$partialFit,
-                             aes_string(x = var1, y = "fit", group = var2, color = var2))
-        gg <- gg + geom_ribbon(data = x$partialFit,
-                               aes_string(x = var1, fill = "type", ymin = "fit.lower", ymax = "fit.upper", group = var2, color = var2), alpha = alpha.ggplot)
-        gg <- gg + scale_fill_manual("",values = "grey")
+        gg <- gg + ggplot2::geom_point(data = x$data,
+                                       aes_string(x = var1, y = "pResiduals", color = var2))
+        gg <- gg + ggplot2::geom_line(data = x$partialFit,
+                                      aes_string(x = var1, y = "fit", group = var2, color = var2))
+        gg <- gg + ggplot2::geom_ribbon(data = x$partialFit,
+                                        aes_string(x = var1, fill = "type", ymin = "fit.lower", ymax = "fit.upper", group = var2, color = var2),
+                                        alpha = alpha.ggplot)
+        gg <- gg + ggplot2::scale_fill_manual("",values = "grey")
     }
-    gg <- gg + ylab(paste0("Partial residuals \n",x$name.Y," | ",paste0(x$var,collapse = ", ")))
+    gg <- gg + ggplot2::ylab(paste0("Partial residuals \n",x$name.Y," | ",paste0(x$var,collapse = ", ")))
     print(gg)
      
 ### ** export

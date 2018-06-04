@@ -77,6 +77,7 @@ Display a non-parametric or semi-parametric survival curve.
 \examples{
 library(lava)
 library(survival)
+library(data.table)
 
 set.seed(10)
 n <- 100

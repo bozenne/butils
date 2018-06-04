@@ -5,7 +5,6 @@
 #' 
 #' @import data.table
 #' @import lava
-#' @import ggplot2
 #' @import parallel
 #' @importFrom boot empinf freq.array
 #' @importFrom corrplot corrMatOrder
@@ -13,6 +12,7 @@
 #' @importFrom methods is
 #' @importFrom foreach %dopar% foreach
 #' @importFrom gdata lowerTriangle upperTriangle
+#' @importFrom ggplot2 aes aes_string element_text guide_legend label_both unit
 #' @importFrom grDevices rgb
 #' @importFrom graphics boxplot plot
 #' @importFrom MASS boxcox

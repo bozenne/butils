@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug 29 2017 (11:52) 
 ## Version: 
-## last-updated: jan 18 2018 (15:57) 
+## last-updated: jun  4 2018 (15:20) 
 ##           By: Brice Ozenne
-##     Update #: 123
+##     Update #: 124
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -139,20 +139,21 @@ residplot.lvmfit <- function(object, res.variables = endogenous(object), obs.var
             by = "endogenous"]
     
     ## display
-    gg <- ggplot(dtL.all, aes_string(x = "observed", y = "fitted"))
-    gg <- gg + geom_point()
+    gg <- ggplot2::ggplot(dtL.all,
+                          aes_string(x = "observed", y = "fitted"))
+    gg <- gg + ggplot2::geom_point()
     if(smooth.mean){
-        gg <- gg + geom_smooth(method = "lm",aes(color = "mean"))
+        gg <- gg + ggplot2::geom_smooth(method = "lm",aes(color = "mean"))
     }
     if(smooth.sd){
         sdY <- NULL ## [:for CRAN check] we don't want to move to aes_string because color is indeed a character
-        gg <- gg + geom_line(aes(y = sdY, color = "standard devation"))
+        gg <- gg + ggplot2::geom_line(aes(y = sdY, color = "standard devation"))
     }
     if(is.null(ncol)){
         ncol <- round(sqrt(length(res.variables)))
     }
-    gg <- gg + facet_wrap(~endogenous, ncol = ncol, labeller = label_both)
-    gg <- gg + xlab(x.lab) + ylab("residuals")
+    gg <- gg + ggplot2::facet_wrap(~endogenous, ncol = ncol, labeller = label_both)
+    gg <- gg + ggplot2::xlab(x.lab) + ggplot2::ylab("residuals")
     if(plot){
         print(gg)
     }

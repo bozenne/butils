@@ -1,4 +1,4 @@
-# {{{ doc
+## * ggSurv (documentation)
 #' @title Survival curve using ggplot2
 #' @description Display a non-parametric or semi-parametric survival curve. 
 #' @name ggSurv
@@ -28,10 +28,15 @@
 #'   \item plot: the ggplot object
 #'   \item data: the data used to create the ggplot object
 #' }
+#'
+
+## * ggSurv (examples)
+#' @rdname ggSurv
 #' @examples
 #' library(lava)
 #' library(survival)
-#'
+#' library(data.table)
+#' 
 #' set.seed(10)
 #' n <- 100
 #' newdata <- data.frame(X1=1)
@@ -72,9 +77,8 @@
 #' @export
 `ggSurv` <-
   function(object,...) UseMethod("ggSurv")
-# }}}
 
-# {{{ ggSurv.survfit
+## * ggSurv.survfit (code)
 #' @rdname ggSurv
 #' @export
 ggSurv.survfit <- function(object, ...){
@@ -111,13 +115,13 @@ ggSurv.survfit <- function(object, ...){
                 ...)
   return(invisible(res))
 }
-# }}}
 
-# {{{ ggSurv.coxph
+
+## * ggSurv.coxph (code)
 #' @rdname ggSurv
 #' @export
 ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, ...){
-  requireNamespace("riskRegression")
+    requireNamespace("riskRegression")
   
   ## for CRAN test
   . <- Utimes <- xxSTRATAxx <- n.event <- n.censor <- survival.lower <- survival.upper <- strata <- status <- survival <- NULL
@@ -176,9 +180,17 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
   n.newdata <- NROW(newdata)    
   predC <- NULL    
   for(iObs in 1:n.newdata){ # iObs <- 1
-    
-    rrPred  <- as.data.table(riskRegression::predictCox(object, newdata = newdata[iObs], times = newdata[iObs,Utimes[[1]]],
-                                                        se = confint, keep.strata = FALSE, type = "survival"))
+
+      outRR <- riskRegression::predictCox(object,
+                                          newdata = newdata[iObs],
+                                          times = newdata[iObs,Utimes[[1]]],
+                                          se = confint,
+                                          keep.strata = FALSE,
+                                          type = "survival")
+      if(confint){
+          outRR <- confint(outRR)
+      }
+      rrPred  <- as.data.table(outRR)
     
     dt.tempo <- cbind(rrPred, strata = newdata[iObs,xxSTRATAxx])
     
@@ -333,26 +345,36 @@ ggSurv.data.table <- function(object, format = "data.table",
     dt2.ggplot <- copy(object)
     
     if (is.null(var.strata)) {
-      gg.base <- ggplot(data = dt2.ggplot, mapping = aes(x = time, y = survival))
+      gg.base <- ggplot2::ggplot(data = dt2.ggplot,
+                                 mapping = aes(x = time, y = survival))
     }else{
-      gg.base <- ggplot(data = dt2.ggplot, mapping = aes_string(x = "time", y = "survival", color = var.strata, fill = var.strata))
+      gg.base <- ggplot2::ggplot(data = dt2.ggplot,
+                                 mapping = aes_string(x = "time", y = "survival",
+                                                      color = var.strata, fill = var.strata))
     }
     
     # ci
     if(confint){
       if (is.null(var.strata)) {
-        gg.base <- gg.base + geom_ribbon(aes(x = time, ymin = ci.inf, ymax = ci.sup, alpha = alpha.CIfill))
+        gg.base <- gg.base + ggplot2::geom_ribbon(aes(x = time, ymin = ci.inf, ymax = ci.sup, alpha = alpha.CIfill))
       }else{
-        gg.base <- gg.base + geom_ribbon(data = dt2.ggplot, aes(x = time, ymin = ci.inf, ymax = ci.sup), alpha = alpha.CIfill)
-        gg.base <- gg.base + geom_line(data = dt2.ggplot, aes(x = time, y = ci.inf), alpha = alpha.CIline)
-        gg.base <- gg.base + geom_line(data = dt2.ggplot, aes(x = time, y = ci.sup), alpha = alpha.CIline)
+        gg.base <- gg.base + ggplot2::geom_ribbon(data = dt2.ggplot,
+                                                  aes(x = time, ymin = ci.inf, ymax = ci.sup),
+                                                  alpha = alpha.CIfill)
+        gg.base <- gg.base + ggplot2::geom_line(data = dt2.ggplot,
+                                                aes(x = time, y = ci.inf),
+                                                alpha = alpha.CIline)
+        gg.base <- gg.base + ggplot2::geom_line(data = dt2.ggplot,
+                                                aes(x = time, y = ci.sup),
+                                                alpha = alpha.CIline)
       }
     }
     
     # step function
-    gg.base <- gg.base + geom_line(data = dt2.ggplot, size = line.size)
+    gg.base <- gg.base + ggplot2::geom_line(data = dt2.ggplot,
+                                   size = line.size)
     if (is.null(var.strata)) {
-      gg.base <- gg.base + guides(fill = guide_legend(title = var.strata, title.position = legend.position),
+      gg.base <- gg.base + ggplot2::guides(fill = guide_legend(title = var.strata, title.position = legend.position),
                                   color = guide_legend(title = var.strata, title.position = legend.position)) #+ scale_colour_discrete(name = varStrata)
     }
     
@@ -377,13 +399,13 @@ ggSurv.data.table <- function(object, format = "data.table",
     }
     
     if (censoring == TRUE || events == TRUE) {
-      gg.base <- gg.base + scale_shape_manual( values = values.ShapeLegend )
-      gg.base <- gg.base + guides(shape = guide_legend(title = "Observation", title.position = legend.position ))
+      gg.base <- gg.base + ggplot2::scale_shape_manual( values = values.ShapeLegend )
+      gg.base <- gg.base + ggplot2::guides(shape = guide_legend(title = "Observation", title.position = legend.position ))
     }
     
-    if(!is.null(title)){gg.base <- gg.base + ggtitle(title)}
-    if(!is.null(text.size)){gg.base <- gg.base +  theme(text = element_text(size = text.size))}
-    if(!is.null(ylim)){gg.base <- gg.base + coord_cartesian(ylim = ylim)}
+    if(!is.null(title)){gg.base <- gg.base + ggplot2::ggtitle(title)}
+    if(!is.null(text.size)){gg.base <- gg.base +  ggplot2::theme(text = element_text(size = text.size))}
+    if(!is.null(ylim)){gg.base <- gg.base + ggplot2::coord_cartesian(ylim = ylim)}
     
     if(plot==TRUE){
       print(gg.base)
@@ -400,7 +422,6 @@ ggSurv.data.table <- function(object, format = "data.table",
   return(invisible(list(data = object,
                         plot = gg.base)))
 }
-# }}}
 
 
 

@@ -40,7 +40,7 @@ In wide format, all the columns will be used if \code{NULL}.}
 
 \item{output}{[character] how to output the correlation value. Can be \code{matrix}, \code{data.table} or \code{plot}.}
 
-\item{...}{additional arguments to be passed to method.cor}
+\item{...}{additional arguments to be passed to method.cor.}
 }
 \value{
 An object determined by the output argument
@@ -63,6 +63,9 @@ This function uses the function \code{ggHeatmap} to display the correlation matr
 \examples{
 M <- matrix(rnorm(1e3),100,10)
 cor.testDT(M, format = "wide")
+
+cor.testDT(M, format = "wide",
+           args.plot = list(add.text = "correlation", round = 1))
 
 }
 \seealso{

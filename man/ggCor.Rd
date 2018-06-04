@@ -26,5 +26,4 @@ n <- 100
 X <- cbind(X1=rnorm(n),X2=rnorm(n),X3=rnorm(n))
 
 ggCor(X)
-
 }
