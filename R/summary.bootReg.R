@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 21 2017 (17:49) 
 ## Version: 
-## Last-Updated: apr 11 2018 (16:17) 
+## Last-Updated: jun  4 2018 (16:30) 
 ##           By: Brice Ozenne
-##     Update #: 316
+##     Update #: 325
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -160,11 +160,16 @@ summary.bootReg <- function(object, p.value = TRUE,
                             "stud" = 5,
                             "perc" = 5,
                             "bca" = 5)
-    
+    if(type=="stud"){
+        index.index <- 1:2
+    }else{
+        index.index <- 1
+    }
 ### ** compute CI for each subset
     ls.out <- lapply(index, function(iP){ # iP <- 1
-          
+
         resBoot.ci <- boot::boot.ci(boot.object,
+                                    index = index.index,
                                     conf = conf,
                                     type = type,
                                     var.t0 = boot.object$var.t0[iP],
@@ -172,7 +177,7 @@ summary.bootReg <- function(object, p.value = TRUE,
                                     t0 = boot.object$t0[iP],
                                     t = boot.object$t[,iP],
                                     L = iid[,iP])[[slot.boot.ci]][index.lowerCI:index.upperCI]
-        
+
         return(setNames(resBoot.ci,c("lower","upper")))
         
     })
@@ -194,6 +199,7 @@ summary.bootReg <- function(object, p.value = TRUE,
 
                                        ## the p-value is obtained when iRoot = 0
                                        iRoot <- boot::boot.ci(boot.object,
+                                                              index = index.index,
                                                               conf = 1-p.value,
                                                               type = type,
                                                               var.t0 = boot.object$var.t0[iP],
