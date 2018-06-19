@@ -1,13 +1,16 @@
-## * Documentation
+## * extractData (documentation)
 #' @title Extract Data From a Model
-#' 
-#' @description Extract data from a model using \code{nlme::getData}, \code{riskRegression::coxDesign} or \code{model.frame}.. 
+#' @description Extract data from a model using \code{nlme::getData}, \code{riskRegression::coxModelFrame} or \code{model.frame}.. 
 #' If it fails it will try to extract it by its name according to \code{model$call$data}.
+#' @name extractData
 #' 
 #' @param object the fitted model.
 #' @param design.matrix should the data be extracted after transformation (e.g. conversion of categorical variables to dummy variables)? Otherwise the original data will be returned.
 #' @param as.data.frame should the output be converted into a dataa.frame object?
-#' 
+#'
+
+## * extractData (examples)
+#' @rdname extractData
 #' @examples
 #' set.seed(10)
 #' n <- 101
@@ -121,18 +124,11 @@ extractData.coxph <- function(object, design.matrix = FALSE, as.data.frame = TRU
             stop("riskRegression version must be > 1.4.3 \n",
                  "latest version available on Github at tagteam/riskRegression \n")
         }else{
-            #### [:toUpdate]
-            ##  data <- try(riskRegression::coxDesign(object), silent = TRUE)
-            ##  strataVar <- riskRegression::coxVariableName(object)$stratavars.original
-
-            ## this is a temporary modification waiting for the update of riskRegression on CRAN
-            coxDesign.rr <- get("coxDesign", envir = asNamespace("riskRegression"), inherits = FALSE)
-            coxVariableName.rr <- get("coxVariableName", envir = asNamespace("riskRegression"), inherits = FALSE)
-            data <- try(coxDesign.rr(object), silent = TRUE)
-            strataVar <- coxVariableName.rr(object)$stratavars.original
+            data <- try(riskRegression_coxModelFrame(object), silent = TRUE)
+            strataVar <- riskRegression_coxVariableName(object, model.frame = data)$stratavars.original
         } 
       
-        if(length(strataVar)>0){         
+         if(length(strataVar)>0){
             data2 <- evalInParentEnv(object$call$data, environment())
             data <- cbind(as.data.frame(data),
                           as.data.frame(data2)[,strataVar,drop=FALSE])        

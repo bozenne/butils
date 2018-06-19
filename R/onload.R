@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: sep 16 2017 (23:42) 
 ## Version: 
-## last-updated: jan  8 2018 (14:07) 
+## last-updated: jun 19 2018 (10:22) 
 ##           By: Brice Ozenne
-##     Update #: 7
+##     Update #: 8
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -23,7 +23,7 @@ boot_boot.return <- get("boot.return", envir = asNamespace("boot"), inherits = F
 estimate.lvm <- get("estimate.lvm", envir = asNamespace("lava"), inherits = FALSE) ## needed for bootReg.lvm since estimate.lvm is saved in the call
 
 riskRegression_coxVariableName <- get("coxVariableName", envir = asNamespace("riskRegression"), inherits = FALSE)
-riskRegression_coxDesign <- get("coxDesign", envir = asNamespace("riskRegression"), inherits = FALSE)
+riskRegression_coxModelFrame <- get("coxModelFrame", envir = asNamespace("riskRegression"), inherits = FALSE)
 
 
 #----------------------------------------------------------------------

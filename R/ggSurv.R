@@ -45,8 +45,8 @@
 #' ## simulate non proportional hazard using lava
 #' m <- lvm()
 #' regression(m) <- y ~ 1
-#' regression(m) <- s ~ exp(-2*X1)
-#' distribution(m,~X1) <- binomial.lvm()
+#' regression(m) <- s ~ exp(-2*X1+X2)
+#' distribution(m,~X1+X2) <- binomial.lvm()
 #' distribution(m,~cens) <- coxWeibull.lvm(scale=1)
 #' distribution(m,~y) <- coxWeibull.lvm(scale=1,shape=~s)
 #' eventTime(m) <- eventtime ~ min(y=1,cens=0)
@@ -54,6 +54,11 @@
 #' setkey(d, eventtime)
 #'
 #' ## Cox (PH)
+#' ## no regressor
+#' m.cox <- coxph(Surv(eventtime, status) ~ 1, data = d, y = TRUE, x = TRUE)
+#' res1 <- ggSurv(m.cox)
+#'
+#' ## regressors
 #' m.cox <- coxph(Surv(eventtime, status) ~ X1, data = d, y = TRUE, x = TRUE)
 #' res1 <- ggSurv(m.cox)
 #' ggSurv(m.cox, newdata = d[,.SD[1], by = X1])
@@ -62,14 +67,19 @@
 #' ## Cox (stratified)
 #' mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1), data = d, y = TRUE, x = TRUE)
 #' ggSurv(mStrata.cox, censoring = TRUE, event = TRUE)
-#'
+#' 
+#' mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1) + strata(X2), data = d, y = TRUE, x = TRUE)
+#' ggSurv(mStrata.cox, censoring = TRUE, event = TRUE)
+#' 
 #' ## KM
 #' m.KM <- survfit(Surv(eventtime, status) ~ X1, data = d)
 #' res2 <- ggSurv(m.KM)
 #'
 #' ## combine plot
-#' dt.gg <- rbind(cbind(res1$data[original == TRUE & X1 == 1], model = "cox"),
-#'                cbind(res2$data[original == TRUE & X1 == 1], model = "KM")
+#' res1$data[,X1 := as.numeric(factor(strata2, levels = c("X1=0","X1=1")))-1]
+#' res1$data[,strata2 := NULL]
+#' dt.gg <- rbind(cbind(res1$data[original == TRUE & X1==1], model = "cox"),
+#'                cbind(res2$data[original == TRUE & X1==1], model = "KM")
 #' )
 #' dt.gg[,c("X1","original") := NULL]
 #' ggSurv(dt.gg, var.time = "time", var.survival = "survival", var.strata = "model")
@@ -97,6 +107,7 @@ ggSurv.survfit <- function(object, ...){
     Flevels.strata <- names(strata)
     base.strata <- sapply(Flevels.strata, function(s){unlist(lapply(strsplit(s, split = "=", fixed = TRUE), "[",1))})
     varStrata <- unique(base.strata)
+    nameStrata <- "strata"
     
     levels.model <- mapply(FUN = function(base, i){gsub(pattern = paste0(base,"="), replacement = "", x = i, fixed = TRUE)}, 
                            base = base.strata, i = Flevels.strata)
@@ -106,12 +117,13 @@ ggSurv.survfit <- function(object, ...){
     dt.ggplot[, (varStrata) := valueStrata]
   }else{
     varStrata <- NULL 
+    nameStrata <- NULL 
   }
   setkey(dt.ggplot, time)
   
   res <- ggSurv(object = dt.ggplot,
                 var.time = "time", var.survival = "survival", var.ci.inf = "ci.inf", var.ci.sup = "ci.sup", 
-                var.event = "n.event", var.censor = "n.censor",  var.strata = varStrata,
+                var.event = "n.event", var.censor = "n.censor",  name.strata = nameStrata, var.strata = varStrata,
                 ...)
   return(invisible(res))
 }
@@ -123,58 +135,76 @@ ggSurv.survfit <- function(object, ...){
 ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, ...){
     requireNamespace("riskRegression")
   
-  ## for CRAN test
-  . <- Utimes <- xxSTRATAxx <- n.event <- n.censor <- survival.lower <- survival.upper <- strata <- status <- survival <- NULL
+    ## for CRAN test
+    . <- strata <- NULL
 
-  ## find all strata in the original object
-  coxInfo <- riskRegression_coxVariableName(object)
-  name.Xstrata <- coxInfo$strata.vars.original
-  #terms.special <- prodlim::strip.terms(terms(coxFormula(object)), special = "strata")
-  name.Xlp <- coxInfo$lpvars#attr(terms.special, "term.labels")
-  name.X <- c(name.Xstrata,name.Xlp)
+    ## extract the data used to fit the model
+    object.data <- extractData(object, design.matrix = TRUE)
+
+    ## find all strata in the original object
+    coxInfo <- riskRegression_coxVariableName(object,
+                                              model.frame = object.data)
+    name.Xstrata <- coxInfo$stratavars.original
+    ##terms.special <- prodlim::strip.terms(terms(coxFormula(object)), special = "strata")
+    name.Xlp <- coxInfo$lpvars#attr(terms.special, "term.labels")
+    name.X <- c(name.Xstrata,name.Xlp)
+    only.strata <- if(length(name.Xlp)==0 && length(name.Xstrata)>0){TRUE}else{FALSE}
+    if(only.strata){
+        var.strata <- "strata"
+        name.strata <- "strata"
+    }else if(length(name.X)>0){
+        var.strata <- "strata2"
+        name.strata <- NULL
+    }else{
+        var.strata <- NULL
+        name.strata <- NULL
+    }
+    
+    ## 
+    if(is.null(data)){
+        originalData <- as.data.table(object.data)
+        ## cannot use model.frame = TRUE otherwise the strata variable are combined into one
+        ## add strata
+        originalData[,c("strata") := coxStrata(object,
+                                               data = originalData,
+                                               sterms = coxInfo$strata.sterms,
+                                               strata.vars = coxInfo$stratavars,
+                                               strata.levels = coxInfo$strata.levels
+                                               )]
   
-  ## extract the data used to fit the model
-  if(is.null(data)){
-      originalData <- as.data.table(extractData(object, design.matrix = FALSE))
-      ## cannot use model.frame = TRUE otherwise the strata variable are combined into one
-  }else{
-      originalData <- copy(as.data.table(data))
-  }
-  setnames(originalData, old = coxInfo$time, new = "stop")
-  
-  ## initialize newdata
-  if(is.null(newdata)){
-      if(length(name.X)>0){
-          newdata <- originalData[,.SD,.SDcols=c("stop",name.X)]
-      }else{
-          newdata <- originalData[,.SD,.SDcols = "stop"]
-      }        
-      init.newdata <- TRUE
-  }else{
-      init.newdata <- FALSE
-  }
-  
-  ## add strata
-  if(length(name.X)==0){
-    newdata[,xxSTRATAxx := "1"]
-    originalData[,xxSTRATAxx := "1"]
-    var.strata <- NULL
-  }else if(length(name.X)==1){
-    newdata[,xxSTRATAxx := as.character(.SD[[1]]),.SDcols = name.X]
-    originalData[,xxSTRATAxx := as.character(.SD[[1]]),.SDcols = name.X]
-    var.strata <- name.X
-  }else{
-    newdata[,xxSTRATAxx := interaction(.SD),.SDcols = name.X]
-    originalData[,xxSTRATAxx := interaction(.SD),.SDcols = name.X]
-    var.strata <- paste(name.X, collpase=".", sep = "")
-  }
-  
-  ## add prediction times
-  if(init.newdata){ # also restrict to one observation per strata
-    newdata <- newdata[,cbind(Utimes = .(.(unique(stop))),.SD[1]),by = xxSTRATAxx]        
-  }else{
-    newdata[,Utimes := .(.(sort(unique(originalData$stop))))]        
-  }
+    }else{
+        originalData <- copy(as.data.table(data))
+    }
+
+    ## initialize newdata
+    if(is.null(newdata)){
+        newdata <- originalData[,.SD,.SDcols=c("stop","strata",name.X)]
+        init.newdata <- TRUE
+    }else{        
+        init.newdata <- FALSE
+    }
+
+    ## add prediction times and restrict to one observation per strata
+    if(init.newdata){ 
+        newdata[,c("Utimes") := .(.(sort(unique(originalData$stop)))), by = "strata"]
+        newdata <- newdata[, .SD[1], by = name.X]
+
+        if(identical(var.strata,"strata2")){
+            newdata.X <- newdata[,.SD,.SDcols = name.X]
+            tmp <- data.frame(lapply(1:NCOL(newdata.X),function(j){
+                paste0(name.X[j],"=",newdata.X[[name.X[j]]])
+            }))
+            newdata[, c("strata2") := apply(tmp,1,paste0,collapse = ", ")]
+        }
+    }else{
+        newdata[, c("Utimes") := .(.(sort(unique(originalData$stop))))]
+        if(length(name.Xstrata)==0){
+            newdata[, c("strata") := unique(originalData$strata)]
+        }
+        if(only.strata==FALSE){
+            newdata[,c("strata2") := paste0("obs",1:.N)]
+        }
+    }
 
   ## compute predictions
   n.newdata <- NROW(newdata)    
@@ -186,51 +216,52 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
                                           times = newdata[iObs,Utimes[[1]]],
                                           se = confint,
                                           keep.strata = FALSE,
+                                          keep.newdata = TRUE,
                                           type = "survival")
-      if(confint){
-          outRR <- confint(outRR)
-      }
-      rrPred  <- as.data.table(outRR)
-    
-    dt.tempo <- cbind(rrPred, strata = newdata[iObs,xxSTRATAxx])
-    
-    # add the number of events
-    dt.tempo2 <- originalData[xxSTRATAxx == newdata[iObs,xxSTRATAxx], .(n.censor = sum(status == 0), n.event = sum(status == 1)), by = stop]
-    index.missing <- which(dt.tempo$times %in% dt.tempo2$stop == FALSE)
-    if(length(index.missing)>0){
-      dt.tempo2 <- rbind(dt.tempo2, cbind(stop = dt.tempo$times[index.missing], n.censor = 0, n.event = 0))
-    }
-    dt.tempo <- merge(x = dt.tempo, y = dt.tempo2, by.x = "times", by.y = "stop")
-    predC <- rbind(predC, dt.tempo)
-  }
-  setnames(predC, old = c("times","strata"), new = c("time",var.strata))
 
-  ## normalize for export
-  if(confint==FALSE){
-    predC[, survival.lower := NA]
-    predC[, survival.upper := NA]
+      outRR$newdata <- newdata[iObs,.SD,.SDcols = union(c(name.X,"strata"),var.strata)]
+      rrPred  <- as.data.table(outRR)
+      
+      ## add the number of events
+      dt.tempo <- originalData[strata == newdata[iObs,strata],
+                               .("n.censor" = sum(.SD$status == 0), "n.event" = sum(.SD$status == 1)),
+                               by = "stop"]
+      index.missing <- which(rrPred$times %in% dt.tempo$stop == FALSE)
+      if(length(index.missing)>0){
+          dt.tempo <- rbind(dt.tempo,
+                            cbind(stop = rrPred$times[index.missing], n.censor = 0, n.event = 0))
+      }
+
+      dt.tempo <- merge(x = rrPred, y = dt.tempo, by.x = "times", by.y = "stop")
+      predC <- rbind(predC, dt.tempo)
   }
-  
-  ## export
-  res <- ggSurv(object = predC,
-                var.time = "time", var.survival = "survival",
-                confint = confint,
-                var.ci.inf = "survival.lower",
-                var.ci.sup = "survival.upper",
-                var.event = "n.event", var.censor = "n.censor",  var.strata = var.strata, 
-                ...)
+    
+    ## normalize for export
+    if(confint==FALSE){
+        predC[, c("survival.lower") := NA]
+        predC[, c("survival.upper") := NA]
+    }
+
+    ## export
+    res <- ggSurv(object = predC,
+                  var.time = "times", var.survival = "survival",
+                  confint = confint,
+                  var.ci.inf = "survival.lower",
+                  var.ci.sup = "survival.upper",
+                  var.event = "n.event", var.censor = "n.censor", var.strata = var.strata, name.strata = name.strata, 
+                  ...)
   
   return(invisible(res))
   
 }
 # }}}
 
-# {{{ ggSurv.data.table
+## * ggSurv.data.table (code)
 #' @rdname ggSurv
 #' @export
 ggSurv.data.table <- function(object, format = "data.table",
                               var.time = "time", var.survival = "survival", var.ci.inf = NULL, var.ci.sup = NULL, 
-                              var.event = NULL, var.censor = NULL,  var.strata = NULL, 
+                              var.event = NULL, var.censor = NULL,  name.strata = NULL, var.strata = NULL, 
                               plot = TRUE, legend.position = "top",
                               title = NULL, text.size = NULL, ylim = NULL, line.size = 2,
                               confint = FALSE, alpha.CIfill = 0.2, alpha.CIline = 0.5,
@@ -370,12 +401,12 @@ ggSurv.data.table <- function(object, format = "data.table",
       }
     }
     
-    # step function
+                                        # step function
     gg.base <- gg.base + ggplot2::geom_line(data = dt2.ggplot,
-                                   size = line.size)
+                                            size = line.size)
     if (is.null(var.strata)) {
-      gg.base <- gg.base + ggplot2::guides(fill = guide_legend(title = var.strata, title.position = legend.position),
-                                  color = guide_legend(title = var.strata, title.position = legend.position)) #+ scale_colour_discrete(name = varStrata)
+        gg.base <- gg.base + ggplot2::guides(fill = guide_legend(title = name.strata, title.position = legend.position),
+                                             color = guide_legend(title = name.strata, title.position = legend.position)) #+ scale_colour_discrete(name = varStrata)
     }
     
     # censoring
@@ -406,7 +437,7 @@ ggSurv.data.table <- function(object, format = "data.table",
     if(!is.null(title)){gg.base <- gg.base + ggplot2::ggtitle(title)}
     if(!is.null(text.size)){gg.base <- gg.base +  ggplot2::theme(text = element_text(size = text.size))}
     if(!is.null(ylim)){gg.base <- gg.base + ggplot2::coord_cartesian(ylim = ylim)}
-    
+
     if(plot==TRUE){
       print(gg.base)
     }

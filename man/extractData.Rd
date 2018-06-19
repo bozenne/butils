@@ -42,7 +42,7 @@ extractData(object, design.matrix, as.data.frame)
 \item{as.data.frame}{should the output be converted into a dataa.frame object?}
 }
 \description{
-Extract data from a model using \code{nlme::getData}, \code{riskRegression::coxDesign} or \code{model.frame}.. 
+Extract data from a model using \code{nlme::getData}, \code{riskRegression::coxModelFrame} or \code{model.frame}.. 
 If it fails it will try to extract it by its name according to \code{model$call$data}.
 }
 \examples{

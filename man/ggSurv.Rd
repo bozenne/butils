@@ -17,13 +17,14 @@ ggSurv(object, ...)
 \method{ggSurv}{data.table}(object, format = "data.table",
   var.time = "time", var.survival = "survival", var.ci.inf = NULL,
   var.ci.sup = NULL, var.event = NULL, var.censor = NULL,
-  var.strata = NULL, plot = TRUE, legend.position = "top", title = NULL,
-  text.size = NULL, ylim = NULL, line.size = 2, confint = FALSE,
-  alpha.CIfill = 0.2, alpha.CIline = 0.5, censoring = FALSE,
-  alpha.censoring = 1, colour.censoring = rgb(0.2, 0.2, 0.2),
-  shape.censoring = 3, size.censoring = 2, name.censoring = "censoring",
-  events = FALSE, alpha.events = 1, colour.events = rgb(0.2, 0.2, 0.2),
-  shape.events = 8, size.events = 2, name.events = "event", ...)
+  name.strata = NULL, var.strata = NULL, plot = TRUE,
+  legend.position = "top", title = NULL, text.size = NULL, ylim = NULL,
+  line.size = 2, confint = FALSE, alpha.CIfill = 0.2,
+  alpha.CIline = 0.5, censoring = FALSE, alpha.censoring = 1,
+  colour.censoring = rgb(0.2, 0.2, 0.2), shape.censoring = 3,
+  size.censoring = 2, name.censoring = "censoring", events = FALSE,
+  alpha.events = 1, colour.events = rgb(0.2, 0.2, 0.2), shape.events = 8,
+  size.events = 2, name.events = "event", ...)
 }
 \arguments{
 \item{object}{a coxph object or a survfit object or a data.table object.}
@@ -87,8 +88,8 @@ time <- 0.25
 ## simulate non proportional hazard using lava
 m <- lvm()
 regression(m) <- y ~ 1
-regression(m) <- s ~ exp(-2*X1)
-distribution(m,~X1) <- binomial.lvm()
+regression(m) <- s ~ exp(-2*X1+X2)
+distribution(m,~X1+X2) <- binomial.lvm()
 distribution(m,~cens) <- coxWeibull.lvm(scale=1)
 distribution(m,~y) <- coxWeibull.lvm(scale=1,shape=~s)
 eventTime(m) <- eventtime ~ min(y=1,cens=0)
@@ -96,6 +97,11 @@ d <- as.data.table(lava::sim(m,n))
 setkey(d, eventtime)
 
 ## Cox (PH)
+## no regressor
+m.cox <- coxph(Surv(eventtime, status) ~ 1, data = d, y = TRUE, x = TRUE)
+res1 <- ggSurv(m.cox)
+
+## regressors
 m.cox <- coxph(Surv(eventtime, status) ~ X1, data = d, y = TRUE, x = TRUE)
 res1 <- ggSurv(m.cox)
 ggSurv(m.cox, newdata = d[,.SD[1], by = X1])
@@ -105,13 +111,18 @@ ggSurv(m.cox, newdata = d[,.SD[1], by = X1], confint = TRUE)
 mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1), data = d, y = TRUE, x = TRUE)
 ggSurv(mStrata.cox, censoring = TRUE, event = TRUE)
 
+mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1) + strata(X2), data = d, y = TRUE, x = TRUE)
+ggSurv(mStrata.cox, censoring = TRUE, event = TRUE)
+
 ## KM
 m.KM <- survfit(Surv(eventtime, status) ~ X1, data = d)
 res2 <- ggSurv(m.KM)
 
 ## combine plot
-dt.gg <- rbind(cbind(res1$data[original == TRUE & X1 == 1], model = "cox"),
-               cbind(res2$data[original == TRUE & X1 == 1], model = "KM")
+res1$data[,X1 := as.numeric(factor(strata2, levels = c("X1=0","X1=1")))-1]
+res1$data[,strata2 := NULL]
+dt.gg <- rbind(cbind(res1$data[original == TRUE & X1==1], model = "cox"),
+               cbind(res2$data[original == TRUE & X1==1], model = "KM")
 )
 dt.gg[,c("X1","original") := NULL]
 ggSurv(dt.gg, var.time = "time", var.survival = "survival", var.strata = "model")
