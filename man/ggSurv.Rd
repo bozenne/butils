@@ -51,6 +51,8 @@ ggSurv(object, ...)
 
 \item{var.censor}{the name of the column in the data.table object containing the number of censored patients at each time}
 
+\item{name.strata}{the title for the color and fill legend in the plot.}
+
 \item{var.strata}{the name of the column in the data.table object containing the strata variable}
 
 \item{plot}{should the plot be displayed}

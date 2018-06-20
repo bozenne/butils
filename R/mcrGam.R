@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 19 2018 (10:08) 
 ## Version: 
-## Last-Updated: jun 19 2018 (10:26) 
+## Last-Updated: jun 20 2018 (09:30) 
 ##           By: Brice Ozenne
-##     Update #: 10
+##     Update #: 12
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -25,7 +25,8 @@
 #' Otherwise it will be constrained to be decreasing.
 #' @param lower [numeric] This specifies the lower bound on the spline unless it is NA in which case no lower bound is imposed.
 #' @param upper [numeric] This specifies the upper bound on the spline unless it is NA in which case no upper bound is imposed.
-#'
+#' @param ... Not used. For compatibility with the generic function.
+#' 
 #' @examples
 #' if(require(mgcv)){
 #' 
@@ -139,9 +140,9 @@ mcrGam.gam <- function(object, increasing = TRUE, lower = NA, upper = NA, ...){
 ## * print.mcrGam
 #' @method print mcrGam
 #' @export
-print.mcrGam <- function(object, ...){
+print.mcrGam <- function(x, ...){
     cat("Spline coefficients: \n")
-    print(object$mcr.p)
+    print(x$mcr.p)
 }
 
 ## * predict.mcrGam

@@ -13,6 +13,8 @@ mcrGam(object, ...)
 \arguments{
 \item{object}{[gam] output of the \code{mgcv::gam} function.}
 
+\item{...}{Not used. For compatibility with the generic function.}
+
 \item{increasing}{[logical] should the function should be constrained to be increasing.
 Otherwise it will be constrained to be decreasing.}
 

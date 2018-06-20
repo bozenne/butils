@@ -120,9 +120,6 @@ extractData.coxph <- function(object, design.matrix = FALSE, as.data.frame = TRU
          tryPkg <- requireNamespace("riskRegression")
          if("try-error" %in% class(tryPkg)){
             stop(tryPkg)
-        }else if(utils::packageVersion("riskRegression")<="1.4.3"){
-            stop("riskRegression version must be > 1.4.3 \n",
-                 "latest version available on Github at tagteam/riskRegression \n")
         }else{
             data <- try(riskRegression_coxModelFrame(object), silent = TRUE)
             strataVar <- riskRegression_coxVariableName(object, model.frame = data)$stratavars.original

@@ -12,6 +12,7 @@
 #' @param var.ci.sup the name of the column in the data.table object containing the upper bound of the confidence interval 
 #' @param var.event the name of the column in the data.table object containing the number of events at each time
 #' @param var.censor the name of the column in the data.table object containing the number of censored patients at each time
+#' @param name.strata the title for the color and fill legend in the plot.
 #' @param var.strata the name of the column in the data.table object containing the strata variable
 #' @param format the format used to export the data. Can be data.table or data.frame.
 #' @param plot should the plot be displayed
@@ -133,7 +134,11 @@ ggSurv.survfit <- function(object, ...){
 #' @rdname ggSurv
 #' @export
 ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, ...){
-    requireNamespace("riskRegression")
+
+    tryPkg <- requireNamespace("riskRegression")
+    if("try-error" %in% class(tryPkg)){
+        stop(tryPkg)
+    }
   
     ## for CRAN test
     . <- strata <- NULL
@@ -165,12 +170,12 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
         originalData <- as.data.table(object.data)
         ## cannot use model.frame = TRUE otherwise the strata variable are combined into one
         ## add strata
-        originalData[,c("strata") := coxStrata(object,
-                                               data = originalData,
-                                               sterms = coxInfo$strata.sterms,
-                                               strata.vars = coxInfo$stratavars,
-                                               strata.levels = coxInfo$strata.levels
-                                               )]
+        originalData[,c("strata") := riskRegression::coxStrata(object,
+                                                               data = originalData,
+                                                               sterms = coxInfo$strata.sterms,
+                                                               strata.vars = coxInfo$stratavars,
+                                                               strata.levels = coxInfo$strata.levels
+                                                               )]
   
     }else{
         originalData <- copy(as.data.table(data))
@@ -213,7 +218,7 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
 
       outRR <- riskRegression::predictCox(object,
                                           newdata = newdata[iObs],
-                                          times = newdata[iObs,Utimes[[1]]],
+                                          times = newdata[iObs,.SD$Utimes[[1]]],
                                           se = confint,
                                           keep.strata = FALSE,
                                           keep.newdata = TRUE,
