@@ -10,5 +10,6 @@ DIM(x)
 \item{x}{object.}
 }
 \description{
-Return \code{length} for vector and list and use \code{dim} otherwise.
+Return \code{length} for vectors, lists, S4 objects,
+and use \code{dim} otherwise.
 }
