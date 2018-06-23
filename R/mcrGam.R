@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 19 2018 (10:08) 
 ## Version: 
-## Last-Updated: jun 20 2018 (09:30) 
+## Last-Updated: jun 20 2018 (11:28) 
 ##           By: Brice Ozenne
-##     Update #: 12
+##     Update #: 15
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -152,10 +152,12 @@ predict.mcrGam <- function(object, newdata = NULL, ...){
 
     ## extract data
     if(is.null(newdata)){
-        data <- model.frame(object)
+        newdata <- model.frame(object)
     }
-    data.table::setDT(data)
-
+    if(!data.table::is.data.table(newdata)){
+        data.table::setDT(newdata)
+    }
+    
     ## find spline variable
     formula.object <- formula(object)
     term.object <- terms(formula.object,
@@ -164,8 +166,8 @@ predict.mcrGam <- function(object, newdata = NULL, ...){
     spline.var <- all.vars(formula.object)[index.spline]
 
     ## ** Predict values 
-    return(mgcv::Predict.matrix(object =object$mcr.sm,
-                                data = data[,.SD,.SDcols = spline.var]) %*% object$mcr.p)
+    return(mgcv::Predict.matrix(object = object$mcr.sm,
+                                data = newdata[,.SD,.SDcols = spline.var]) %*% object$mcr.p)
 }
 
 
