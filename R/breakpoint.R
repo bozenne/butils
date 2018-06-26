@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 26 2018 (09:13) 
 ## Version: 
-## Last-Updated: jun 26 2018 (09:23) 
+## Last-Updated: jun 26 2018 (13:20) 
 ##           By: Brice Ozenne
-##     Update #: 7
+##     Update #: 120
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,9 +22,12 @@
 #'
 #' @param object a \code{lm} object under the assumption of a linear relationship
 #' @param pattern [vector of character] the number and type of breakpoints to be search. 0 indicates a flat line. 
-#' @param var.breakpoint [character] the variable regarding which the breakpoints should be found.
-#' @param init.breakpoint [list] a list containing initialization values for the breakpoints for each pattern.
+#' @param breakpoint.var [character] the variable regarding which the breakpoints should be found.
+#' @param breakpoint.init [list] a list containing initialization values for the breakpoints for each pattern.
+#' Initialisation values can be a vector or a matrix with the same number of rows as the number of breakpoints.
 #' @param n.iter [integer, >0] the maximum number of iterations used to estimates the breakpoints.
+#' @param n.init [integer, >0] the number of quantiles used to generate initialisation points.
+#' Only active when breakpoint.init is \code{NULL}.
 #' @param tol [numeric, >0] the maximum accpetable difference between two consecutive estimates of the breakpoints.
 #' When reached, the estimation algorithm stops.
 #' @param n.points [integer, >0] the number of points used to display the fit.
@@ -70,32 +73,30 @@
 #' #### fit breakpoint regression
 #' e.lm <- lm(Y~X, data = dtL)
 #' resBP <- breakpoint(e.lm)
-#' 
+#'
+#' BIC(resBP)
 #' gg + geom_point(data = resBP$BP101$fit, aes(y = fit))
 #'
 #'
 #' #### example from the package segmented
 #' if(require(segmented)){
-#' GS <- segmented(e.lm, psi = c(0.5,1.5))
-#' cbind(value = resBP$BP111$value,
-#'       se = resBP$BP111$se)
+#' GS <- segmented(e.lm, psi = c(1,2))
+#'
+#' cbind(value = resBP$BP111$breakpoint,
+#'       se = resBP$BP111$breakpoint.se)
 #' GS$psi
 #' }
 #' 
 #' if(require(gridExtra)){
-#' grid.arrange(resBP[["BP111"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-#'              resBP[["BP101"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-#'              resBP[["BP11"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-#'              resBP[["BP10"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-#'              resBP[["BP01"]]$plot + theme(text = element_text(size = 10), legend.position="none"), nrow = 1)
+#'   autoplot(resBP)
 #' }
 #'  
 
 ## * breakpoint (code)
 #' @rdname breakpoint
 #' @export
-breakpoint <- function(object, pattern = c("111","101","10","11","01"), var.breakpoint = NULL, init.breakpoint = NULL,
-                       n.iter = 10, tol = 1e-3, n.points = 1e3,
+breakpoint <- function(object, pattern = c("111","101","10","11","01"), breakpoint.var = NULL, breakpoint.init = NULL,
+                       n.iter = 10, tol = 1e-3, n.init = 5, n.points = 1e4,
                        trace = 2, digits = -log10(tol)){
 
 
@@ -108,6 +109,11 @@ breakpoint <- function(object, pattern = c("111","101","10","11","01"), var.brea
     }
 
     ## ** check arguments
+    ## *** object
+    if("lm" %in% class(object) == FALSE){
+        stop("Only work with lm objects \n")
+    }
+    
     ## *** data
     reserved.names <- c("fit","Us","Vs","Us2","Vs2","gamma","beta")
     if(any(names(dt) %in% reserved.names)){
@@ -116,18 +122,20 @@ breakpoint <- function(object, pattern = c("111","101","10","11","01"), var.brea
     }
 
 
-    
-    ## *** var.breakpoint
-    if(is.null(var.breakpoint)){
-        var.breakpoint <- all.vars(update(formula(object),"0~."))
+    ## *** response.var
+    response.var <- all.vars(update(formula(object),".~0"))
+
+    ## *** breakpoint.var
+    if(is.null(breakpoint.var)){
+        breakpoint.var <- all.vars(update(formula(object),"0~."))
     }
 
-    if(length(var.breakpoint)!=1){
-        stop("Argument \"var.breakpoint\" should correspond to only one variable \n")
+    if(length(breakpoint.var)!=1){
+        stop("Argument \"breakpoint.var\" should correspond to only one variable \n")
     }
 
-    if(var.breakpoint %in% names(dt) == FALSE){
-        stop("Variable \"",var.breakpoint,"\" is not in data \n")
+    if(breakpoint.var %in% names(dt) == FALSE){
+        stop("Variable \"",breakpoint.var,"\" is not in data \n")
     }
 
     ## *** pattern
@@ -135,200 +143,347 @@ breakpoint <- function(object, pattern = c("111","101","10","11","01"), var.brea
         stop("n.breakpoint must be one of \"111\",\"101\",\"10\",\"11\",\"01\" \n")
     }
 
-    ## *** init.breakpoint
-    if(is.null(init.breakpoint)){
-        init.breakpoint <- list()
+    ## *** breakpoint.init
+    if(is.null(breakpoint.init)){
+        breakpoint.init <- list()
     }else{
-        if(!is.null(init.breakpoint)){
-            stop("Argument \'init.breakpoint\' must be a list \n")
+        if(!is.list(breakpoint.init)){
+            stop("Argument \'breakpoint.init\' must be a list \n")
         }
-        if(any(pattern %in% names(init.breakpoint) == FALSE)){
-            stop("Argument \'init.breakpoint\' must be a list containing elements \"",paste0(pattern,collpase = "\" \""),"\" \n")
+        if(any(pattern %in% names(breakpoint.init) == FALSE)){
+            stop("Argument \'breakpoint.init\' must be a list containing elements \"",paste(pattern, collapse = "\" \""),"\" \n")
         }
     }
 
     ## ** compute breakpoints
+    out <- vector(mode = "list", length = length(pattern))
+    names(out) <- paste0("BP",pattern)
     for(iPattern in pattern){
         if(trace>0){ cat("* Search breaking points (pattern ",iPattern,")", sep = "") }
-        if(trace>1){ cat("\n") }
-        
-        object[[paste0("BP",iPattern)]] <- .BPfit(object = object, data = dt, var.breakpoint = var.breakpoint, init.breakpoint = init.breakpoint[[iPattern]], pattern = iPattern,
-                                                  n.iter = n.iter, tol = tol, n.points = n.points,
-                                                  trace = (trace-1)>0, digits = digits)
-        if(trace == 0){
-            cat(" - done \n")
+        if(trace>2){ cat("\n") }
+        out[[paste0("BP",iPattern)]] <- .BPfit(object = object,
+                                               data = dt,
+                                               response.var = response.var,
+                                               breakpoint.var = breakpoint.var,
+                                               breakpoint.init = breakpoint.init[[iPattern]],
+                                               pattern = iPattern,
+                                               n.iter = n.iter,
+                                               tol = tol,
+                                               n.init = n.init,
+                                               n.points = n.points,
+                                               trace = (trace-1)>0,
+                                               digits = digits)
+        if(trace <= 2){
+            cat(" - cv=",out[[paste0("BP",iPattern)]]$cv," \n",sep="")
         }
         ## object$BP111$plot
     }
     
     ## ** export
-    return(object)
+    out$breakpoint.var <- breakpoint.var
+    out$response.var <- response.var
+    out$data <- dt
+    class(out) <- "breakpoint"
+    return(out)
+}
+
+## * BIC
+#' @method BIC breakpoint
+#' @export
+BIC.breakpoint <- function(object,...){
+
+    index.BP <- grep("^BP", names(object))
+    
+    return(unlist(lapply(object[index.BP],function(iP){BIC(iP$model)})))
+
+}
+
+## * autoplot
+#' @title Display Regression Line and Observations
+#' @description Display regression line and observations.
+#'
+#' @param object output of \code{breakpoint}
+#' @param pattern [vector of character] the number and type of breakpoints to be display.
+#' @param combine.plot [logical] should the plots for the different patterns be combined into one.
+#' @param nrow [integer, >0] number of rows used when combining the plots.
+#' @param ncol [integer, >0] number of columns used when combining the plots.
+#' @param text.size [numeric, >0] the size of the text in the plot.
+#' @param add.cv.title [logical] should the convergence status of the estimation algorithm
+#' be displayed in the title of the plot.
+#' @param add.bic.title [logical] should the bic of the model
+#' be displayed in the title of the plot.
+#' @param ... not used. For compatibility with the generic function.
+#' 
+#' 
+#' @method autoplot breakpoint
+#' @export 
+autoplot.breakpoint <- function(object, pattern = NULL,
+                                combine.plot = TRUE, nrow = NULL, ncol = NULL, text.size = 10,
+                                add.cv.title = TRUE, add.bic.title = FALSE, ...){
+
+    fit <- NULL ## [:CRANtest:] ggplot2
+
+    ## ** normalize argument
+    if(is.null(pattern)){
+        pattern <- grep("^BP", names(object), value = TRUE)
+    }else{
+        pattern <- match.arg(pattern, choices = names(object), several.ok = TRUE)
+    }
+    n.pattern <- length(pattern)
+
+    breakpoint.var <- object$breakpoint.var
+    response.var <- object$response.var
+    data <- object$data
+
+    ##
+    tryPkg <- requireNamespace("gridExtra")
+    if("try-error" %in% class(tryPkg)){
+        stop(tryPkg)
+    }
+
+
+    ## ** make individual plots
+    ls.plot <- vector(mode = "list", length = n.pattern)
+    names(ls.plot) <- pattern
+
+    for(iPattern in pattern){ ## iPattern <- pattern[2]
+
+        title.txt <- paste0("pattern: ",iPattern)
+        if(add.cv.title){title.txt <- paste0(title.txt," | convergence: ",object[[iPattern]]$cv)}
+        if(add.bic.title){title.txt <- paste0(title.txt," | convergence: ",stats::BIC(object[[iPattern]]$model))}
+    
+
+        ls.plot[[iPattern]] <- ggplot2::ggplot(mapping = aes_string(breakpoint.var))
+        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_point(data = cbind(data, observation = "observation"), aes_string(y = response.var, color = "observation"))
+        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_line(data = object[[iPattern]]$fit, aes(y = fit, color = "fit"))
+        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::scale_colour_manual(name = "",
+                                                                                  values = c("red","black"))
+        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::ggtitle(label = title.txt)
+        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::theme(text = element_text(size = text.size))
+    }
+
+    if(combine.plot && n.pattern>1){
+        vec.txt <- paste0("ls.plot[[\"",pattern,"\"]] + theme(legend.position=\"none\")")
+        txt <- paste0(vec.txt, collapse = ", \n", sep = "")
+        txt.all <- paste0("grid.arrange(",txt,
+                          if(!is.null(nrow)){paste0(", nrow = ",nrow)},
+                          if(!is.null(ncol)){paste0(", ncol = ",ncol)},
+                          ")"
+                          )
+        return(eval(parse(text = txt.all)))
+    }else{
+        return(ls.plot)
+    }
+
+    
+
 }
 
 ## * .calcBP
-.BPfit <- function(object, data, var.breakpoint, init.breakpoint, pattern,
-                   n.iter, tol, n.points,
+.BPfit <- function(object, data, response.var, breakpoint.var, breakpoint.init, pattern,
+                   n.iter, tol, n.init, n.points,
                    trace, digits){
 
     n.breakpoint <- nchar(pattern)-1
     
-    if(is.null(init.breakpoint)){
-        probs.breakpoint <- seq(0,1, length.out = n.breakpoint+2)[2:(n.breakpoint+1)]
-        init.breakpoint <- quantile(data[[var.breakpoint]], probs = probs.breakpoint)
-    }else if(length(init.breakpoint) != n.breakpoint){
-        stop("Incorrect initialization for the breakpoints (too many or to few) \n")
-    }
-
     ## ** lvm model
     ## free flat free
-    var.response <- all.vars(update(formula(object),".~0"))
     if(pattern == "111"){
         formula.updated <- update(formula(object),".~.+Us+Vs+Us2+Vs2")
         
-        coef.alpha <- var.breakpoint
         coef.beta <- c("Us","Us2")
         coef.gamma <- c("Vs","Vs2")
     }else if(pattern == "101"){
-        txt.formula <- paste0(var.response,"~alpha*",var.breakpoint,"+beta*Us+Vs+Us2+Vs2")
-        m <- lava::lvm(as.formula(txt.formula))
-        lava::constrain(m,beta~alpha) <- function(x){-x}
+        formula.updated <- update(update(formula(object),paste0(".~.-",breakpoint.var)),
+                                  paste0(".~.+I(",breakpoint.var,"-Us)+Vs+Us2+Vs2"))
 
-        coef.alpha <- paste0(var.response,"~",var.breakpoint)
-        coef.beta <- c(paste0(var.response,"~Us"),paste0(var.response,"~Us2"))    
-        coef.gamma <- c(paste0(var.response,"~Vs"),paste0(var.response,"~Vs2"))
+        ## txt.formula <- paste0(response.var,"~alpha*",breakpoint.var,"+beta*Us+Vs+Us2+Vs2")
+        ## m <- lava::lvm(as.formula(txt.formula))
+        ## lava::constrain(m,beta~alpha) <- function(x){-x}
+
+        ## coef.alpha <- paste0(response.var,"~",breakpoint.var)
+        ## coef.beta <- c(paste0(response.var,"~Us"),paste0(response.var,"~Us2"))    
+        ## coef.gamma <- c(paste0(response.var,"~Vs"),paste0(response.var,"~Vs2"))
+        coef.beta <- c("Us","Us2")
+        coef.gamma <- c("Vs","Vs2")
+
     }else if(pattern == "11"){
         formula.updated <- update(formula(object),".~.+Us+Vs")
         
-        coef.alpha <- var.breakpoint
         coef.beta <- c("Us")
         coef.gamma <- c("Vs")
     }else if(pattern == "01"){
-        formula.updated <- update(formula(object),".~Us+Vs")
+        formula.updated <- update(update(formula(object),paste0(".~.-",breakpoint.var)),
+                                  paste0(".~.+Us+Vs"))
         
-        coef.alpha <- NULL
         coef.beta <- c("Us")
         coef.gamma <- c("Vs")
     }else if(pattern == "10"){
-        txt.formula <- paste0(var.response,"~alpha*",var.breakpoint,"+beta*Us+Vs")
-        m <- lava::lvm(as.formula(txt.formula))
-        lava::constrain(m,beta~alpha) <- function(x){-x}
-
-        coef.alpha <- paste0(var.response,"~",var.breakpoint)
-        coef.beta <- paste0(var.response,"~Us")
-        coef.gamma <- paste0(var.response,"~Vs")        
+        formula.updated <- update(update(formula(object),paste0(".~.-",breakpoint.var)),
+                                  paste0(".~.+I(",breakpoint.var,"-Us)+Vs"))
+        coef.beta <- c("Us")
+        coef.gamma <- c("Vs")
     }
     
-    ## ** add variable
-    iBreakpoint <- init.breakpoint
-    if(trace){
-        cat("Initialize breakpoints: ",paste(round(init.breakpoint, digits = digits), collapse = " "),"\n")
+    ## ** loop over initializations points
+    if(is.null(breakpoint.init)){
+                
+        probs.breakpoint <- seq(0,1, length.out = n.init+2)[2:(n.init+1)]
+        quantile.data <- quantile(data[[breakpoint.var]], probs = probs.breakpoint)
+        breakpoint.init <- utils::combn(quantile.data, m = n.breakpoint)
+        
+    }else {
+        if(is.vector(breakpoint.init)){
+            breakpoint.init <- cbind(as.double(breakpoint.init))
+        }
+        if(NROW(breakpoint.init) != n.breakpoint){
+            stop("Incorrect initialization for the breakpoints (too many or to few) \n",
+                 "NROW(breakpoint.init): ",NROW(breakpoint.init),"\n",
+                 "required:",n.breakpoint,"\n")
+        }
+    }
+    n.init <- NCOL(breakpoint.init)
+    
+    ls.res <- vector(mode = "list", length = n.init)
+    vec.score <- rep(-Inf, times = n.init)
+    if(trace>0){cat(": ")}
+    for(iInit in 1:n.init){
+        ls.res[[iInit]] <- .warperBP(formula = formula.updated,
+                                     data = data,
+                                     breakpoint.init = breakpoint.init[,iInit],
+                                     breakpoint.var = breakpoint.var,
+                                     n.breakpoint = n.breakpoint,
+                                     coef.beta = coef.beta,
+                                     coef.gamma = coef.gamma,
+                                     pattern = pattern,
+                                     n.iter = n.iter,
+                                     tol = tol,
+                                     trace = (trace-1)>0,
+                                     digits = digits)
+        if(ls.res[[iInit]]$cv){
+            vec.score[iInit] <- logLik(ls.res[[iInit]]$model)
+        }
+        if(trace>0){cat("+")}
+    }
+    out <- ls.res[[which.max(vec.score)[1]]]
+    out$all <- list(init = breakpoint.init,
+                    score = vec.score,
+                    breakpoint = do.call(rbind,lapply(ls.res,"[[","breakpoint"))
+                    )
+    
+    ## ** standard error
+    out$breakpoint.se <- rep(NA, n.breakpoint)
+    if(pattern %in% c("111","11","01")){        
+        vcov.tempo <- vcov(out$model)
+    }else if(pattern %in% c("101","10")){
+        tryPkg <- requireNamespace("lavaSearch2")
+        if("try-error" %in% class(tryPkg)){
+            stop(tryPkg)
+        }
+        iid.tempo <- lavaSearch2::iid2(out$model, robust = FALSE)
+
+        m.tempo <- cbind(-iid.tempo[,paste0("I(",breakpoint.var," - Us)")])
+        colnames(m.tempo) <- "Us"
+        vcov.tempo <- crossprod(cbind(iid.tempo,m.tempo))
+        
+    }
+        ## SE via the influence function
+        ## term1 <- iid.tempo.scaled[,coef.gamma[1]]/coef(ebp)[coef.beta[1]] 
+        ## term2 <- - coef(ebp)[coef.gamma[1]]* iid.tempo.scaled[,coef.beta[1]]/coef(ebp)[coef.beta[1]]^2
+        ## sqrt(sum((term1 + term2)^2))
+    
+    
+    for(iBP in 1:n.breakpoint){
+        term1 <- vcov.tempo[coef.gamma[iBP],coef.gamma[iBP]] / out$coef[coef.beta[iBP]]^2
+        term2 <- vcov.tempo[coef.beta[iBP],coef.beta[iBP]] * (out$coef[coef.gamma[iBP]]/out$coef[coef.beta[iBP]]^2)^2
+        term3 <- -2*vcov.tempo[coef.gamma[iBP],coef.beta[iBP]] * out$coef[coef.gamma[iBP]]/out$coef[coef.beta[iBP]]^3
+        out$breakpoint.se[iBP] <- sqrt(term1+term2+term3)
+    }
+    
+    ## ** fitted
+    out$fit <- data.table(seq(min(data[[breakpoint.var]]), max(data[[breakpoint.var]]), length.out = n.points))
+    names(out$fit) <- breakpoint.var
+
+    out$fit[,c("Us") := (.SD[[1]]>out$breakpoint[1])*(.SD[[1]]-out$breakpoint[1]), .SDcols = breakpoint.var]
+    out$fit[,c("Vs") := -as.numeric(.SD[[1]]>out$breakpoint[1]), .SDcols = breakpoint.var]
+    if(n.breakpoint == 2){            
+        out$fit[,c("Us2") := (.SD[[1]]>out$breakpoint[2])*(.SD[[1]]-out$breakpoint[2]), .SDcols = breakpoint.var]
+        out$fit[,c("Vs2") := -as.numeric(.SD[[1]]>out$breakpoint[2]), .SDcols = breakpoint.var]
     }
 
+    out$fit[,c("fit") := predict(out$model, newdata = out$fit)]
+
+    ## ** export
+    return(out)
+
+}
+
+.warperBP <- function(formula, data,
+                      breakpoint.init, breakpoint.var, n.breakpoint,
+                      coef.beta, coef.gamma, pattern,
+                      n.iter, tol,
+                      trace, digits){
+
+
+    if(trace){
+        cat("    Initialize breakpoints: ",paste(round(breakpoint.init, digits = digits), collapse = " "),"\n")
+    }
+    iBreakpoint <- breakpoint.init
+    cv <- FALSE
     
     for(iIter in 1:n.iter){
         iBreakpointM1 <- iBreakpoint
 
-        ## update design
-        data[,c("Us") := (.SD[[1]]>iBreakpoint[1])*(.SD[[1]]-iBreakpoint[1]), .SDcols = var.breakpoint]
-        data[,c("Vs") := -as.numeric(.SD[[1]]>iBreakpoint[1]), .SDcols = var.breakpoint]
+        ## ** update design
+        data[,c("Us") := (.SD[[1]]>iBreakpoint[1])*(.SD[[1]]-iBreakpoint[1]), .SDcols = breakpoint.var]
+        data[,c("Vs") := -as.numeric(.SD[[1]]>iBreakpoint[1]), .SDcols = breakpoint.var]
 
         if(n.breakpoint>1){
-            data[,c("Us2") := (.SD[[1]]>iBreakpoint[2])*(.SD[[1]]-iBreakpoint[2]), .SDcols = var.breakpoint]
-            data[,c("Vs2") := -as.numeric(.SD[[1]]>iBreakpoint[2]), .SDcols = var.breakpoint]
+            data[,c("Us2") := (.SD[[1]]>iBreakpoint[2])*(.SD[[1]]-iBreakpoint[2]), .SDcols = breakpoint.var]
+            data[,c("Vs2") := -as.numeric(.SD[[1]]>iBreakpoint[2]), .SDcols = breakpoint.var]
         }
         
-        ## *** estimate model coefficients
-        if(pattern %in% c("111","11","01")){
-            ebp <- lm(formula.updated, data = data)
-        }else{
-            ebp <- lava::estimate(m, data = data)
-        }
+        ## ** estimate model coefficients
+        ebp <- lm(formula, data = data)
 
-        ## update breakpoint
+        ## ** update breakpoint
         coef.tempo <- summary(ebp)$coef[,"Estimate"]
+        if(pattern=="101"){
+            coef.tempo["Us"] <- -coef.tempo[paste0("I(",breakpoint.var," - Us)")]
+        }else if(pattern == "10"){
+            coef.tempo["Us"] <- -coef.tempo[paste0("I(",breakpoint.var," - Us)")]
+        }
         iBreakpoint <- coef.tempo[coef.gamma]/coef.tempo[coef.beta] + iBreakpoint
 
+        if(any(is.na(iBreakpoint))){ ## case where one breakpoint is outside the domain
+            return(list(model = NULL,
+                        coef = coef.tempo,
+                        breakpoint = iBreakpoint,
+                        breakpoint.init = breakpoint.init,
+                        cv = FALSE))
+        }
+        
+        ## ** display
         if(trace){
-            cat("Iteration ",iIter,", breakpoints: ",paste(round(iBreakpoint, digits = digits), collapse = " "),"\n", sep = "")
+            cat("    > iteration ",iIter,", breakpoints: ",paste(round(iBreakpoint, digits = digits), collapse = " "),"\n", sep = "")
         }
 
-        ## exit
+        ## ** cv
         iDiff <- abs(iBreakpoint-iBreakpointM1)
         if(any(iDiff<tol)){
+            cv <- TRUE
             break
         }
         
     }
 
-    ## ** standard error
-    se <- rep(NA, n.breakpoint)
-    if(pattern %in% c("111","11","01")){        
-        vcov.tempo <- vcov(ebp)
-    }else if(pattern %in% c("101","10")){
-        iid.tempo <- iid(ebp)
-
-        vec.sigma2 <- diag(vcov(ebp))
-        vec.sigma2.robust <- colSums(iid.tempo^2)
-        iid.tempo.scaled <- sweep(iid.tempo, FUN = "*", MARGIN = 2, STATS = sqrt(vec.sigma2/vec.sigma2.robust))
-        colnames(iid.tempo.scaled)
-        col.tempo <- -iid.tempo.scaled[,coef.alpha[1],drop =FALSE]
-        colnames(col.tempo) <- coef.beta[1]
-
-        vcov.tempo <- crossprod(cbind(iid.tempo.scaled, col.tempo))
-
-        ## SE via the influence function
-        ## term1 <- iid.tempo.scaled[,coef.gamma[1]]/coef(ebp)[coef.beta[1]] 
-        ## term2 <- - coef(ebp)[coef.gamma[1]]* iid.tempo.scaled[,coef.beta[1]]/coef(ebp)[coef.beta[1]]^2
-        ## sqrt(sum((term1 + term2)^2))
-    }
-    
-    for(iBP in 1:n.breakpoint){
-        term1 <- vcov.tempo[coef.gamma[iBP],coef.gamma[iBP]] / coef.tempo[coef.beta[iBP]]^2
-        term2 <- vcov.tempo[coef.beta[iBP],coef.beta[iBP]] * (coef.tempo[coef.gamma[iBP]]/coef.tempo[coef.beta[iBP]]^2)^2
-        term3 <- -2*vcov.tempo[coef.gamma[iBP],coef.beta[iBP]] * coef.tempo[coef.gamma[iBP]]/coef.tempo[coef.beta[iBP]]^3
-        se[iBP] <- sqrt(term1+term2+term3)
-    }
-    
-    ## ** fitted
-    data.fit <- data.table(seq(min(data[[var.breakpoint]]), max(data[[var.breakpoint]]), length.out = n.points))
-    names(data.fit) <- var.breakpoint
-
-    data.fit[,c("Us") := (.SD[[1]]>iBreakpoint[1])*(.SD[[1]]-iBreakpoint[1]), .SDcols = var.breakpoint]
-    data.fit[,c("Vs") := -as.numeric(.SD[[1]]>iBreakpoint[1]), .SDcols = var.breakpoint]
-    if(n.breakpoint == 2){            
-        data.fit[,c("Us2") := (.SD[[1]]>iBreakpoint[2])*(.SD[[1]]-iBreakpoint[2]), .SDcols = var.breakpoint]
-        data.fit[,c("Vs2") := -as.numeric(.SD[[1]]>iBreakpoint[2]), .SDcols = var.breakpoint]
-    }
-
-    if(pattern %in% c("111","11","01")){
-        data.fit[,fit := predict(ebp, newdata = data.fit)]
-    }else{
-        data.fit[,fit := predict(ebp, data = data.fit)[,1]] ## not newdata because it is lava::predict.lvmfit
-    }
-    
-    ## ** display
-    fit <- NULL ## [:CRANtest:] ggplot2
-    gg <- ggplot2::ggplot(mapping = aes_string(var.breakpoint))
-    gg <- gg + ggplot2::geom_point(data = cbind(data, observation = "observation"), aes_string(y = var.response, color = "observation"))
-    gg <- gg + ggplot2::geom_line(data = data.fit, aes(y = fit, color = "fit"))
-    gg <- gg + ggplot2::scale_colour_manual(name = "",
-                                   values = c("red","black"))
-    gg <- gg + ggplot2::ggtitle(label = paste0("pattern: ",pattern," | residual difference: ",round(iDiff, digits = digits)))
-
-    ## ** export
-    breakpoint <- list(value = iBreakpoint,
-                       se = se,
-                       init = init.breakpoint,
-                       fit = data.fit[],
-                       plot = gg,
-                       opt <- c("n.iteration" = iIter,
-                                "n.iterationMax" = n.iter,
-                                "diff" = iDiff,
-                                "tolerance" = tol)
-                       )
-
-    return(breakpoint)
-
+    return(list(model = ebp,
+                coef = coef.tempo,
+                breakpoint = iBreakpoint,
+                breakpoint.init = breakpoint.init,
+                diff = iDiff,
+                n.iter = n.iter,
+                cv = cv))
 }
 
 ######################################################################

@@ -12,7 +12,7 @@
 #' @importFrom methods is
 #' @importFrom foreach %dopar% foreach
 #' @importFrom gdata lowerTriangle upperTriangle
-#' @importFrom ggplot2 aes aes_string element_text guide_legend label_both unit
+#' @importFrom ggplot2 aes aes_string autoplot element_text guide_legend label_both unit
 #' @importFrom grDevices rgb
 #' @importFrom graphics boxplot plot
 #' @importFrom MASS boxcox
@@ -23,7 +23,7 @@
 #' @importFrom profvis profvis
 #' @importFrom proftools plotProfileCallGraph readProfileData
 #' @importFrom qqtest qqtest
-#' @importFrom stats anova as.formula coef cov cov2cor delete.response formula IQR lm logLik mad median model.frame model.matrix na.omit optim pnorm pt predict qnorm qt quantile sd setNames simulate terms time vcov update
+#' @importFrom stats anova as.formula coef BIC cov cov2cor delete.response formula IQR lm logLik mad median model.frame model.matrix na.omit optim pnorm pt predict qnorm qt quantile sd setNames simulate terms time vcov update
 #' @importFrom tmvtnorm rtmvnorm
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils Rprof setTxtProgressBar summaryRprof txtProgressBar  

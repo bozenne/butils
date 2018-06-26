@@ -5,22 +5,27 @@
 \title{Find One or Two Breakpoints}
 \usage{
 breakpoint(object, pattern = c("111", "101", "10", "11", "01"),
-  var.breakpoint = NULL, init.breakpoint = NULL, n.iter = 10,
-  tol = 0.001, n.points = 1000, trace = 2, digits = -log10(tol))
+  breakpoint.var = NULL, breakpoint.init = NULL, n.iter = 10,
+  tol = 0.001, n.init = 5, n.points = 10000, trace = 2,
+  digits = -log10(tol))
 }
 \arguments{
 \item{object}{a \code{lm} object under the assumption of a linear relationship}
 
 \item{pattern}{[vector of character] the number and type of breakpoints to be search. 0 indicates a flat line.}
 
-\item{var.breakpoint}{[character] the variable regarding which the breakpoints should be found.}
+\item{breakpoint.var}{[character] the variable regarding which the breakpoints should be found.}
 
-\item{init.breakpoint}{[list] a list containing initialization values for the breakpoints for each pattern.}
+\item{breakpoint.init}{[list] a list containing initialization values for the breakpoints for each pattern.
+Initialisation values can be a vector or a matrix with the same number of rows as the number of breakpoints.}
 
 \item{n.iter}{[integer, >0] the maximum number of iterations used to estimates the breakpoints.}
 
 \item{tol}{[numeric, >0] the maximum accpetable difference between two consecutive estimates of the breakpoints.
 When reached, the estimation algorithm stops.}
+
+\item{n.init}{[integer, >0] the number of quantiles used to generate initialisation points.
+Only active when breakpoint.init is \code{NULL}.}
 
 \item{n.points}{[integer, >0] the number of points used to display the fit.}
 
@@ -65,23 +70,21 @@ gg
 e.lm <- lm(Y~X, data = dtL)
 resBP <- breakpoint(e.lm)
 
+BIC(resBP)
 gg + geom_point(data = resBP$BP101$fit, aes(y = fit))
 
 
 #### example from the package segmented
 if(require(segmented)){
-GS <- segmented(e.lm, psi = c(0.5,1.5))
-cbind(value = resBP$BP111$value,
-      se = resBP$BP111$se)
+GS <- segmented(e.lm, psi = c(1,2))
+
+cbind(value = resBP$BP111$breakpoint,
+      se = resBP$BP111$breakpoint.se)
 GS$psi
 }
 
 if(require(gridExtra)){
-grid.arrange(resBP[["BP111"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-             resBP[["BP101"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-             resBP[["BP11"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-             resBP[["BP10"]]$plot + theme(text = element_text(size = 10), legend.position="none"),
-             resBP[["BP01"]]$plot + theme(text = element_text(size = 10), legend.position="none"), nrow = 1)
+  autoplot(resBP)
 }
  
 }

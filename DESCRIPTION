@@ -38,6 +38,7 @@ Suggests:
     AICcmodavg,
     gridExtra,
     heplots,
+    lavaSearch2,
     lme4,
     mgcv,
     numDeriv,
