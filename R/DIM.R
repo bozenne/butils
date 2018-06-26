@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 22 2018 (15:06) 
 ## Version: 
-## Last-Updated: jun 23 2018 (13:14) 
+## Last-Updated: jun 26 2018 (09:19) 
 ##           By: Brice Ozenne
-##     Update #: 5
+##     Update #: 6
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -28,7 +28,7 @@ DIM <- function(x){
     }else if(is.list(x)||is.vector(x)){
         return(length(x))
     }else{
-        retrun(dim(x))
+        return(dim(x))
     }
 }
 
