@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 26 2018 (09:13) 
 ## Version: 
-## Last-Updated: jun 26 2018 (13:20) 
+## Last-Updated: jun 26 2018 (15:35) 
 ##           By: Brice Ozenne
-##     Update #: 120
+##     Update #: 214
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -75,13 +75,13 @@
 #' resBP <- breakpoint(e.lm)
 #'
 #' BIC(resBP)
-#' gg + geom_point(data = resBP$BP101$fit, aes(y = fit))
-#'
+#' gg + geom_line(data = resBP$BP101$fit, aes(y = fit))
 #'
 #' #### example from the package segmented
 #' if(require(segmented)){
 #' GS <- segmented(e.lm, psi = c(1,2))
 #'
+#' 
 #' cbind(value = resBP$BP111$breakpoint,
 #'       se = resBP$BP111$breakpoint.se)
 #' GS$psi
@@ -96,7 +96,7 @@
 #' @rdname breakpoint
 #' @export
 breakpoint <- function(object, pattern = c("111","101","10","11","01"), breakpoint.var = NULL, breakpoint.init = NULL,
-                       n.iter = 10, tol = 1e-3, n.init = 5, n.points = 1e4,
+                       n.iter = 10, tol = 1e-3, n.init = 5, n.points = 5,
                        trace = 2, digits = -log10(tol)){
 
 
@@ -171,7 +171,7 @@ breakpoint <- function(object, pattern = c("111","101","10","11","01"), breakpoi
                                                tol = tol,
                                                n.init = n.init,
                                                n.points = n.points,
-                                               trace = (trace-1)>0,
+                                               trace = (trace-1),
                                                digits = digits)
         if(trace <= 2){
             cat(" - cv=",out[[paste0("BP",iPattern)]]$cv," \n",sep="")
@@ -194,7 +194,13 @@ BIC.breakpoint <- function(object,...){
 
     index.BP <- grep("^BP", names(object))
     
-    return(unlist(lapply(object[index.BP],function(iP){BIC(iP$model)})))
+    return(unlist(lapply(object[index.BP],function(iP){
+        if(!is.null(iP$model)){
+            return(BIC(iP$model))
+        }else{
+            return(NA)
+        }
+    })))
 
 }
 
@@ -207,6 +213,8 @@ BIC.breakpoint <- function(object,...){
 #' @param combine.plot [logical] should the plots for the different patterns be combined into one.
 #' @param nrow [integer, >0] number of rows used when combining the plots.
 #' @param ncol [integer, >0] number of columns used when combining the plots.
+#' @param title [character] the title of the combined plot. 
+#' @param plot [logical] should the plot be displayed in a window?
 #' @param text.size [numeric, >0] the size of the text in the plot.
 #' @param add.cv.title [logical] should the convergence status of the estimation algorithm
 #' be displayed in the title of the plot.
@@ -217,8 +225,8 @@ BIC.breakpoint <- function(object,...){
 #' 
 #' @method autoplot breakpoint
 #' @export 
-autoplot.breakpoint <- function(object, pattern = NULL,
-                                combine.plot = TRUE, nrow = NULL, ncol = NULL, text.size = 10,
+autoplot.breakpoint <- function(object, pattern = NULL, plot = TRUE,
+                                combine.plot = TRUE, nrow = NULL, ncol = NULL, title = NULL, text.size = 10,
                                 add.cv.title = TRUE, add.bic.title = FALSE, ...){
 
     fit <- NULL ## [:CRANtest:] ggplot2
@@ -245,38 +253,53 @@ autoplot.breakpoint <- function(object, pattern = NULL,
     ## ** make individual plots
     ls.plot <- vector(mode = "list", length = n.pattern)
     names(ls.plot) <- pattern
-
-    for(iPattern in pattern){ ## iPattern <- pattern[2]
-
-        title.txt <- paste0("pattern: ",iPattern)
-        if(add.cv.title){title.txt <- paste0(title.txt," | convergence: ",object[[iPattern]]$cv)}
-        if(add.bic.title){title.txt <- paste0(title.txt," | convergence: ",stats::BIC(object[[iPattern]]$model))}
+    object.BIC <- BIC(object)
     
+    for(iPattern in pattern){ ## iPattern <- pattern[2]
+        title.txt <- paste0("pattern: ",iPattern)
+
+        if(add.cv.title){title.txt <- paste0(title.txt," | convergence: ",object[[iPattern]]$cv)}
+        if(add.bic.title){title.txt <- paste0(title.txt," | BIC: ",round(object.BIC[iPattern],3))}
 
         ls.plot[[iPattern]] <- ggplot2::ggplot(mapping = aes_string(breakpoint.var))
         ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_point(data = cbind(data, observation = "observation"), aes_string(y = response.var, color = "observation"))
-        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_line(data = object[[iPattern]]$fit, aes(y = fit, color = "fit"))
-        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::scale_colour_manual(name = "",
-                                                                                  values = c("red","black"))
+        if(!is.null(object[[iPattern]]$fit)){
+            ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_line(data = object[[iPattern]]$fit, aes(y = fit, color = "fit"))
+            ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::scale_colour_manual(name = "",
+                                                                                      values = c("red","black"))
+        }else{
+               ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::scale_colour_manual(name = "", values = c("black"))
+        }
+        
         ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::ggtitle(label = title.txt)
         ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::theme(text = element_text(size = text.size))
+
+        if(pattern[which.min(object.BIC)]==iPattern){
+            ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::theme(plot.title = element_text(colour = "darkblue"))
+        }
     }
 
     if(combine.plot && n.pattern>1){
         vec.txt <- paste0("ls.plot[[\"",pattern,"\"]] + theme(legend.position=\"none\")")
         txt <- paste0(vec.txt, collapse = ", \n", sep = "")
-        txt.all <- paste0("grid.arrange(",txt,
+        txt.all <- paste0("gridExtra::arrangeGrob(",txt,
                           if(!is.null(nrow)){paste0(", nrow = ",nrow)},
                           if(!is.null(ncol)){paste0(", ncol = ",ncol)},
-                          ")"
-                          )
-        return(eval(parse(text = txt.all)))
+                          if(!is.null(title)){paste0(",top=\"",title,"\"")},
+                          ")")
+        out <- eval(parse(text = txt.all))
+        if(plot){
+            gridExtra::grid.arrange(out)
+        }
     }else{
-        return(ls.plot)
+        out <- ls.plot
+        if(plot){
+            lapply(out, print)
+        }
     }
 
     
-
+        return(invisible(out))
 }
 
 ## * .calcBP
@@ -331,7 +354,7 @@ autoplot.breakpoint <- function(object, pattern = NULL,
         probs.breakpoint <- seq(0,1, length.out = n.init+2)[2:(n.init+1)]
         quantile.data <- quantile(data[[breakpoint.var]], probs = probs.breakpoint)
         breakpoint.init <- utils::combn(quantile.data, m = n.breakpoint)
-        
+
     }else {
         if(is.vector(breakpoint.init)){
             breakpoint.init <- cbind(as.double(breakpoint.init))
@@ -345,87 +368,118 @@ autoplot.breakpoint <- function(object, pattern = NULL,
     n.init <- NCOL(breakpoint.init)
     
     ls.res <- vector(mode = "list", length = n.init)
-    vec.score <- rep(-Inf, times = n.init)
+    vec.score <- rep(-Inf, times = n.init) 
+    vec.score2 <- rep(-Inf, times = n.init)
+
+    breakpoint.min <- min(data[[breakpoint.var]], na.rm = TRUE)
+    breakpoint.max <- max(data[[breakpoint.var]], na.rm = TRUE)
+
     if(trace>0){cat(": ")}
     for(iInit in 1:n.init){
         ls.res[[iInit]] <- .warperBP(formula = formula.updated,
                                      data = data,
                                      breakpoint.init = breakpoint.init[,iInit],
                                      breakpoint.var = breakpoint.var,
+                                     breakpoint.min = breakpoint.min,
+                                     breakpoint.max = breakpoint.max,
                                      n.breakpoint = n.breakpoint,
                                      coef.beta = coef.beta,
                                      coef.gamma = coef.gamma,
                                      pattern = pattern,
                                      n.iter = n.iter,
                                      tol = tol,
-                                     trace = (trace-1)>0,
+                                     trace = (trace-1),
                                      digits = digits)
+
         if(ls.res[[iInit]]$cv){
             vec.score[iInit] <- logLik(ls.res[[iInit]]$model)
+            if(ls.res[[iInit]]$continuity){
+                vec.score2[iInit] <- logLik(ls.res[[iInit]]$model)
+            }
         }
         if(trace>0){cat("+")}
     }
-    out <- ls.res[[which.max(vec.score)[1]]]
+
+    ## ** find the best fit
+    if(any(!is.infinite(vec.score2))){ ## if any model respect continuity constrain take the best of them
+        out <- ls.res[[which.max(vec.score2)[1]]]
+    }else{ ## other look over those with discontinuity
+        out <- ls.res[[which.max(vec.score)[1]]]
+    }
     out$all <- list(init = breakpoint.init,
                     score = vec.score,
                     breakpoint = do.call(rbind,lapply(ls.res,"[[","breakpoint"))
                     )
     
     ## ** standard error
-    out$breakpoint.se <- rep(NA, n.breakpoint)
-    if(pattern %in% c("111","11","01")){        
-        vcov.tempo <- vcov(out$model)
-    }else if(pattern %in% c("101","10")){
-        tryPkg <- requireNamespace("lavaSearch2")
-        if("try-error" %in% class(tryPkg)){
-            stop(tryPkg)
-        }
-        iid.tempo <- lavaSearch2::iid2(out$model, robust = FALSE)
-
-        m.tempo <- cbind(-iid.tempo[,paste0("I(",breakpoint.var," - Us)")])
-        colnames(m.tempo) <- "Us"
-        vcov.tempo <- crossprod(cbind(iid.tempo,m.tempo))
+    if(out$cv){
+        out$breakpoint.se <- rep(NA, n.breakpoint)
         
-    }
+        if(pattern %in% c("111","11","01")){        
+            vcov.tempo <- vcov(out$model)
+        }else if(pattern %in% c("101","10")){
+            tryPkg <- requireNamespace("lavaSearch2")
+            if("try-error" %in% class(tryPkg)){
+                stop(tryPkg)
+            }
+            iid.tempo <- lavaSearch2::iid2(out$model, robust = FALSE)
+
+            m.tempo <- cbind(-iid.tempo[,paste0("I(",breakpoint.var," - Us)")])
+            colnames(m.tempo) <- "Us"
+            vcov.tempo <- crossprod(cbind(iid.tempo,m.tempo))
+        
+        }
+    
         ## SE via the influence function
         ## term1 <- iid.tempo.scaled[,coef.gamma[1]]/coef(ebp)[coef.beta[1]] 
         ## term2 <- - coef(ebp)[coef.gamma[1]]* iid.tempo.scaled[,coef.beta[1]]/coef(ebp)[coef.beta[1]]^2
         ## sqrt(sum((term1 + term2)^2))
     
-    
-    for(iBP in 1:n.breakpoint){
-        term1 <- vcov.tempo[coef.gamma[iBP],coef.gamma[iBP]] / out$coef[coef.beta[iBP]]^2
-        term2 <- vcov.tempo[coef.beta[iBP],coef.beta[iBP]] * (out$coef[coef.gamma[iBP]]/out$coef[coef.beta[iBP]]^2)^2
-        term3 <- -2*vcov.tempo[coef.gamma[iBP],coef.beta[iBP]] * out$coef[coef.gamma[iBP]]/out$coef[coef.beta[iBP]]^3
-        out$breakpoint.se[iBP] <- sqrt(term1+term2+term3)
+        for(iBP in 1:n.breakpoint){
+            term1 <- vcov.tempo[coef.gamma[iBP],coef.gamma[iBP]] / out$coef[coef.beta[iBP]]^2
+            term2 <- vcov.tempo[coef.beta[iBP],coef.beta[iBP]] * (out$coef[coef.gamma[iBP]]/out$coef[coef.beta[iBP]]^2)^2
+            term3 <- -2*vcov.tempo[coef.gamma[iBP],coef.beta[iBP]] * out$coef[coef.gamma[iBP]]/out$coef[coef.beta[iBP]]^3
+            out$breakpoint.se[iBP] <- sqrt(term1+term2+term3)
+        }
     }
     
     ## ** fitted
-    out$fit <- data.table(seq(min(data[[breakpoint.var]]), max(data[[breakpoint.var]]), length.out = n.points))
-    names(out$fit) <- breakpoint.var
+    if(!is.null(out$model)){
 
-    out$fit[,c("Us") := (.SD[[1]]>out$breakpoint[1])*(.SD[[1]]-out$breakpoint[1]), .SDcols = breakpoint.var]
-    out$fit[,c("Vs") := -as.numeric(.SD[[1]]>out$breakpoint[1]), .SDcols = breakpoint.var]
-    if(n.breakpoint == 2){            
-        out$fit[,c("Us2") := (.SD[[1]]>out$breakpoint[2])*(.SD[[1]]-out$breakpoint[2]), .SDcols = breakpoint.var]
-        out$fit[,c("Vs2") := -as.numeric(.SD[[1]]>out$breakpoint[2]), .SDcols = breakpoint.var]
+        if(n.breakpoint==1){
+            out$fit <- data.table(c(seq(min(data[[breakpoint.var]]), out$breakpoint[1], length.out = n.points),
+                                    seq(out$breakpoint[1], max(data[[breakpoint.var]]), length.out = n.points)))
+        }else if(n.breakpoint==2){
+            out$fit <- data.table(c(seq(min(data[[breakpoint.var]]), out$breakpoint[1], length.out = n.points),
+                                    seq(out$breakpoint[1], out$breakpoint[2], length.out = n.points),
+                                    seq(out$breakpoint[2], max(data[[breakpoint.var]]), length.out = n.points)))
+        }
+        names(out$fit) <- breakpoint.var
+
+        out$fit[,c("Us") := (.SD[[1]]>out$breakpoint[1])*(.SD[[1]]-out$breakpoint[1]), .SDcols = breakpoint.var]
+        out$fit[,c("Vs") := -as.numeric(.SD[[1]]>out$breakpoint[1]), .SDcols = breakpoint.var]
+        if(n.breakpoint == 2){            
+            out$fit[,c("Us2") := (.SD[[1]]>out$breakpoint[2])*(.SD[[1]]-out$breakpoint[2]), .SDcols = breakpoint.var]
+            out$fit[,c("Vs2") := -as.numeric(.SD[[1]]>out$breakpoint[2]), .SDcols = breakpoint.var]
+        }
+
+        out$fit[,c("fit") := predict(out$model, newdata = out$fit)]
     }
-
-    out$fit[,c("fit") := predict(out$model, newdata = out$fit)]
 
     ## ** export
     return(out)
 
 }
 
+## * warperBP
 .warperBP <- function(formula, data,
-                      breakpoint.init, breakpoint.var, n.breakpoint,
+                      breakpoint.init, breakpoint.var, breakpoint.min, breakpoint.max, n.breakpoint,
                       coef.beta, coef.gamma, pattern,
                       n.iter, tol,
                       trace, digits){
 
 
-    if(trace){
+    if(trace>0){
         cat("    Initialize breakpoints: ",paste(round(breakpoint.init, digits = digits), collapse = " "),"\n")
     }
     iBreakpoint <- breakpoint.init
@@ -445,7 +499,7 @@ autoplot.breakpoint <- function(object, pattern = NULL,
         
         ## ** estimate model coefficients
         ebp <- lm(formula, data = data)
-
+        
         ## ** update breakpoint
         coef.tempo <- summary(ebp)$coef[,"Estimate"]
         if(pattern=="101"){
@@ -454,36 +508,60 @@ autoplot.breakpoint <- function(object, pattern = NULL,
             coef.tempo["Us"] <- -coef.tempo[paste0("I(",breakpoint.var," - Us)")]
         }
         iBreakpoint <- coef.tempo[coef.gamma]/coef.tempo[coef.beta] + iBreakpoint
-
-        if(any(is.na(iBreakpoint))){ ## case where one breakpoint is outside the domain
+        
+        if(any(is.na(iBreakpoint)) || any(iBreakpoint<breakpoint.min) || any(iBreakpoint>breakpoint.max) || is.unsorted(iBreakpoint) ){
+            ## case where one breakpoint is outside the domain
+            ## or when the breakpoints are not in increasing order
             return(list(model = NULL,
                         coef = coef.tempo,
                         breakpoint = iBreakpoint,
                         breakpoint.init = breakpoint.init,
-                        cv = FALSE))
+                        cv = FALSE,
+                        continuity = FALSE))
         }
         
         ## ** display
-        if(trace){
-            cat("    > iteration ",iIter,", breakpoints: ",paste(round(iBreakpoint, digits = digits), collapse = " "),"\n", sep = "")
+        if(trace>0){
+            cat("    > iteration ",iIter,
+                ", breakpoints: ",paste(round(iBreakpoint, digits = digits), collapse = " "),
+                ", Vs: ",paste(round(coef.tempo[coef.gamma], digits = digits), collapse = " "),
+                " \n", sep = "")
         }
 
         ## ** cv
         iDiff <- abs(iBreakpoint-iBreakpointM1)
-        if(any(iDiff<tol)){
+        if(all(iDiff<tol)){
             cv <- TRUE
             break
         }
         
     }
 
+    ## ** enforce continuity
+    test.continuity <- all(abs(coef.tempo[coef.gamma])<tol)
+    if(test.continuity==FALSE){
+        ebp <- lm(update(formula,".~.-Vs-Vs2"), data = data)
+
+        coef.tempo <- summary(ebp)$coef[,"Estimate"]
+        if(pattern=="101"){
+            coef.tempo["Us"] <- -coef.tempo[paste0("I(",breakpoint.var," - Us)")]
+        }else if(pattern == "10"){
+            coef.tempo["Us"] <- -coef.tempo[paste0("I(",breakpoint.var," - Us)")]
+        }
+
+    }
+    
+    ## ** export
+    test.continuity <- all(abs(coef.tempo[coef.gamma])<tol)
+    
     return(list(model = ebp,
                 coef = coef.tempo,
                 breakpoint = iBreakpoint,
                 breakpoint.init = breakpoint.init,
                 diff = iDiff,
                 n.iter = n.iter,
-                cv = cv))
+                cv = cv,
+                continuity = test.continuity))
 }
 
 ######################################################################

@@ -6,7 +6,7 @@
 \usage{
 breakpoint(object, pattern = c("111", "101", "10", "11", "01"),
   breakpoint.var = NULL, breakpoint.init = NULL, n.iter = 10,
-  tol = 0.001, n.init = 5, n.points = 10000, trace = 2,
+  tol = 0.001, n.init = 5, n.points = 5, trace = 2,
   digits = -log10(tol))
 }
 \arguments{
@@ -71,12 +71,12 @@ e.lm <- lm(Y~X, data = dtL)
 resBP <- breakpoint(e.lm)
 
 BIC(resBP)
-gg + geom_point(data = resBP$BP101$fit, aes(y = fit))
-
+gg + geom_line(data = resBP$BP101$fit, aes(y = fit))
 
 #### example from the package segmented
 if(require(segmented)){
 GS <- segmented(e.lm, psi = c(1,2))
+
 
 cbind(value = resBP$BP111$breakpoint,
       se = resBP$BP111$breakpoint.se)

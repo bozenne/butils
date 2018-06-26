@@ -4,20 +4,24 @@
 \alias{autoplot.breakpoint}
 \title{Display Regression Line and Observations}
 \usage{
-\method{autoplot}{breakpoint}(object, pattern = NULL, combine.plot = TRUE,
-  nrow = NULL, ncol = NULL, text.size = 10, add.cv.title = TRUE,
-  add.bic.title = FALSE, ...)
+\method{autoplot}{breakpoint}(object, pattern = NULL, plot = TRUE,
+  combine.plot = TRUE, nrow = NULL, ncol = NULL, title = NULL,
+  text.size = 10, add.cv.title = TRUE, add.bic.title = FALSE, ...)
 }
 \arguments{
 \item{object}{output of \code{breakpoint}}
 
 \item{pattern}{[vector of character] the number and type of breakpoints to be display.}
 
+\item{plot}{[logical] should the plot be displayed in a window?}
+
 \item{combine.plot}{[logical] should the plots for the different patterns be combined into one.}
 
 \item{nrow}{[integer, >0] number of rows used when combining the plots.}
 
 \item{ncol}{[integer, >0] number of columns used when combining the plots.}
+
+\item{title}{[character] the title of the combined plot.}
 
 \item{text.size}{[numeric, >0] the size of the text in the plot.}
 
