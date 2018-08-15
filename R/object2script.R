@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: apr 15 2018 (16:52) 
 ## Version: 
-## Last-Updated: maj 16 2018 (16:32) 
+## Last-Updated: aug 15 2018 (14:45) 
 ##           By: Brice Ozenne
-##     Update #: 109
+##     Update #: 112
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -126,8 +126,7 @@ object2script.matrix <- function(object, digits = NULL, print = TRUE, final.spac
         type <- "col"
     }
 
-
-    if(type == "matrix"){
+    if(type == "matrix"){        
         value.txt <- paste0(as.double(object), collapse = ", ")
         rownames.txt <- paste0("\"",paste(object.rownames,collapse="\", \""),"\"")
         colnames.txt <- paste0("\"",paste(object.colnames,collapse="\", \""),"\"")
@@ -146,11 +145,11 @@ object2script.matrix <- function(object, digits = NULL, print = TRUE, final.spac
     }else if(type == "col"){
         end <- c(rep(",", n.col-1),"\n)")
         value.txt <- apply(object, 2 , paste, collapse = ", ")
+        vecValue.txt <- paste0("c(",value.txt,")", end)
         if(!is.null(object.colnames)){
-           value.txt <- paste0("\"",object.colnames,"\" = ",value.txt)
+            vecValue.txt <- paste0("\"",object.colnames,"\" = ",vecValue.txt)
         }
-        vecValue.txt <- paste(paste0("c(",value.txt,")", end), collapse =" \n      ")
-        
+        vecValue.txt <- paste(vecValue.txt, collapse = " \n      ")
         M.txt <- paste0("cbind(",vecValue.txt,final.space)
     }
 
