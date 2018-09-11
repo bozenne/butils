@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 26 2018 (09:13) 
 ## Version: 
-## Last-Updated: jun 26 2018 (15:35) 
+## Last-Updated: sep 11 2018 (15:09) 
 ##           By: Brice Ozenne
-##     Update #: 214
+##     Update #: 234
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -210,6 +210,7 @@ BIC.breakpoint <- function(object,...){
 #'
 #' @param object output of \code{breakpoint}
 #' @param pattern [vector of character] the number and type of breakpoints to be display.
+#' @param newdata [data.frame/data.table] datapoint at which the fit should be display.
 #' @param combine.plot [logical] should the plots for the different patterns be combined into one.
 #' @param nrow [integer, >0] number of rows used when combining the plots.
 #' @param ncol [integer, >0] number of columns used when combining the plots.
@@ -225,7 +226,7 @@ BIC.breakpoint <- function(object,...){
 #' 
 #' @method autoplot breakpoint
 #' @export 
-autoplot.breakpoint <- function(object, pattern = NULL, plot = TRUE,
+autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = TRUE,
                                 combine.plot = TRUE, nrow = NULL, ncol = NULL, title = NULL, text.size = 10,
                                 add.cv.title = TRUE, add.bic.title = FALSE, ...){
 
@@ -241,30 +242,40 @@ autoplot.breakpoint <- function(object, pattern = NULL, plot = TRUE,
 
     breakpoint.var <- object$breakpoint.var
     response.var <- object$response.var
-    data <- object$data
+    if(is.null(newdata)){
+        newdata <- data.table::copy(object$data)
+    }
+    newdata.fit <- lapply(pattern, function(iPattern){
+        out <- data.table::copy(object[[iPattern]]$fit)
+        return(out)
+    })
+    names(newdata.fit) <- pattern
 
+    
     ##
     tryPkg <- requireNamespace("gridExtra")
     if("try-error" %in% class(tryPkg)){
         stop(tryPkg)
     }
 
-
     ## ** make individual plots
     ls.plot <- vector(mode = "list", length = n.pattern)
     names(ls.plot) <- pattern
     object.BIC <- BIC(object)
-    
+
+    newdata <- cbind(newdata, observation = "observation")
+        
     for(iPattern in pattern){ ## iPattern <- pattern[2]
         title.txt <- paste0("pattern: ",iPattern)
-
+        iFit <- newdata.fit[[iPattern]]
+            
         if(add.cv.title){title.txt <- paste0(title.txt," | convergence: ",object[[iPattern]]$cv)}
         if(add.bic.title){title.txt <- paste0(title.txt," | BIC: ",round(object.BIC[iPattern],3))}
 
         ls.plot[[iPattern]] <- ggplot2::ggplot(mapping = aes_string(breakpoint.var))
-        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_point(data = cbind(data, observation = "observation"), aes_string(y = response.var, color = "observation"))
-        if(!is.null(object[[iPattern]]$fit)){
-            ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_line(data = object[[iPattern]]$fit, aes(y = fit, color = "fit"))
+        ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_point(data = newdata, aes_string(y = response.var, color = "observation"))
+        if(!is.null(iFit)){
+            ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::geom_line(data = iFit, aes(y = fit, color = "fit"))
             ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::scale_colour_manual(name = "",
                                                                                       values = c("red","black"))
         }else{
@@ -292,9 +303,11 @@ autoplot.breakpoint <- function(object, pattern = NULL, plot = TRUE,
             gridExtra::grid.arrange(out)
         }
     }else{
-        out <- ls.plot
+        out <- list(plot = ls.plot,
+                    data = newdata,
+                    fit = newdata.fit)
         if(plot){
-            lapply(out, print)
+            lapply(out$plot, print)
         }
     }
 
