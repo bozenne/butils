@@ -37,7 +37,8 @@ to be specified on the four sides of the plot (bottom, left, top, right).}
 
 \item{type}{the function used to display the qqplot. Can be qqtest or qqnorm.}
 
-\item{name.model}{[character vector] character string to be displayed before the variable name in the title of the plot.#'}
+\item{name.model}{[character vector] character string to be displayed before the variable name in the title of the plot.
+If \code{NULL} and \code{object} is a list, the names of the list will be used to define the title of the plots.}
 
 \item{centralPercents}{argument passed to \code{qqtest}. See the help of \code{\link{qqtest}}.}
 }

@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug 30 2017 (09:26) 
 ## Version: 
-## last-updated: maj 17 2018 (13:04) 
+## last-updated: sep 18 2018 (11:55) 
 ##           By: Brice Ozenne
-##     Update #: 76
+##     Update #: 94
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -24,7 +24,8 @@
 #' @param object a lvm model.
 #' @param residuals [matrix] the residuals relative to each endogenous variable.
 #' @param variables the variable for which the residuals should be displayed.
-#' @param name.model [character vector] character string to be displayed before the variable name in the title of the plot.#' 
+#' @param name.model [character vector] character string to be displayed before the variable name in the title of the plot.
+#' If \code{NULL} and \code{object} is a list, the names of the list will be used to define the title of the plots.
 #' @param mfrow how to divide the window. See \code{par}.
 #' @param mar [numeric vector] the number of lines of margin
 #' to be specified on the four sides of the plot (bottom, left, top, right).
@@ -107,10 +108,18 @@ qqplot2.list <- function(object,
     if(any(vec.n != vec.n[iL])){
         stop("The number of residuals differ between models \n")
     }
+    if(any(duplicated(variables))){
+        if(length(unique(name.model))!=length(variables) || any(duplicated(name.model))){
+            stop("Non unique response variable names \n")
+        }else{
+            variables <- name.model
+            name.model <- ""
+        }
+    }
     
     M.residuals <- do.call("cbind",ls.residuals)
     colnames(M.residuals) <- variables
-        
+
     out <- .qqplot2(variables = variables,
                     residuals = M.residuals,
                     plot = plot,
@@ -119,7 +128,6 @@ qqplot2.list <- function(object,
                     type = type,
                     name.model = name.model,
                     centralPercents = centralPercents)
-    
     return(invisible(out))
     
 }
@@ -171,7 +179,7 @@ qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, p
     }
 
     ## ** initialize
-    residuals <- residuals[,variables,drop=FALSE]
+    residuals <- as.data.frame(residuals)[,variables,drop=FALSE]
     n.var <- NCOL(residuals)       
     if(is.null(mfrow)){
         mfrow <- c(round(sqrt(n.var)), ceiling(n.var/round(sqrt(n.var))))
@@ -182,7 +190,11 @@ qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, p
         op <- graphics::par(mfrow = envir$mfrow, mar = envir$mar)
         sapply(1:envir$n.var, function(row){
             resid <- stats::na.omit(envir$residuals[,row])
-            iMain <- paste0(envir$name.model,envir$variables[row])
+            if(length(envir$name.model)>1){
+                iMain <- envir$name.model[row]
+            }else{
+                iMain <- paste0(envir$name.model,envir$variables[row])
+            }
             if(all(resid < 1e-5)){
                 graphics::plot(0,0, col = "white", axes = FALSE, xlab = "", ylab = "", main = iMain)
                 graphics::text(0,0,"all residuals < 1e-5")
