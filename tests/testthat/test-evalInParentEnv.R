@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: okt  5 2017 (13:20) 
 ## Version: 
-## last-updated: okt  5 2017 (13:23) 
+## last-updated: sep 28 2018 (13:45) 
 ##           By: Brice Ozenne
-##     Update #: 5
+##     Update #: 6
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -20,11 +20,11 @@ context("evalInParentEnv")
 
 
 e.lm <- lm(Y~X, data = data.frame(Y=1:5,X=1:5))
-res1 <- butils:::evalInParentEnv(e.lm$call$data, envir = environment())
+res1 <- butils:::evalInParentEnv(e.lm$call$data)
 
 df <- data.frame(Y=1:5,X=1:5)
 e.lm <- lm(Y~X, data = df)
-res2 <- butils:::evalInParentEnv(e.lm$call$data, envir = environment())
+res2 <- butils:::evalInParentEnv(e.lm$call$data)
 
 test_that("df vs. data.frame(...) ", {
     expect_equal(res1,res2)
