@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: okt  5 2017 (10:48) 
 ## Version: 
-## last-updated: jan 19 2018 (17:00) 
+## last-updated: sep 28 2018 (12:05) 
 ##           By: Brice Ozenne
-##     Update #: 8
+##     Update #: 9
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -20,10 +20,9 @@
 #' @description Internal function
 #' 
 #' @param name character string containing the name of the object to get.
-#' @param envir the environment from which to look for the object.
 #'
 #' @export
-evalInParentEnv <- function(name, envir){
+evalInParentEnv <- function(name){
   
   ### ** find parent environments
   frames <- sys.status()
