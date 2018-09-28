@@ -4,12 +4,10 @@
 \alias{evalInParentEnv}
 \title{Find object in the parent environments}
 \usage{
-evalInParentEnv(name, envir)
+evalInParentEnv(name)
 }
 \arguments{
 \item{name}{character string containing the name of the object to get.}
-
-\item{envir}{the environment from which to look for the object.}
 }
 \description{
 Internal function
