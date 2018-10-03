@@ -7,8 +7,8 @@
 bootPb(data, statistic, R, sim = "ordinary", stype = c("i", "f", "w"),
   strata = rep(1, n), L = NULL, m = 0, weights = NULL,
   ran.gen = function(d, p) d, mle = NULL, simple = FALSE, ...,
-  parallel = c("no", "multicore", "snow"), ncpus = getOption("boot.ncpus",
-  1L), cl = NULL)
+  parallel = c("no", "multicore", "snow"),
+  ncpus = getOption("boot.ncpus", 1L), cl = NULL)
 }
 \arguments{
 \item{data}{see \code{boot::boot}}

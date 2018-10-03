@@ -7,8 +7,8 @@
 cor.testDT(data, format, col.value = NULL, col.group = NULL,
   lower.tri = TRUE, method.cor = "cor.test", use.pairwiseNNA = TRUE,
   reorder = "AOE", imput.value = 0, hclust.method = "complete",
-  trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table",
-  ...)
+  trace = TRUE, plot = TRUE, args.plot = list(),
+  output = "data.table", ...)
 }
 \arguments{
 \item{data}{the dataset.}

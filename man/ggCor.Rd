@@ -4,7 +4,8 @@
 \alias{ggCor}
 \title{Display correlation/covariance  matrix}
 \usage{
-ggCor(data, type = "correlation", legend_title = NULL, plot = TRUE, ...)
+ggCor(data, type = "correlation", legend_title = NULL, plot = TRUE,
+  ...)
 }
 \arguments{
 \item{data}{a matrix containing in each columns the observations for each variable.}

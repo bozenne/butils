@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 22 2018 (15:06) 
 ## Version: 
-## Last-Updated: jun 26 2018 (09:19) 
+## Last-Updated: okt  3 2018 (14:29) 
 ##           By: Brice Ozenne
-##     Update #: 6
+##     Update #: 7
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -25,9 +25,13 @@
 DIM <- function(x){
     if(isS4(x)){
         length(attributes(x))
-    }else if(is.list(x)||is.vector(x)){
+    } else if(data.table::is.data.table(x)){
+        return(dim(x))
+    } else if(is.data.frame(x)){
+        return(dim(x))
+    } else if(is.list(x)||is.vector(x)){
         return(length(x))
-    }else{
+    } else {
         return(dim(x))
     }
 }

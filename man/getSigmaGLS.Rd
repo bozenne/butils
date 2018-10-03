@@ -5,8 +5,8 @@
 \title{Variance-covariance of GLS object}
 \usage{
 getSigmaGLS(gls, data = NULL, type = "covariance", upper = NULL,
-  individual = NULL, plot = TRUE, args.plot = list(), output = "matrix",
-  trace = 1)
+  individual = NULL, plot = TRUE, args.plot = list(),
+  output = "matrix", trace = 1)
 }
 \arguments{
 \item{gls}{the gls object}

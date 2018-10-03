@@ -1,23 +1,29 @@
 packages <- c(
-"car","caret", "coda",
+"abind","archivist","AUC",
+"car","caret", "clubSandwich", "coda",
 "data.table","devtools",
-"fields",
-"glmnet",
+"fields","foreach",
+"gdata","geepack","glmnet",
+"Hmisc",
 "Matrix","mgcv",
-"ggmap","ggplot2",
-"lava","lava.tobit","lme4",
-"maps","maptools","markdown","mritc","multcomp"
+"ggmap","ggplot2","ggthemes","gof","gridExtra",
+"knitr",
+"lava","lava.tobit","lme4","lmerTest",
+"maps","maptools","markdown","mets","mritc","multcomp","mvtnorm",
 "nlme","nnet",
 "parallel","pracma",
-"oro.dicom", "oro.nifti",
-"pec","penalized","proc","prodlim","publish",
-"RANN","Rcpp","RcppArmadillo","RcppEigen","ReporteRs","rgl","riskRegression","ROCR","roxygen2"
-"shiny","snowfall","sp","spam"
+"optimx","oro.dicom", "oro.nifti",
+"pbapply","pec","penalized","pbkrtest","pracma","pROC","prodlim","publish",
+"qqtest","quantreg",
+"ranger","RANN","Rcpp","RcppArmadillo","RcppEigen","ReporteRs","rgl","riskRegression","ROCR","roxygen2",
+"shiny","snowfall","sp","spam","spelling","stringi",
 "testthat",
 "ranger","randomForest",
 "survival",
 "xtable"
 )
+toInstall <- setdiff(packages, rownames(installed.packages()))
+install.packages(toInstall)
 
 Imports: graphics, grDevices ROCR, spam, stats, stats4, utils
 Suggests: coda, fields, mritc, nnet, parallel, pracma, rgl, snowfall
