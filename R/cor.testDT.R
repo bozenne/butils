@@ -7,7 +7,8 @@
 #' @param col.value [character vector] columns containing the values to be analyzed.
 #' In wide format, all the columns will be used if \code{NULL}.
 #' @param col.group [character] column defining the groups of observations between which the correlation will be computed.
-#' @param lower.tri [logical] should only the lower traingle of the matrix be filled?
+#' @param lower.tri [logical] should only the lower triangle of the matrix be filled?
+#' @param upper.tri [logical] should only the upper triangle of the matrix be filled?
 #' @param method.cor [character] the method used to compute the correlation. 
 #' @param use.pairwiseNNA [logical]] If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
 #' @param reorder [character] argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.
@@ -46,7 +47,7 @@
 #' 
 #' @export
 cor.testDT <- function(data, format,
-                       col.value = NULL, col.group = NULL, lower.tri = TRUE,
+                       col.value = NULL, col.group = NULL, lower.tri = TRUE, upper.tri = FALSE,
                        method.cor = "cor.test", use.pairwiseNNA = TRUE, 
                        reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
@@ -151,6 +152,11 @@ cor.testDT <- function(data, format,
   if(lower.tri == FALSE){
     for(iter3 in 1:dim(cor.array)[3]){
       cor.array[,,iter3][upper.tri(cor.array[,,iter3])] <- NA
+    }
+  }
+  if(upper.tri == FALSE){
+    for(iter3 in 1:dim(cor.array)[3]){
+      cor.array[,,iter3][lower.tri(cor.array[,,iter3])] <- NA
     }
   }
   
