@@ -5,10 +5,10 @@
 \title{Perform pairwise correlation tests between matrix columns}
 \usage{
 cor.testDT(data, format, col.value = NULL, col.group = NULL,
-  lower.tri = TRUE, method.cor = "cor.test", use.pairwiseNNA = TRUE,
-  reorder = "AOE", imput.value = 0, hclust.method = "complete",
-  trace = TRUE, plot = TRUE, args.plot = list(),
-  output = "data.table", ...)
+  lower.tri = TRUE, upper.tri = FALSE, method.cor = "cor.test",
+  use.pairwiseNNA = TRUE, reorder = "AOE", imput.value = 0,
+  hclust.method = "complete", trace = TRUE, plot = TRUE,
+  args.plot = list(), output = "data.table", ...)
 }
 \arguments{
 \item{data}{the dataset.}
@@ -20,7 +20,9 @@ In wide format, all the columns will be used if \code{NULL}.}
 
 \item{col.group}{[character] column defining the groups of observations between which the correlation will be computed.}
 
-\item{lower.tri}{[logical] should only the lower traingle of the matrix be filled?}
+\item{lower.tri}{[logical] should only the lower triangle of the matrix be filled?}
+
+\item{upper.tri}{[logical] should only the upper triangle of the matrix be filled?}
 
 \item{method.cor}{[character] the method used to compute the correlation.}
 

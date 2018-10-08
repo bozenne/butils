@@ -66,10 +66,12 @@
 #' ggSurv(m.cox, newdata = d[,.SD[1], by = X1], confint = TRUE)
 #'
 #' ## Cox (stratified)
-#' mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1), data = d, y = TRUE, x = TRUE)
+#' mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1), data = d,
+#'                      y = TRUE, x = TRUE)
 #' ggSurv(mStrata.cox, censoring = TRUE, event = TRUE)
 #' 
-#' mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1) + strata(X2), data = d, y = TRUE, x = TRUE)
+#' mStrata.cox <- coxph(Surv(eventtime, status) ~ strata(X1) + strata(X2), data = d,
+#'                      y = TRUE, x = TRUE)
 #' ggSurv(mStrata.cox, censoring = TRUE, event = TRUE)
 #' 
 #' ## KM

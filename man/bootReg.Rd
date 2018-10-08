@@ -9,7 +9,7 @@
 \alias{.bootReg}
 \title{Perform bootstrap computation on an object}
 \usage{
-bootReg(object, ...)
+bootReg(object, type, FUN.estimate, FUN.stdError, data, load.library, ...)
 
 \method{bootReg}{lm}(object, type = "coef", FUN.estimate = NULL,
   FUN.stdError = NULL, data = NULL, load.library = NULL, ...)
@@ -33,8 +33,6 @@ bootReg(object, ...)
 \arguments{
 \item{object}{the fitted model.}
 
-\item{...}{ignored}
-
 \item{type}{the type of test for which the bootstrap should be performed. Can be \code{"coef"}, \code{"anova"}, \code{"publish"}.
 Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.stdError}.}
 
@@ -45,6 +43,8 @@ Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.
 \item{data}{the data that have been used to fit the model.}
 
 \item{load.library}{additional library to load on each CPU. Useful when performing parallel computation.}
+
+\item{...}{ignored}
 
 \item{cluster}{the variable indicating the level where the sample is i.i.d. Only required for gls with no correlation argument.}
 
@@ -67,11 +67,14 @@ Setting type to \code{NULL} enable the use of \code{FUN.estimate} and \code{FUN.
 \item{trace}{should the execution of the bootstrap be displayed using a progress bar?}
 }
 \description{
-Perform bootstrap computation on an object under H0 or H1. Handle one grouping variable.
+Perform bootstrap computation for a regression model. Handle one grouping variable.
 }
 \details{
-Bootstrap under H1: randomly select observations (or individuals according to argument var.id) to form a new dataset.
+Bootstrap: randomly select observations (or individuals according to argument var.id) to form a new dataset.
 If the same individual appear several times, a different group value is given for each apparition.
+
+When using multiple cores, even though a seed is set to each core, the result may change depending on
+how many samples each core is performing.
 }
 \examples{
 #### data  ####

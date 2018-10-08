@@ -2,7 +2,7 @@
 #' @title Perform bootstrap computation on an object
 #' @name bootReg
 #' 
-#' @description Perform bootstrap computation on an object under H0 or H1. Handle one grouping variable.
+#' @description Perform bootstrap computation for a regression model. Handle one grouping variable.
 #' 
 #' @param object the fitted model.
 #' @param data the data that have been used to fit the model.
@@ -24,8 +24,11 @@
 #' @param ... ignored
 #' 
 #' @details
-#' Bootstrap under H1: randomly select observations (or individuals according to argument var.id) to form a new dataset.
+#' Bootstrap: randomly select observations (or individuals according to argument var.id) to form a new dataset.
 #' If the same individual appear several times, a different group value is given for each apparition.
+#'
+#' When using multiple cores, even though a seed is set to each core, the result may change depending on
+#' how many samples each core is performing.
 #' 
 #' @examples
 #' #### data  ####
@@ -62,7 +65,9 @@
 #' 
 #' @export
 `bootReg` <-
-  function(object, ...) UseMethod("bootReg")
+    function(object, type,
+             FUN.estimate, FUN.stdError,
+             data, load.library, ...) UseMethod("bootReg")
 
 
 ## * bootReg.lm
@@ -307,15 +312,6 @@ bootReg.lvmfit <- function(object,
     })
     names(ls.index.cluster) <- unique.cluster
     n.obs.cluster <- unlist(lapply(ls.index.cluster,length))
-
-    
-    ### ** seed
-    if (!is.null(seed)){
-        set.seed(seed)
-        bootseeds <- sample(1:max(1e6,seed),size=n.boot,replace=FALSE)
-    }else{
-        bootseeds <- NULL
-    }
     
     ### ** non-parametric bootstrap simulation
     FUN.resample.save <- FUN.resample
@@ -358,17 +354,13 @@ bootReg.lvmfit <- function(object,
 
     ### ** boostrap function
     FUN.boostrap <- function(iB){
-        if(!is.null(bootseeds)){
-            set.seed(bootseeds[iB])
-        }
-
         object$call$data <- do.call(FUN.resample, args = list(object = object, data = data, response.var = response.var))
 
         objectBoot <- matrix(NA, nrow = 2, ncol = n.coef,
                              dimnames = list(c("estimate","stdError"),name.coef)
                              )
         res <- tryWithWarnings(eval(object$call))
-        if(!is.null(res$value)){            
+        if(!is.null(res$value)){
             estimate.tempo <- do.call(FUN.estimate, args = list(res$value))
             objectBoot["estimate",names(estimate.tempo)] <- estimate.tempo
             if(!is.null(FUN.stdError)){
@@ -389,9 +381,27 @@ bootReg.lvmfit <- function(object,
   if(n.cpus>1){
       vec.export <- c("object","tryWithWarnings")
       b <- NULL ## for CRAN check
-      
+
       cl <- snow::makeSOCKcluster(n.cpus)
       doSNOW::registerDoSNOW(cl)
+
+      if (!is.null(seed)){
+          set.seed(seed)
+          bootseeds <- sample(1:max(1e3,seed),size=n.cpus,replace=FALSE)
+
+          ## name of each CPU
+          cpus.name <- unlist(parallel::clusterCall(cl = cl, function(x){
+              myName <- paste(Sys.info()[['nodename']], Sys.getpid(), sep='-')
+              return(myName)
+          }))
+
+          ## index of each CPU
+          parallel::clusterCall(cl = cl, function(x){
+              indexCPU <- which(cpus.name == paste(Sys.info()[['nodename']], Sys.getpid(), sep='-'))
+              set.seed(bootseeds[indexCPU])
+          })
+      }
+
       if(trace){
           pb <- txtProgressBar(min=1, max=n.boot, style=3)
           option <- list(progress = function(n){ setTxtProgressBar(pb, n) })
@@ -411,6 +421,10 @@ bootReg.lvmfit <- function(object,
       
       
   }else{
+
+      if (!is.null(seed)){
+          set.seed(seed)
+      }
 
       if(trace){
           requireNamespace("pbapply")
