@@ -14,13 +14,13 @@ bootReg(object, type, FUN.estimate, FUN.stdError, data, load.library, ...)
 \method{bootReg}{lm}(object, type = "coef", FUN.estimate = NULL,
   FUN.stdError = NULL, data = NULL, load.library = NULL, ...)
 
-\method{bootReg}{gls}(object, cluster, type = "coef",
-  FUN.estimate = NULL, FUN.stdError = NULL, data = NULL,
-  load.library = "nlme", ...)
+\method{bootReg}{gls}(object, type = "coef", FUN.estimate = NULL,
+  FUN.stdError = NULL, data = NULL, load.library = "nlme", cluster,
+  ...)
 
-\method{bootReg}{lme}(object, cluster, type = "coef",
-  FUN.estimate = NULL, FUN.stdError = NULL, data = NULL,
-  load.library = "nlme", ...)
+\method{bootReg}{lme}(object, type = "coef", FUN.estimate = NULL,
+  FUN.stdError = NULL, data = NULL, load.library = "nlme", cluster,
+  ...)
 
 \method{bootReg}{lvmfit}(object, type = "coef", FUN.estimate = NULL,
   FUN.stdError = NULL, data = NULL, load.library = "lava", ...)

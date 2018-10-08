@@ -143,12 +143,12 @@ bootReg.lm <- function(object,
 #' @rdname bootReg
 #' @export
 bootReg.gls <- function(object,
-                        cluster,
                         type = "coef",
                         FUN.estimate = NULL,
                         FUN.stdError = NULL,
                         data = NULL,                        
                         load.library = "nlme",
+                        cluster,
                         ...){
 
 ### ** extract data
