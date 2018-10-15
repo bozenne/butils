@@ -1,26 +1,27 @@
 packages <- c(
 "abind","archivist","AUC",
-"car","caret", "clubSandwich", "coda",
-"data.table","devtools",
+"boot",
+"car","caret", "clubSandwich", "coda", "corrplot",
+"data.table","devtools", "doSNOW",
 "fields","foreach",
 "gdata","geepack","glmnet",
 "Hmisc",
-"Matrix","mgcv",
+"Matrix","mgcv", "merTools",
 "ggmap","ggplot2","ggthemes","gof","gridExtra",
 "knitr",
 "lava","lava.tobit","lme4","lmerTest",
 "maps","maptools","markdown","mets","mritc","multcomp","mvtnorm",
 "nlme","nnet",
-"parallel","pracma",
+"parallel","pracma", "proftools", "profvis",
 "optimx","oro.dicom", "oro.nifti",
-"pbapply","pec","penalized","pbkrtest","pracma","pROC","prodlim","publish",
+"pbapply","pec","penalized","pbkrtest","pipeR","pracma","pROC","prodlim","publish",
 "qqtest","quantreg",
 "ranger","RANN","Rcpp","RcppArmadillo","RcppEigen","ReporteRs","rgl","riskRegression","ROCR","roxygen2",
 "shiny","snowfall","sp","spam","spelling","stringi",
-"testthat",
+"testthat", "tmvtnorm",
 "ranger","randomForest",
 "survival",
-"xtable"
+"XML","xtable"
 )
 toInstall <- setdiff(packages, rownames(installed.packages()))
 install.packages(toInstall)
