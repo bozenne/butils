@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 21 2017 (17:49) 
 ## Version: 
-## Last-Updated: jun  4 2018 (16:30) 
+## Last-Updated: okt 15 2018 (15:29) 
 ##           By: Brice Ozenne
-##     Update #: 325
+##     Update #: 336
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -63,19 +63,24 @@ summary.bootReg <- function(object, p.value = TRUE,
     ### ** Convert to boot
     boot.object <- as.boot(object, index = index)
 
-    ### ** Compute confidence intervals and p.values
+### ** Compute confidence intervals and p.values
     resStat.full <- .calcCIP(boot.object, conf = conf, type = type, index = 1:length(index),
                              p.value = p.value,
                              stdError = object$stdError[index],
                              iid = object$iid[,index,drop=FALSE],
                              boot.stdError = object$boot.stdError[,index,drop=FALSE])
-    
-    ### ** Display results
+
+### ** Display results
     rowM <- cbind(estimate = object$estimate[index],
-                  estimate.boot = apply(object$boot.estimate[,index,drop=FALSE],2,median,na.rm = TRUE),
+                  estimate.boot = apply(object$boot.estimate[,index,drop=FALSE],2,mean,na.rm = TRUE),
                   resStat.full,
                   nBoot.effective = colSums(!is.na(object$boot.estimate[,index,drop=FALSE])))
+    rowM <- as.data.frame(rowM)
 
+    if("p.value" %in% rowM){
+        rowM$p.value <- format.pval(rowM$p.value, eps = 1/object$n.boot) 
+    }
+    
     if(print==TRUE){
         print(object$call)
         cat("\n")
@@ -211,7 +216,7 @@ summary.bootReg <- function(object, p.value = TRUE,
                                        return(iRoot)
                                    })
             return(p.value)            
-        })
+        })        
         resCI <- cbind(resCI,p.value = resP)
     }
 

@@ -41,7 +41,12 @@
 #' 
 #' #### lm ####
 #' m.lm <- lm(Y ~ group*gender, data = df.data)
+#' \dontrun{
+#' resBoot <- bootReg(m.lm, n.boot = 1e4)
+#' }
+#' \dontshow{
 #' resBoot <- bootReg(m.lm, n.boot = 1e2)
+#' }
 #' resBoot
 #' summary(resBoot, type = "norm")
 #' summary(resBoot, type = "basic")
