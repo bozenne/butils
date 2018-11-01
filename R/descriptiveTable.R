@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: nov  1 2018 (17:25) 
+## Last-Updated: nov  1 2018 (17:28) 
 ##           By: Brice Ozenne
-##     Update #: 179
+##     Update #: 180
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -154,7 +154,7 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
 ##' @title Print Function for the Descriptive Table
 ##' @description Print function for the descriptive table.
 ##'
-##' @param object output of \code{descriptiveTable}.
+##' @param x output of \code{descriptiveTable}.
 ##' @param print [logical] should the descriptive table be printed?
 ##' @param digit.frequency [integer, >=0] number of digit when printing frequencies.
 ##' @param digit.center [integer, >=0] number of digit when printing center parameters.
@@ -163,16 +163,16 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
 ##' @param ... Not used. For compatibility with the generic method.
 ##' 
 ##' @export
-print.descriptiveTable <- function(object, print = TRUE,
+print.descriptiveTable <- function(x, print = TRUE,
                                    digit.frequency = 2,
                                    digit.center = 2,
                                    digit.spread = 2,
                                    format.date = "%Y-%m-%d",
                                    ...){
 
-    name.group <- attr(object, "name.group")
+    name.group <- attr(x, "name.group")
     n.group <- length(name.group)
-    name.type <- names(object)
+    name.type <- names(x)
     n.type <- length(name.type)
 
     out <- vector(mode = "list", length = n.type)
@@ -180,7 +180,7 @@ print.descriptiveTable <- function(object, print = TRUE,
 
     ## ** rounding
     if("date" %in% name.type){
-        out$date <- data.table::copy(data.table::as.data.table(object[["date"]]))
+        out$date <- data.table::copy(data.table::as.data.table(x[["date"]]))
         out$date[, c("center") := format(.SD[["center"]], format = format.date)]
         out$date[, c("min") := format(.SD[["min"]], format = format.date)]
         out$date[, c("max") := format(.SD[["max"]], format = format.date)]
@@ -188,18 +188,18 @@ print.descriptiveTable <- function(object, print = TRUE,
         out$date <- dcast(out$date, value.var = c("center","[min;max]","n.NA"), formula = variable ~ group)
     }
     if("constant" %in% name.type){
-        out$constant <- data.table::copy(data.table::as.data.table(object[["constant"]]))
+        out$constant <- data.table::copy(data.table::as.data.table(x[["constant"]]))
         out$constant[, c("level") := as.character(.SD$level)]
         out$constant <- dcast(out$constant, value.var = c("n","frequency","n.NA"), formula = variable + level ~ group)        
     }
     if("categorical" %in% name.type){
-        out$categorical <- data.table::copy(data.table::as.data.table(object[["categorical"]]))
+        out$categorical <- data.table::copy(data.table::as.data.table(x[["categorical"]]))
         out$categorical[, c("frequency") := round(100*.SD[["frequency"]], digits = digit.frequency)]
         out$categorical[, c("level") := as.character(.SD$level)]
         out$categorical <- dcast(out$categorical, value.var = c("n","frequency"), formula = variable + level ~ group)        
     }
     if("continuous" %in% name.type){
-        out$continuous <- data.table::copy(data.table::as.data.table(object[["continuous"]]))
+        out$continuous <- data.table::copy(data.table::as.data.table(x[["continuous"]]))
         out$continuous[, c("center") := round(.SD[["center"]], digits = digit.center)]
         out$continuous[, c("min") := round(.SD[["min"]], digits = digit.center)]
         out$continuous[, c("max") := round(.SD[["max"]], digits = digit.center)]
@@ -209,19 +209,19 @@ print.descriptiveTable <- function(object, print = TRUE,
     }
 
     ## ** rename according to center and scale
-    if(attr(object,"FCT.center") %in% c("mean","median")){
+    if(attr(x,"FCT.center") %in% c("mean","median")){
         if("date" %in% name.type){
-            new.names <- gsub("center",attr(object,"FCT.center"),names(out$date), fixed = TRUE)
+            new.names <- gsub("center",attr(x,"FCT.center"),names(out$date), fixed = TRUE)
             setnames(out$date, old = names(out$date), new = new.names)
         }
         if("continuous" %in% name.type){
-            new.names <- gsub("center",attr(object,"FCT.center"),names(out$continuous), fixed = TRUE)
+            new.names <- gsub("center",attr(x,"FCT.center"),names(out$continuous), fixed = TRUE)
             setnames(out$continuous, old = names(out$continuous), new = new.names)
         }
     }
-    if(attr(object,"FCT.spread") %in% c("sd","IQR")){
+    if(attr(x,"FCT.spread") %in% c("sd","IQR")){
         if("continuous" %in% name.type){
-            new.names <- gsub("spread",attr(object,"FCT.spread"),names(out$continuous), fixed = TRUE)
+            new.names <- gsub("spread",attr(x,"FCT.spread"),names(out$continuous), fixed = TRUE)
             setnames(out$continuous, old = names(out$continuous), new = new.names)
         }
     }
