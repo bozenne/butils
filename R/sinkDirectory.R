@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 22 2018 (09:24) 
 ## Version: 
-## Last-Updated: apr 11 2018 (16:39) 
+## Last-Updated: okt 25 2018 (13:30) 
 ##           By: Brice Ozenne
-##     Update #: 20
+##     Update #: 22
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -45,7 +45,7 @@ sinkDirectory <- function(path, string.keep = NULL, string.exclude = NULL,
     allFiles <- list.files(path)
     index.file <- 1:length(allFiles)
 
-### ** subset files
+    ## ** subset files
     if(!is.null(string.keep)){
         index.file <- intersect(index.file,grep(string.keep,allFiles,fixed = fixed))
     }
@@ -55,7 +55,7 @@ sinkDirectory <- function(path, string.keep = NULL, string.exclude = NULL,
 
     n.files <- length(index.file)
 
-    #### ** merge files
+    ## ** merge files
     dt.merge <- NULL
     if(trace){
         cat("read ",n.files," files \n", sep = "")
@@ -97,7 +97,7 @@ sinkDirectory <- function(path, string.keep = NULL, string.exclude = NULL,
     }
     if(trace){close(pb)}
 
-#### ** export
+    ## ** export
     return(dt.merge)
 }
 
