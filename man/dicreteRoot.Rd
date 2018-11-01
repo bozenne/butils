@@ -28,7 +28,7 @@ f <- function(x){abs(vec[x]-1)}
 discreteRoot(function(x){x},grid = seq(-20,10,1))
 
 ### find level of the confidence interval
-library(nlme)
+if(require(nlme)){
 fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), data = Ovary,
                correlation = corAR1(form = ~ 1 | Mare))
 
@@ -55,4 +55,5 @@ fctIC <- function(x){
    return( IC.tempo[["coef"]][3,"upper"])
 }
 discreteRoot(fctIC,grid = seq(0,1-1/1000,0.001))$par
+}
 }

@@ -234,8 +234,8 @@ calcPartialResiduals <- function(model,var,
                 return(xlevels[[x]][1])
             }
         }else if(design.numeric[x]){
-            return(seq(quantile(design.df[[x]], na.rm=TRUE, probs = quantile.range[1]),
-                       quantile(design.df[[x]], na.rm=TRUE, probs = quantile.range[2]),
+            return(seq(stats::quantile(design.df[[x]], na.rm=TRUE, probs = quantile.range[1]),
+                       stats::quantile(design.df[[x]], na.rm=TRUE, probs = quantile.range[2]),
                        length.out = npoints))
         }else{ 
             return(unique(design.df[[x]]))

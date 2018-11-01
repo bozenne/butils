@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 22 2017 (13:39) 
 ## Version: 
-## Last-Updated: okt 15 2018 (15:26) 
+## Last-Updated: okt 15 2018 (21:57) 
 ##           By: Brice Ozenne
-##     Update #: 243
+##     Update #: 244
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -33,7 +33,7 @@
 #' discreteRoot(function(x){x},grid = seq(-20,10,1))
 #' 
 #' ### find level of the confidence interval
-#' library(nlme)
+#' if(require(nlme)){
 #' fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), data = Ovary,
 #'                correlation = corAR1(form = ~ 1 | Mare))
 #'
@@ -60,7 +60,8 @@
 #'    return( IC.tempo[["coef"]][3,"upper"])
 #' }
 #' discreteRoot(fctIC,grid = seq(0,1-1/1000,0.001))$par
-
+#' }
+ 
 ## * discreteRoot
 #' @rdname dicreteRoot
 #' @export
@@ -299,7 +300,7 @@ quantileCI <- function(x, alternative, p.value, sign.estimate, ...){
                     "less" = 1-p.value,
                     "greater" = p.value)
 
-    return(quantile(x, probs = probs)[1])
+    return(stats::quantile(x, probs = probs)[1])
 }
 
 

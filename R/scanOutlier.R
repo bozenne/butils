@@ -121,7 +121,7 @@ numOutlier <- function(x, type = "auto",
     center <- rep(median(x, na.rm = na.rm), 2)
     scale <- stats::mad(x, na.rm = na.rm)
   }else if(type == "boxplot"){
-    center <- quantile(x, probs = c(0.25,0.75), na.rm = na.rm)
+    center <- stats::quantile(x, probs = c(0.25,0.75), na.rm = na.rm)
     scale <- stats::IQR(x, na.rm = na.rm)
   }
   
