@@ -12,7 +12,7 @@ conditionalCI(theta, threshold, sigma = 1, conf.level = 0.95,
 
 \item{threshold}{[numeric, >0] the threshold.}
 
-\item{sigma}{[numeric vector] the variance of the statistic(s).}
+\item{sigma}{[numeric vector] the standard error of the statistic(s).}
 
 \item{conf.level}{[numeric 0-1] Conditional confidence level of the interval.}
 
