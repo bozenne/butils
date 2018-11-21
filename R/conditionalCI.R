@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 20 2018 (14:43) 
 ## Version: 
-## Last-Updated: nov 21 2018 (10:33) 
+## Last-Updated: nov 21 2018 (11:44) 
 ##           By: Brice Ozenne
-##     Update #: 67
+##     Update #: 101
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,7 +21,7 @@
 #' @name conditionalCI
 #' 
 #' @param theta [numeric vector] the observed value(s) of the statistic.
-#' @param sigma [numeric vector] the variance of the statistic(s).
+#' @param sigma [numeric vector] the standard error of the statistic(s).
 #' @param threshold [numeric, >0] the threshold.
 #' @param conf.level [numeric 0-1] Conditional confidence level of the interval.
 #' @param method [character] the method used to compute the conditional confidence interval.
@@ -67,7 +67,7 @@ conditionalCI <- function(theta, threshold,
         }            
     }
 
-    if(any(abs(theta)<threshold)){
+    if(any(abs(theta/sigma)<threshold)){
         stop("Contradiction between argument \'theta\' and argument \'threshold\' \n",
              "abs(theta) should be lower than threshold \n")
     }
@@ -92,17 +92,16 @@ conditionalCI <- function(theta, threshold,
                          optim = NULL)
 
         }else if(method == "shortest"){
-
-            vec.init <- c(theta1 = iTheta,
-                          theta2 = iTheta,
-                          lower = iTheta + pnorm(0.025)*1,
-                          upper = iTheta + pnorm(0.975)*1)
+            vec.init <- c(theta1 = abs(iTheta),
+                          theta2 = abs(iTheta),
+                          lower = abs(iTheta) + pnorm(alpha/2)*1,
+                          upper = abs(iTheta) + pnorm(1-alpha/2)*1)
             if(iSeq>1){
                 ## vec.init["lower"] <- ls.CI[[iSeq-1]]["lower"]
                 vec.init["theta1"] <- df.optim[df.optim$param == "theta1" & df.optim$theta == theta[iSeq-1],"solution"]
                 ## vec.init <- ls.CI[[iSeq-1]][c("theta1","theta2","lower","upper")]
             }
-            iRes <- .calcShortestCI(value = iTheta, threshold = threshold, alpha = alpha,
+            iRes <- .calcShortestCI(value = abs(iTheta), value.sign = sign(iTheta), threshold = threshold, alpha = alpha,
                                     vec.init = vec.init,
                                     ...)
         }
@@ -123,6 +122,7 @@ conditionalCI <- function(theta, threshold,
                 optim = df.optim,
                 conf.level = conf.level,
                 method = method,
+                sigma = sigma,
                 threshold = threshold)
     class(out) <- "conditionalCI"
     return(out)
@@ -178,7 +178,7 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
 }
 
 ## * .calcShortestCI
-.calcShortestCI <- function(value, threshold, alpha,
+.calcShortestCI <- function(value, value.sign, threshold, alpha,
                             vec.init,
                             optimizer = "optim", method.optim = "L-BFGS-B", ...){
 
@@ -200,7 +200,6 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
     }
 
     if(optimizer == "optim"){
-
         iOut <- stats::optim(par = vec.init["theta1"],
                              fn = function(x){fn1(x)^2},
                              gr = function(x){2*fn1(x)*d_fn1(x)},
@@ -228,7 +227,7 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                    message = iOut$message,
                                    stringsAsFactors = FALSE)
         theta2 <- as.double(iOut$par)
-        
+
     }else if(optimizer == "uniroot"){
 
         iOut <- stats::uniroot(f = fn1, lower = 0, upper = threshold + 5*qnorm(1 - alpha))
@@ -249,15 +248,10 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                    stringsAsFactors = FALSE)
         theta2 <- iOut$root
     }
-
     ## ** Identify acceptance region (optional, formula 2)
-    theta <- value
-    theta.sign <- sign(theta)
-    theta.abs <- abs(theta)
+    if (value < theta1) { ## |theta| in [0,theta1]
 
-    if (theta.abs < theta1) { ## |theta| in [0,theta1]
-
-        lower.left <- theta - qnorm( 1 - alpha/2 *  Q(theta) )
+        lower.left <- value - qnorm( 1 - alpha/2 *  Q(value) )
         if(lower.left>=-threshold){
             lower.left <- NA
             upper.left <- NA
@@ -265,35 +259,32 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
             upper.left <- -threshold
         }
         lower.right <- threshold
-        upper.right <- theta + qnorm( 1 - alpha/2 *  Q(theta) )
+        upper.right <- value + qnorm( 1 - alpha/2 *  Q(value) )
         
-    }else if (theta.abs < theta2) { ## |theta| in [theta1,theta2]
+    }else if (value < theta2) { ## |theta| in [theta1,theta2]
         
         lower.left <- NA
         upper.left <- NA
         lower.right <- threshold
-        upper.right <- theta + qnorm( pnorm( threshold - theta ) + (1 - alpha) *  Q(theta) )
+        upper.right <- value + qnorm( pnorm( threshold - value ) + (1 - alpha) *  Q(value) )
         
     } else {  ## |theta| in [theta2,Inf]
         
         lower.left <- NA
         upper.left <- NA
-        lower.right <- theta - qnorm( .5 * ( 1 + (1 - alpha) *  Q(theta) ) )
-        upper.right <- theta + qnorm( .5 * ( 1 + (1 - alpha) *  Q(theta) ) )
+        lower.right <- value - qnorm( .5 * ( 1 + (1 - alpha) *  Q(value) ) )
+        upper.right <- value + qnorm( .5 * ( 1 + (1 - alpha) *  Q(value) ) )
         
     }
 
     ## reconstruct
-    if (theta.sign %in% c(0,1)){
+    if (value.sign %in% c(0,1)){
         AR <- c(lower.left = lower.left, lower.right = lower.right, upper.left = upper.left, upper.right = upper.right)
-    }else if (theta.sign == -1){
+    }else if (value.sign == -1){
         AR <- c(lower.left = -upper.right, lower.right = -upper.left, upper.left = -lower.right, upper.right = -lower.left)
     }
 
     ## ** Identify CI
-    x <- value
-    x.sign <- sign(x)
-    x.abs <- abs(x)
     
     ## *** compute x1 and x2 according to formula (6-7)
     ## x1 <- theta1 + qnorm ( pnorm(threshold - theta1) + (1 - alpha)*( 1 - pnorm(threshold + theta1) + 1 - pnorm(threshold - theta1) ) )
@@ -301,42 +292,41 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
     x2 <- 2*theta2 - threshold
 
     ## *** lower CI, i.e. solve equation (5)
-    if (threshold < x.abs && x.abs < x1) { ## x in [threshold, x1]
+    if (threshold < value && value < x1) { ## x in [threshold, x1]
         f.lower <-  function(theta){
-            2 * (1 - stats::pnorm( x.abs - theta )) - alpha * Q(theta)
+            2 * (1 - stats::pnorm( value - theta )) - alpha * Q(theta)
             ## num <- -dnorm(threshold - theta) + (1 - alpha) * ( -dnorm(threshold + theta) + dnorm(threshold - theta) )
             ## denum <- dnorm( qnorm( pnorm(threshold - theta) + (1 - alpha) * (1 - pnorm(threshold + theta) + 1 - pnorm(threshold - theta)) ) )
             ## return(1 + num / denum)
         }
         d_f.lower <-  function(theta){
-            2 * stats::dnorm( x.abs - theta ) - alpha * d_Q(theta)
+            2 * stats::dnorm( value - theta ) - alpha * d_Q(theta)
         }
-    }else if (x.abs < x2) { ## x in [x1, x2]
+    }else if (value < x2) { ## x in [x1, x2]
         f.lower <- function(theta){ 
-            stats::pnorm( x.abs - theta ) - stats::pnorm( threshold - theta ) - (1 - alpha) *  Q(theta)
+            stats::pnorm( value - theta ) - stats::pnorm( threshold - theta ) - (1 - alpha) *  Q(theta)
         }
         d_f.lower <- function(theta){ 
-            - stats::dnorm( x.abs - theta ) + stats::dnorm( threshold - theta ) - (1 - alpha) *  d_Q(theta)
+            - stats::dnorm( value - theta ) + stats::dnorm( threshold - theta ) - (1 - alpha) *  d_Q(theta)
         }
     }else { ## x in [x2, Inf])
         f.lower <- function(theta){
-            2 * stats::pnorm( x - theta ) - 1 - (1 - alpha) *  Q(theta)
+            2 * stats::pnorm( value - theta ) - 1 - (1 - alpha) *  Q(theta)
         }
         d_f.lower <- function(theta){
-            - 2 * stats::dnorm( x - theta ) - (1 - alpha) *  d_Q(theta)
+            - 2 * stats::dnorm( value - theta ) - (1 - alpha) *  d_Q(theta)
         }
     }
         
     ## *** upper CI    
     f.upper <- function(theta){
-        2 * stats::pnorm(theta - x) - 1 - (1 - alpha) *  Q(theta)
+        2 * stats::pnorm(theta - value) - 1 - (1 - alpha) *  Q(theta)
     }
     d_f.upper <- function(theta){
-        2 * stats::dnorm(theta - x) - (1 - alpha) *  d_Q(theta)
+        2 * stats::dnorm(theta - value) - (1 - alpha) *  d_Q(theta)
     }
 
     if(optimizer == "optim"){
-
         iOut <- stats::optim(par = vec.init["lower"],
                              fn = function(x){f.lower(x)^2},
                              gr = function(x){2*f.lower(x)*d_f.lower(x)},
@@ -349,7 +339,7 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                   message = iOut$message,
                                   stringsAsFactors = FALSE)
         lower <- as.double(iOut$par)
-        
+
         iOut <- stats::optim(par = vec.init["upper"],
                              fn = function(x){f.upper(x)^2},
                              gr = function(x){2*f.upper(x)*d_f.upper(x)},
@@ -388,7 +378,6 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
 
     }
 
-
     ## M.print <- rbind(theta1 = unlist(theta1.optim[1:2]),
                      ## theta2 = unlist(theta2.optim[1:2]),
                      ## lower.optim = unlist(lower.optim[1:2]),
@@ -399,9 +388,9 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
     ## }
     
     ## *** reconstruct
-    if (theta.sign %in% c(0,1)){
+    if (value.sign %in% c(0,1)){
         CI <- c(lower = lower, upper = upper)        
-    }else if (theta.sign == -1){
+    }else if (value.sign == -1){
         CI <- c(lower = -upper, upper = -lower)
     }
     

@@ -15,6 +15,8 @@
 \item{unconditional.CI}{[logical] should the unconditional confidence intervals be displayed (in red)?}
 
 \item{plot}{[logical] should the graph be displayed in a graphical window?}
+
+\item{...}{not used, for compatibility with the generic method.}
 }
 \description{
 Display conditional confidence intervals.
