@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 20 2018 (14:43) 
 ## Version: 
-## Last-Updated: nov 21 2018 (11:44) 
+## Last-Updated: nov 26 2018 (16:55) 
 ##           By: Brice Ozenne
-##     Update #: 101
+##     Update #: 102
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -85,7 +85,7 @@ conditionalCI <- function(theta, threshold,
         if(trace==1){utils::setTxtProgressBar(pb, iSeq)}        
         if(trace>1){cat(iTheta," ")}
 
-        if(threshold==0){
+        if(threshold[iSeq]==0){
             
             iRes <- list(AR = c(lower.left = qnorm(alpha/2), lower.right = 0, upper.left = 0, upper.right = qnorm( 1 - alpha/2)),
                          CI = c(lower = iTheta + qnorm(alpha/2), upper = iTheta + qnorm( 1 - alpha/2)),
@@ -101,7 +101,7 @@ conditionalCI <- function(theta, threshold,
                 vec.init["theta1"] <- df.optim[df.optim$param == "theta1" & df.optim$theta == theta[iSeq-1],"solution"]
                 ## vec.init <- ls.CI[[iSeq-1]][c("theta1","theta2","lower","upper")]
             }
-            iRes <- .calcShortestCI(value = abs(iTheta), value.sign = sign(iTheta), threshold = threshold, alpha = alpha,
+            iRes <- .calcShortestCI(value = abs(iTheta), value.sign = sign(iTheta), threshold = threshold[iSeq], alpha = alpha,
                                     vec.init = vec.init,
                                     ...)
         }
