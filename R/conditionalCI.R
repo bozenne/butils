@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 20 2018 (14:43) 
 ## Version: 
-## Last-Updated: nov 26 2018 (16:55) 
+## Last-Updated: nov 28 2018 (09:40) 
 ##           By: Brice Ozenne
-##     Update #: 102
+##     Update #: 105
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -62,8 +62,17 @@ conditionalCI <- function(theta, threshold,
             sigma <- rep(sigma, n.theta)
         }else{
             stop("The length of argument \'theta\' does not match the length of argument \'sigma\' \n",
-                 "length(theta)=",length(theta),"\n",
+                 "length(theta)=",n.theta,"\n",
                  "length(sigma)=",length(sigma),"\n")
+        }            
+    }
+    if(n.theta!=length(threshold)){
+        if(length(threshold)==1){
+            threshold <- rep(threshold, n.theta)
+        }else{
+            stop("The length of argument \'theta\' does not match the length of argument \'threshold\' \n",
+                 "length(theta)=",n.theta,"\n",
+                 "length(threshold)=",length(threshold),"\n")
         }            
     }
 
