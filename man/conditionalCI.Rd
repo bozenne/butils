@@ -14,7 +14,7 @@ conditionalCI(theta, threshold, sigma = 1, conf.level = 0.95,
 
 \item{sigma}{[numeric vector] the standard error of the statistic(s).}
 
-\item{conf.level}{[numeric 0-1] Conditional confidence level of the interval.}
+\item{conf.level}{[numeric, 0-1] Conditional confidence level of the interval.}
 
 \item{method}{[character] the method used to compute the conditional confidence interval.
 So far only \code{"shortest"} is supported.}
@@ -35,10 +35,15 @@ The thresholding is applied after normalization (i.e. dividing theta by sigma).
 This corresponding to conditioning on a minimal significance level.
 }
 \examples{
-ci <- conditionalCI(theta = seq(3,5, by = 0.1), threshold = 2.9999)
+ci <- conditionalCI(theta = seq(3,7, by = 0.1), threshold = 2.9999)
 print(ci)
+## confint(ci)
 
 autoplot(ci)
 
-
+ci1 <- conditionalCI(theta = 4, sigma = 2, threshold = 2.9999, method = "shortest")
+ci2 <- conditionalCI(theta = 4/2, sigma = 1, threshold = 2.9999/2, method = "shortest")
+confint(ci1) - 2*confint(ci2)
+ci3 <- conditionalCI(theta = 4, sigma = 2, threshold = 2.9999, method = "shortest2")
+confint(ci1) - confint(ci3)
 }

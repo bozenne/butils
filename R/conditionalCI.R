@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 20 2018 (14:43) 
 ## Version: 
-## Last-Updated: nov 29 2018 (13:25) 
+## Last-Updated: nov 29 2018 (13:47) 
 ##           By: Brice Ozenne
-##     Update #: 146
+##     Update #: 154
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -39,6 +39,7 @@
 #' @examples
 #' ci <- conditionalCI(theta = seq(3,7, by = 0.1), threshold = 2.9999)
 #' print(ci)
+#' ## confint(ci)
 #'
 #' autoplot(ci)
 #' 
@@ -188,8 +189,22 @@ print.conditionalCI <- function(x, ...){
 }
 
 ## * confint.conditionalCI
+#' @title Conditional confidence interval
+#' @description Extract the conditional confidence interval from the object.
+#' @name confint.conditionalCI
+#' 
+#' @param object output of the function \code{conditionalCI}
+#' @param parm not used. For compatibility with the generic method.
+#' @param level not used. For compatibility with the generic method.
+#' @param ... not used. For compatibility with the generic method.
+#'
+#' @method confint conditionalCI
 #' @export
 confint.conditionalCI <- function(object, parm, level = 0.95, ...){
+    if("level" %in% names(match.call())){
+        warning("Argument \'level\' is ignored \n")
+    }
+    
     return(as.data.frame(object$CI))
 }
 

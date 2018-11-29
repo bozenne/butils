@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 29 2018 (09:33) 
 ## Version: 
-## Last-Updated: nov 29 2018 (13:32) 
+## Last-Updated: nov 29 2018 (13:52) 
 ##           By: Brice Ozenne
-##     Update #: 47
+##     Update #: 51
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -29,6 +29,8 @@
 ##' @param conf.level [numeric, 0-1] Confidence level.
 ##' @param method.p.adjust [character] Method used to adjust for multiple comparisons.
 ##' See argument method in \code{p.adjust} for more details.
+##' @param method.CI [character] Method used to estimate the confidence intervals after selection.
+##' Passed to the function \code{conditionalCI}.
 ##' 
 ##' @return A data.frame where each site corresponds to a row and with the following columns: \itemize{
 ##' \item site: the index of the site
@@ -84,7 +86,7 @@
 ##' 
 ##' plot(spdf[,"effect"], zlim = effect.range)
 ##'
-##' res <- massTtestCI(X, Y, threshold = 1, method = "shortest2")
+##' res <- massTtestCI(X, Y, threshold = 0.5, method.CI = "shortest2")
 ##'
 ##' ## traditional analysis
 ##' spdf$p.value <- res$p.value
@@ -92,7 +94,7 @@
 ##' 
 ##' plot(spdf[,"effect"], zlim = effect.range,
 ##' main = "traditional t-test")
-##' points(spdf[spdf$adjusted.p.value<0.05,"p.value"], col = "green")
+##' points(spdf[spdf$adjusted.p.value<0.05,"p.value"], col = "green", lwd = 3)
 ##'
 ##' ## post selection CI
 ##' spdf$selected <- res$selected
@@ -101,11 +103,11 @@
 ##' 
 ##' plot(spdf[spdf$selected>0,"lower.CI"], zlim = effect.range,
 ##'      main = "post-selection unadjusted")
-##' points(spdf[which(spdf$lower.CI>0),"lower.CI"], col = "green")
+##' points(spdf[which(spdf$lower.CI>0),"lower.CI"], col = "green", lwd = 3)
 ##'
 ##' plot(spdf[spdf$selected>0,"adjusted.lower.CI"], zlim = effect.range,
 ##'      main = "post-selection adjusted")
-##' points(spdf[which(spdf$adjusted.lower.CI>0),"lower.CI"], col = "green")
+##' points(spdf[which(spdf$adjusted.lower.CI>0),"lower.CI"], col = "green", lwd = 3)
 ##' }
 ##' 
 
@@ -113,7 +115,7 @@
 ##' @rdname massTtestCI
 ##' @export
 massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "bonferroni",
-                        method = "shortest2"){
+                        method.CI = "shortest2"){
 
     alpha <- 1 - conf.level
     n.sites <- NCOL(X)
@@ -140,11 +142,11 @@ massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "b
                               sigma = out$sigma,
                               threshold = threshold,
                               conf.level = conf.level,
-                              method = method,
+                              method = method.CI,
                               trace = FALSE))
         
     if(!inherits(iCCI,"try-error")){
-        out$selected <- !is.na(confint(iCCI)$value)
+        out$selected <- !is.na(stats::confint(iCCI)$value)
         out$lower.CI <- iCCI$CI[,"lower"]
         out$upper.CI <- iCCI$CI[,"upper"]
 
@@ -154,7 +156,7 @@ massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "b
                                            sigma = out$sigma,
                                            threshold = threshold,
                                            conf.level = 1 - alpha/n.selected,
-                                           method = method,
+                                           method = method.CI,
                                            trace = FALSE))
         if(!inherits(adjusted.iCCI,"try-error")){
             out$adjusted.lower.CI <- adjusted.iCCI$CI[,"lower"]

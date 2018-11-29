@@ -5,7 +5,7 @@
 \title{Mass t-tests with conditional inference}
 \usage{
 massTtestCI(X, Y, threshold, conf.level = 0.95,
-  method.p.adjust = "bonferroni")
+  method.p.adjust = "bonferroni", method.CI = "shortest2")
 }
 \arguments{
 \item{X}{[numeric matrix] the design matrix for the individuals of the control group.}
@@ -18,6 +18,9 @@ massTtestCI(X, Y, threshold, conf.level = 0.95,
 
 \item{method.p.adjust}{[character] Method used to adjust for multiple comparisons.
 See argument method in \code{p.adjust} for more details.}
+
+\item{method.CI}{[character] Method used to estimate the confidence intervals after selection.
+Passed to the function \code{conditionalCI}.}
 }
 \value{
 A data.frame where each site corresponds to a row and with the following columns: \itemize{
@@ -77,7 +80,7 @@ effect.range <- range(spdf[["effect"]])
 
 plot(spdf[,"effect"], zlim = effect.range)
 
-res <- massTtestCI(X, Y, threshold = 0.5)
+res <- massTtestCI(X, Y, threshold = 0.5, method = "shortest2")
 
 ## traditional analysis
 spdf$p.value <- res$p.value
@@ -85,7 +88,7 @@ spdf$adjusted.p.value <- res$adjusted.p.value
 
 plot(spdf[,"effect"], zlim = effect.range,
 main = "traditional t-test")
-points(spdf[spdf$adjusted.p.value<0.05,"p.value"], col = "green")
+points(spdf[spdf$adjusted.p.value<0.05,"p.value"], col = "green", lwd = 3)
 
 ## post selection CI
 spdf$selected <- res$selected
@@ -94,11 +97,11 @@ spdf$adjusted.lower.CI <- res$adjusted.lower.CI
 
 plot(spdf[spdf$selected>0,"lower.CI"], zlim = effect.range,
      main = "post-selection unadjusted")
-points(spdf[which(spdf$lower.CI>0),"lower.CI"], col = "green")
+points(spdf[which(spdf$lower.CI>0),"lower.CI"], col = "green", lwd = 3)
 
 plot(spdf[spdf$selected>0,"adjusted.lower.CI"], zlim = effect.range,
      main = "post-selection adjusted")
-points(spdf[which(spdf$adjusted.lower.CI>0),"lower.CI"], col = "green")
+points(spdf[which(spdf$adjusted.lower.CI>0),"lower.CI"], col = "green", lwd = 3)
 }
 
 }
