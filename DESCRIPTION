@@ -1,7 +1,7 @@
 Package: butils
 Type: Package
 Title: Various useful functions
-Version: 1.3.5
+Version: 1.3.6
 Author: Brice Ozenne[aut]
 Maintainer: brice ozenne <brice.ozenne@orange.fr>
 Description: Miscellaneous functions for working in R.
@@ -32,7 +32,8 @@ Imports:
     stats,
     tmvtnorm,
     tools,
-    utils
+    utils,
+	gstat
 Suggests:
     AICcmodavg,
     gridExtra,
@@ -44,6 +45,7 @@ Suggests:
     pbapply,
     Publish,
     segmented,
+    sp,
     survival,
     testthat
 LazyLoad: yes

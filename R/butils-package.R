@@ -27,6 +27,7 @@
 #' @importFrom tmvtnorm rtmvnorm
 #' @importFrom tools file_ext file_path_sans_ext
 #' @importFrom utils Rprof setTxtProgressBar summaryRprof txtProgressBar  
+#' @importFrom gstat vgm
 NULL
 
 
