@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 29 2018 (09:33) 
 ## Version: 
-## Last-Updated: nov 29 2018 (13:52) 
+## Last-Updated: nov 29 2018 (14:40) 
 ##           By: Brice Ozenne
-##     Update #: 51
+##     Update #: 53
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -149,6 +149,9 @@ massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "b
         out$selected <- !is.na(stats::confint(iCCI)$value)
         out$lower.CI <- iCCI$CI[,"lower"]
         out$upper.CI <- iCCI$CI[,"upper"]
+        out$significant.CI <- FALSE
+        out$significant.CI[which(iCCI$CI[,"lower"]>0)] <- TRUE
+        out$significant.CI[which(iCCI$CI[,"upper"]<0)] <- TRUE
 
         n.selected <- sum(out$selected)
         ## not adjusted for multiple comparisons using bonferroni
@@ -161,16 +164,22 @@ massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "b
         if(!inherits(adjusted.iCCI,"try-error")){
             out$adjusted.lower.CI <- adjusted.iCCI$CI[,"lower"]
             out$adjusted.upper.CI <- adjusted.iCCI$CI[,"upper"]
+            out$adjusted.significant.CI <- FALSE
+            out$adjusted.significant.CI[which(adjusted.iCCI$CI[,"lower"]>0)] <- TRUE
+            out$adjusted.significant.CI[which(adjusted.iCCI$CI[,"upper"]<0)] <- TRUE
         }else{
             out$adjusted.lower.CI <- NA
             out$adjusted.upper.CI <- NA
+            out$adjusted.significant.CI <- NA
         }
 
     }else{
         out$lower.CI <- NA
         out$upper.CI <- NA
+        out$significant.CI <- NA
         out$adjusted.lower.CI <- NA
         out$adjusted.upper.CI <- NA
+        out$adjusted.significant.CI <- NA
     }
     
 

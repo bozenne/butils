@@ -80,7 +80,7 @@ effect.range <- range(spdf[["effect"]])
 
 plot(spdf[,"effect"], zlim = effect.range)
 
-res <- massTtestCI(X, Y, threshold = 0.5, method = "shortest2")
+res <- massTtestCI(X, Y, threshold = 0.5, method.CI = "shortest2")
 
 ## traditional analysis
 spdf$p.value <- res$p.value
