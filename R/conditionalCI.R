@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 20 2018 (14:43) 
 ## Version: 
-## Last-Updated: dec  6 2018 (17:22) 
+## Last-Updated: dec  6 2018 (17:37) 
 ##           By: Brice Ozenne
-##     Update #: 221
+##     Update #: 224
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -28,6 +28,8 @@
 #' So far only \code{"shortest"} is supported.
 #' @param distribution [character] Distribution of theta.
 #' Either \code{"gaussian"} or \code{"student"}.
+#' @param df [interger, >0] Degree of freedom of the distribution of theta.
+#' Only relevant when distribution equals \code{"student"}.
 #' @param trace [interger, 0-2] should a progress bar be displayed?
 #' @param ... additional arguments to be passed to \code{lavaSearch2:::.calcShortestCI}
 #' to specify the optimization method.
@@ -292,8 +294,8 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                value = CI$value)
         }
 
-        gg <- gg + ggplot2::geom_line(data = df.q, mapping = aes(x = value, y = lower), col = "red")
-        gg <- gg + ggplot2::geom_line(data = df.q, mapping = aes(x = value, y = upper), col = "red")
+        gg <- gg + ggplot2::geom_line(data = df.q, mapping = aes_string(x = "value", y = "lower"), col = "red")
+        gg <- gg + ggplot2::geom_line(data = df.q, mapping = aes_string(x = "value", y = "upper"), col = "red")
     }
 
     ## display

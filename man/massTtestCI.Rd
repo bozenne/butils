@@ -5,7 +5,7 @@
 \title{Mass t-tests with conditional inference}
 \usage{
 massTtestCI(X, Y, threshold, conf.level = 0.95,
-  method.p.adjust = "bonferroni", method.CI = "shortest2")
+  method.p.adjust = "bonferroni", ...)
 }
 \arguments{
 \item{X}{[numeric matrix] the design matrix for the individuals of the control group.}
@@ -19,8 +19,7 @@ massTtestCI(X, Y, threshold, conf.level = 0.95,
 \item{method.p.adjust}{[character] Method used to adjust for multiple comparisons.
 See argument method in \code{p.adjust} for more details.}
 
-\item{method.CI}{[character] Method used to estimate the confidence intervals after selection.
-Passed to the function \code{conditionalCI}.}
+\item{...}{additional arguments passed to the function \code{conditionalCI}.}
 }
 \value{
 A data.frame where each site corresponds to a row and with the following columns: \itemize{

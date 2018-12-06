@@ -18,6 +18,7 @@ Imports:
     doSNOW,
     foreach,
     gdata,
+	LaplacesDemon,
     MASS,
     Matrix,
     merTools,

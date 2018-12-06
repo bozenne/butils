@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 29 2018 (09:33) 
 ## Version: 
-## Last-Updated: nov 29 2018 (14:40) 
+## Last-Updated: dec  6 2018 (17:29) 
 ##           By: Brice Ozenne
-##     Update #: 53
+##     Update #: 57
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -29,8 +29,7 @@
 ##' @param conf.level [numeric, 0-1] Confidence level.
 ##' @param method.p.adjust [character] Method used to adjust for multiple comparisons.
 ##' See argument method in \code{p.adjust} for more details.
-##' @param method.CI [character] Method used to estimate the confidence intervals after selection.
-##' Passed to the function \code{conditionalCI}.
+##' @param ... additional arguments passed to the function \code{conditionalCI}.
 ##' 
 ##' @return A data.frame where each site corresponds to a row and with the following columns: \itemize{
 ##' \item site: the index of the site
@@ -115,7 +114,7 @@
 ##' @rdname massTtestCI
 ##' @export
 massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "bonferroni",
-                        method.CI = "shortest2"){
+                        ...){
 
     alpha <- 1 - conf.level
     n.sites <- NCOL(X)
@@ -142,8 +141,8 @@ massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "b
                               sigma = out$sigma,
                               threshold = threshold,
                               conf.level = conf.level,
-                              method = method.CI,
-                              trace = FALSE))
+                              trace = FALSE,
+                              ...))
         
     if(!inherits(iCCI,"try-error")){
         out$selected <- !is.na(stats::confint(iCCI)$value)
@@ -159,8 +158,8 @@ massTtestCI <- function(X, Y, threshold, conf.level = 0.95, method.p.adjust = "b
                                            sigma = out$sigma,
                                            threshold = threshold,
                                            conf.level = 1 - alpha/n.selected,
-                                           method = method.CI,
-                                           trace = FALSE))
+                                           trace = FALSE,
+                                           ...))
         if(!inherits(adjusted.iCCI,"try-error")){
             out$adjusted.lower.CI <- adjusted.iCCI$CI[,"lower"]
             out$adjusted.upper.CI <- adjusted.iCCI$CI[,"upper"]
