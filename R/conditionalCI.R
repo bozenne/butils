@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 20 2018 (14:43) 
 ## Version: 
-## Last-Updated: nov 29 2018 (13:47) 
+## Last-Updated: dec  6 2018 (17:22) 
 ##           By: Brice Ozenne
-##     Update #: 154
+##     Update #: 221
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -26,6 +26,8 @@
 #' @param conf.level [numeric, 0-1] Conditional confidence level of the interval.
 #' @param method [character] the method used to compute the conditional confidence interval.
 #' So far only \code{"shortest"} is supported.
+#' @param distribution [character] Distribution of theta.
+#' Either \code{"gaussian"} or \code{"student"}.
 #' @param trace [interger, 0-2] should a progress bar be displayed?
 #' @param ... additional arguments to be passed to \code{lavaSearch2:::.calcShortestCI}
 #' to specify the optimization method.
@@ -37,10 +39,11 @@
 #' This corresponding to conditioning on a minimal significance level.
 #'
 #' @examples
-#' ci <- conditionalCI(theta = seq(3,7, by = 0.1), threshold = 2.9999)
+#' ci <- conditionalCI(theta = seq(3,7, by = 0.1),
+#'                     threshold = 2.9999, distribution = "gaussian")
+#' 
 #' print(ci)
-#' ## confint(ci)
-#'
+#' confint(ci)
 #' autoplot(ci)
 #' 
 #' ci1 <- conditionalCI(theta = 4, sigma = 2, threshold = 2.9999, method = "shortest")
@@ -54,14 +57,23 @@
 #' @rdname conditionalCI
 #' @export
 conditionalCI <- function(theta, threshold,
-                          sigma = 1, conf.level = 0.95, method = "shortest", 
+                          sigma = 1, conf.level = 0.95, df = NULL,
+                          method = "shortest", distribution = "gaussian",
                           trace = length(theta)>1, ...){
 
     ## ** normalize arguments
     n.theta <- length(theta)
     alpha <- 1 - conf.level
     method <- match.arg(method, choices = c("shortest","shortest2"))
-
+    distribution <- match.arg(tolower(distribution), choices = c("gaussian","student"))
+    if(distribution == "student"){
+        if(is.null(df)){
+            stop("When argument \'distribution\' equals \"student\" the argument \'df\' must be specified \n")
+        }else if(length(df)!=1){
+            stop("Argument \'df\' must have length 1 \n")
+        }
+    }    
+    
     if(n.theta!=length(sigma)){
         if(length(sigma)==1){
             sigma <- rep(sigma, n.theta)
@@ -82,6 +94,34 @@ conditionalCI <- function(theta, threshold,
     if(any(sigma<0)){
         stop("Argument \'sigma\' must contain only positive values \n")
     }
+
+    ## ** define distribution
+    if(distribution == "gaussian"){
+        pdist <- function(x, sd, df){
+            stats::pnorm(q = x, mean = 0, sd = sd, lower.tail = TRUE, log.p = FALSE)
+        }
+        qdist <- function(x, sd, df){
+            stats::qnorm(p = x, mean = 0, sd = sd, lower.tail = TRUE, log.p = FALSE)
+        }
+        ddist <- function(x, sd, df){
+            stats::dnorm(x = x, mean = 0, sd = sd, log = FALSE)
+        }
+    }else if(distribution == "student"){
+        pdist <- function(x, sd, df){
+            LaplacesDemon::pst(q = x, mu = 0, sigma = sd, nu = df, lower.tail = TRUE, log.p = FALSE)
+        }
+        qdist <- function(x, sd, df){
+            LaplacesDemon::qst(p = x, mu = 0, sigma = sd, nu = df, lower.tail = TRUE, log.p = FALSE)
+        }
+        ddist <- function(x, sd, df){
+            LaplacesDemon::dst(x = x, mu = 0, sigma = sd, nu = df, log = FALSE)
+        }
+        ## stats::pnorm(q = 0.5, mean = 0, sd = 1)
+        ## stats::pnorm(q = -0.5, mean = 0, sd = 1)
+        ## LaplacesDemon::pst(q = 0.5, mu = 0, sigma = 1, nu = 10^5, lower.tail = TRUE, log.p = FALSE)
+        ## LaplacesDemon::pst(q = -0.5, mu = 0, sigma = 1, nu = 10^5, lower.tail = TRUE, log.p = FALSE)
+    }
+    
     ## ** reorder theta according to its relevance
     theta.save <- theta
     sigma.save <- sigma
@@ -127,25 +167,33 @@ conditionalCI <- function(theta, threshold,
                          optim = NULL)
               
         }else if(iThreshold == 0){
+            q_lower <- do.call(qdist, args = list(x = alpha/2, sd = iSigma, df = df))            
+            q_upper <- do.call(qdist, args = list(x = 1 - alpha/2, sd = iSigma, df = df))
             
-            iRes <- list(AR = c(lower.left = qnorm(alpha/2, mean = 0, sd = iSigma), lower.right = 0,
-                                upper.left = 0, upper.right = qnorm(1 - alpha/2, mean = 0, sd = iSigma)),
-                         CI = c(lower = iTheta + qnorm(alpha/2, mean = 0, sd = iSigma),
-                                upper = iTheta + qnorm(1 - alpha/2, mean = 0, sd = iSigma)),
+            iRes <- list(AR = c(lower.left = q_lower, lower.right = 0,
+                                upper.left = 0, upper.right = q_upper),
+                         CI = c(lower = iTheta + q_lower,
+                                upper = iTheta + q_upper),
                          optim = NULL)
 
         }else{
+            q_lower <- do.call(qdist, args = list(x = alpha/2, sd = iSigma, df = df))            
+            q_upper <- do.call(qdist, args = list(x = 1 - alpha/2, sd = iSigma, df = df))
+            
             vec.init <- c(theta1 = abs(iTheta),
                           theta2 = abs(iTheta),
-                          lower = abs(iTheta) + pnorm(alpha/2, mean = 0, sd = iSigma)*1,
-                          upper = abs(iTheta) + pnorm(1 - alpha/2, mean = 0, sd = iSigma)*1)
+                          lower = abs(iTheta) + q_lower,
+                          upper = abs(iTheta) + q_upper)
+            
             if(NROW(df.optim)>1){
                 ## vec.init["lower"] <- ls.CI[[iSeq-1]]["lower"]
                 vec.init["theta1"] <- df.optim[df.optim$param == "theta1" & df.optim$theta == theta[iSeq-1],"solution"]
                 ## vec.init <- ls.CI[[iSeq-1]][c("theta1","theta2","lower","upper")]
             }
             iRes <- .calcShortestCI(value = abs(iTheta), sigma = iSigma, value.sign = sign(iTheta), threshold = iThreshold,
-                                    alpha = alpha, vec.init = vec.init, ...)
+                                    alpha = alpha, df = df, vec.init = vec.init,
+                                    pdist = pdist, qdist = qdist, ddist = ddist,
+                                    ...)
 
             if(method == "shortest"){
                 M.CI[iSeq,] <- c(theta[iSeq], iRes$CI * sigma[iSeq])
@@ -176,6 +224,8 @@ conditionalCI <- function(theta, threshold,
                 optim = df.optim,
                 conf.level = conf.level,
                 method = method,
+                df = df,
+                distribution = distribution,
                 sigma = sigma[restaure.order],
                 threshold = threshold[restaure.order])
     class(out) <- "conditionalCI"
@@ -223,7 +273,8 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
 
     ## extract data
     CI <- stats::confint(object)
-
+    alpha <- 1 - object$conf.level
+    
     ## create plot
     gg <- ggplot2::ggplot(CI, aes_string(x = "value"))
     gg <- gg + ggplot2::geom_ribbon(aes_string(ymin = "lower", ymax = "upper"))
@@ -231,8 +282,18 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
         gg <- gg + ggplot2::geom_abline(intercept = 0, slope = 1, col = "blue")
     }
     if(unconditional.CI){
-        gg <- gg + ggplot2::geom_abline(intercept = qnorm(0.975), slope = 1, col = "red")
-        gg <- gg + ggplot2::geom_abline(intercept = qnorm(0.025), slope = 1, col = "red")
+        if(object$distribution == "gaussian"){
+            df.q <- data.frame(lower = CI$value + qnorm(alpha/2, mean = 0, sd = object$sigma),
+                               upper = CI$value + qnorm(1 - alpha/2, mean = 0, sd = object$sigma),
+                               value = CI$value)            
+        }else if(object$distribution == "student"){
+            df.q <- data.frame(lower = CI$value + LaplacesDemon::qst(alpha/2, mu = 0, sigma = object$sigma, nu = object$df),
+                               upper = CI$value + LaplacesDemon::qst(1 - alpha/2, mu = 0, sigma = object$sigma, nu = object$df),
+                               value = CI$value)
+        }
+
+        gg <- gg + ggplot2::geom_line(data = df.q, mapping = aes(x = value, y = lower), col = "red")
+        gg <- gg + ggplot2::geom_line(data = df.q, mapping = aes(x = value, y = upper), col = "red")
     }
 
     ## display
@@ -246,25 +307,27 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
 }
 
 ## * .calcShortestCI
-.calcShortestCI <- function(value, sigma, value.sign, threshold, alpha,
+.calcShortestCI <- function(value, sigma, value.sign, threshold, alpha, df,
                             vec.init,
+                            pdist, qdist, ddist,
                             optimizer = "optim", method.optim = "L-BFGS-B", ...){
 
+    
     ## ** find theta1 and theta2
-    Q <- function(theta){ 2 - stats::pnorm(threshold + theta, mean = 0, sd = sigma) - stats::pnorm(threshold - theta, mean = 0, sd = sigma)	}
-    d_Q <- function(theta){ - stats::dnorm(threshold + theta, mean = 0, sd = sigma) + stats::dnorm(threshold - theta, mean = 0, sd = sigma)	}
+    Q <- function(theta){ 2 - do.call(pdist, args = list(x = threshold + theta, sd = sigma, df = df)) - do.call(pdist, args = list(x = threshold - theta, sd = sigma, df = df)) }
+    d_Q <- function(theta){ - do.call(ddist, args = list(x = threshold + theta, sd = sigma, df = df)) + do.call(ddist, args = list(x = threshold - theta, sd = sigma, df = df))	}
 
     fn1 <- function(theta){
-        stats::pnorm(threshold + theta, mean = 0, sd = sigma) - stats::pnorm(threshold - theta, mean = 0, sd = sigma) - (1 - alpha) * Q(theta)
+        do.call(pdist, args = list(x = threshold + theta, sd = sigma, df = df)) - do.call(pdist, args = list(x = threshold - theta, sd = sigma, df = df)) - (1 - alpha) * Q(theta)
     }
     d_fn1 <- function(theta){
-        stats::dnorm(threshold + theta, mean = 0, sd = sigma) + stats::dnorm(threshold - theta, mean = 0, sd = sigma) - (1 - alpha) * d_Q(theta)
+        do.call(ddist, args = list(x = threshold + theta, sd = sigma, df = df)) + do.call(ddist, args = list(x = threshold - theta, sd = sigma, df = df)) - (1 - alpha) * d_Q(theta)
     }
     fn2 <- function(theta){
-        2*stats::pnorm(theta - threshold, mean = 0, sd = sigma) - 1 - (1 - alpha)* Q(theta)
+        2 * do.call(pdist, args = list(x = theta - threshold, sd = sigma, df = df)) - 1 - (1 - alpha)* Q(theta)
     }
     d_fn2 <- function(theta){
-        2*stats::dnorm(theta - threshold, mean = 0, sd = sigma) - (1 - alpha )* d_Q(theta)
+        2 * do.call(ddist, args = list(x = theta - threshold, sd = sigma, df = df)) - (1 - alpha )* d_Q(theta)
     }
 
     if(optimizer == "optim"){
@@ -298,7 +361,7 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
 
     }else if(optimizer == "uniroot"){
 
-        iOut <- stats::uniroot(f = fn1, lower = 0, upper = threshold + 5*qnorm(1 - alpha, mean = 0, sd = sigma))
+        iOut <- stats::uniroot(f = fn1, lower = 0, upper = threshold + 5 * do.call(qdist, args = list(x = 1 - alpha/2, sd = sigma, df = df)))
         theta1.optim <- data.frame(solution = iOut$root,
                                    objective = iOut$f.root,
                                    iteration = iOut$iter,
@@ -307,7 +370,7 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                    stringsAsFactors = FALSE)
         theta1 <- iOut$root
         
-        iOut <- stats::uniroot(f = fn2, lower = theta1, upper = threshold + 5*qnorm(1 - alpha/2, mean = 0, sd = sigma))
+        iOut <- stats::uniroot(f = fn2, lower = theta1, upper = threshold + 5 * do.call(qdist, args = list(x = 1 - alpha/2, sd = sigma, df = df)))
         theta2.optim <- data.frame(solution = iOut$root,
                                    objective = iOut$f.root,
                                    iteration = iOut$iter,
@@ -316,34 +379,36 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                    stringsAsFactors = FALSE)
         theta2 <- iOut$root
     }
-    ## ** Identify acceptance region (optional, formula 2)
+    
+    ## ** Compute critical quantile for the AR
     if (value < theta1) { ## |theta| in [0,theta1]
-
-        lower.left <- value - stats::qnorm( 1 - alpha/2 *  Q(value), mean = 0, sd = sigma)
-        if(lower.left>=-threshold){
-            lower.left <- NA
-            upper.left <- NA
-        }else{
-            upper.left <- -threshold
-        }
+        q_alpha <- do.call(qdist, args = list(x = 1 - alpha/2 *  Q(value), sd = sigma, df = df))
+    }else if (value < theta2) { ## |theta| in [theta1,theta2]
+        q_alpha <- do.call(qdist, args = list(x = do.call(pdist, args = list(x = threshold - value, sd = sigma, df = df)) + (1 - alpha) *  Q(value),
+                                              sd = sigma, df = df))
+    }else {  ## |theta| in [theta2,Inf]
+        q_alpha <- do.call(qdist, args = list(0.5 * ( 1 + (1 - alpha) *  Q(value) ), sd = sigma, df = df))
+    }
+    
+    ## ** Identify acceptance region 
+    if (value < theta1) { ## |theta| in [0,theta1]
+        lower.left <- value - q_alpha
+        upper.left <- -threshold
         lower.right <- threshold
-        upper.right <- value + stats::qnorm( 1 - alpha/2 *  Q(value), mean = 0, sd = sigma)
+        upper.right <- value + q_alpha
         
     }else if (value < theta2) { ## |theta| in [theta1,theta2]
-        
         lower.left <- NA
         upper.left <- NA
         lower.right <- threshold
-        upper.right <- value + stats::qnorm( stats::pnorm( threshold - value, mean = 0, sd = sigma) + (1 - alpha) *  Q(value),
-                                            mean = 0, sd = sigma)
+        upper.right <- value + q_alpha
         
     } else {  ## |theta| in [theta2,Inf]
-        
         lower.left <- NA
         upper.left <- NA
-        lower.right <- value - stats::qnorm( .5 * ( 1 + (1 - alpha) *  Q(value) ), mean = 0, sd = sigma)
-        upper.right <- value + stats::qnorm( .5 * ( 1 + (1 - alpha) *  Q(value) ), mean = 0, sd = sigma)
-        
+        lower.right <- value - q_alpha
+        upper.right <- value + q_alpha
+
     }
 
     ## reconstruct
@@ -362,33 +427,33 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
     ## *** lower CI, i.e. solve equation (5)
     if (threshold < value && value < x1) { ## x in [threshold, x1]
         f.lower <-  function(theta){
-            2 * (1 - stats::pnorm( value - theta, mean = 0, sd = sigma)) - alpha * Q(theta)
+            2 * (1 - do.call(pdist, args = list(x = value - theta, sd = sigma, df = df))) - alpha * Q(theta)
         }
         d_f.lower <-  function(theta){
-            2 * stats::dnorm( value - theta, mean = 0, sd = sigma) - alpha * d_Q(theta)
+            2 * do.call(ddist, args = list(x = value - theta, sd = sigma, df = df)) - alpha * d_Q(theta)
         }
     }else if (value < x2) { ## x in [x1, x2]
         f.lower <- function(theta){ 
-            stats::pnorm( value - theta, mean = 0, sd = sigma) - stats::pnorm( threshold - theta, mean = 0, sd = sigma) - (1 - alpha) *  Q(theta)
+            do.call(pdist, args = list(x = value - theta, sd = sigma, df = df)) - do.call(pdist, args = list(x = threshold - theta, sd = sigma, df = df)) - (1 - alpha) *  Q(theta)
         }
         d_f.lower <- function(theta){ 
-            - stats::dnorm( value - theta, mean = 0, sd = sigma) + stats::dnorm( threshold - theta, mean = 0, sd = sigma) - (1 - alpha) *  d_Q(theta)
+            - do.call(ddist, args = list(x = value - theta, sd = sigma, df = df)) + do.call(ddist, args = list(x = threshold - theta, sd = sigma, df = df)) - (1 - alpha) *  d_Q(theta)
         }
     }else { ## x in [x2, Inf])
         f.lower <- function(theta){
-            2 * stats::pnorm( value - theta, mean = 0, sd = sigma) - 1 - (1 - alpha) *  Q(theta)
+            2 * do.call(pdist, args = list(x = value - theta, sd = sigma, df = df)) - 1 - (1 - alpha) *  Q(theta)
         }
         d_f.lower <- function(theta){
-            - 2 * stats::dnorm( value - theta, mean = 0, sd = sigma) - (1 - alpha) *  d_Q(theta)
+            - 2 * do.call(ddist, args = list(x = value - theta, sd = sigma, df = df)) - (1 - alpha) *  d_Q(theta)
         }
     }
         
     ## *** upper CI    
     f.upper <- function(theta){
-        2 * stats::pnorm(theta - value, mean = 0, sd = sigma) - 1 - (1 - alpha) *  Q(theta)
+        2 * do.call(pdist, args = list(x = theta - value, sd = sigma, df = df)) - 1 - (1 - alpha) *  Q(theta)
     }
     d_f.upper <- function(theta){
-        2 * stats::dnorm(theta - value, mean = 0, sd = sigma) - (1 - alpha) *  d_Q(theta)
+        2 * do.call(ddist, args = list(x = theta - value, sd = sigma, df = df)) - (1 - alpha) *  d_Q(theta)
     }
 
     if(optimizer == "optim"){
@@ -430,7 +495,7 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                   stringsAsFactors = FALSE)
         lower <- as.double(iOut$root)
         
-        iOut <- stats::uniroot(f = f.upper, lower = theta2, upper = threshold + 5*qnorm(1 - alpha/2, mean = 0, sd = sigma))
+        iOut <- stats::uniroot(f = f.upper, lower = theta2, upper = threshold + 5 * do.call(qdist, args = list(x = 1 - alpha/2, sd = sigma, df = df)))
         upper.optim <- data.frame(solution = iOut$root,
                                   objective = iOut$f.root,
                                   iteration = iOut$iter,
