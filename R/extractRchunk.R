@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 15 2017 (09:16) 
 ## Version: 
-## Last-Updated: dec  2 2017 (12:27) 
+## Last-Updated: dec  4 2018 (11:10) 
 ##           By: Brice Ozenne
-##     Update #: 93
+##     Update #: 115
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -24,6 +24,7 @@
 #' @param file.start.SRC string indicating the start of a code block.
 #' @param file.end.SRC string indicating the end of a code block.
 #' @param rm.export.none should chunks of code with \code{:export none} be ignored?
+#' @param rm.noexport should header with \code{:noexport:} be ignored?
 #' @param index.chunk should the code block be numbered in the .R file?
 #' @param overwrite Can the existing R file be overwritten?
 #'
@@ -33,7 +34,9 @@ extractRchunk <- function(file, newfile = NULL,
                           file.start.SRC = NULL,
                           file.end.SRC = NULL,
                           rm.export.none = TRUE,
-                          index.chunk = TRUE, overwrite = FALSE){
+                          rm.noexport = TRUE,
+                          index.chunk = TRUE,
+                          overwrite = FALSE){
 
 ### ** define tags
     type <- tolower(tools::file_ext(file))
@@ -43,26 +46,38 @@ extractRchunk <- function(file, newfile = NULL,
         file.start.SRC <- "\\#\\+BEGIN_SRC R"
         file.end.SRC <- "\\#\\+END_SRC"
 
-            if(length(grep(".org$",file))==0){
-                stop("file must have a .org extension \n")
-            }
+        if(identical(rm.noexport,TRUE)){
+            rm.noexport <- ":noexport:"
+        }else if(identical(rm.noexport,FALSE)){
+            rm.noexport <- NULL
+        }
+        
+        if(length(grep(".org$",file))==0){
+            stop("file must have a .org extension \n")
+        }
 
-            if(is.null(newfile)){
-                newfile <- gsub(".org$",".R",file)
-            }
+        if(is.null(newfile)){
+            newfile <- gsub(".org$",".R",file)
+        }
             
-        }else if(type == "rmd"){
-            file.header <- "\\#"
-            file.start.SRC <- "\\`\\`\\`\\{r"
-            file.end.SRC <- "\\`\\`\\`$"
+    }else if(type == "rmd"){
+        file.header <- "\\#"
+        file.start.SRC <- "\\`\\`\\`\\{r"
+        file.end.SRC <- "\\`\\`\\`$"
 
-            if(length(grep(".rmd$",file))==0){
-                stop("file must have a .rmd extension \n")
-            }
+        if(identical(rm.noexport,TRUE)){
+            rm.noexport <- NULL
+        }else if(identical(rm.noexport,FALSE)){
+            rm.noexport <- NULL
+        }
+        
+        if(length(grep(".rmd$",file))==0){
+            stop("file must have a .rmd extension \n")
+        }
 
-            if(is.null(newfile)){
-                newfile <- gsub(".rmd$",".R",file)
-            }
+        if(is.null(newfile)){
+            newfile <- gsub(".rmd$",".R",file)
+        }
             
         }else if(is.null(file.header)  || is.null(file.start.SRC) || is.null(file.end.SRC)){
             stop("if the file is not a org and rmd file the tags must be defined \n",
@@ -107,36 +122,67 @@ extractRchunk <- function(file, newfile = NULL,
     }
 
 ### ** group all
-    df.extract <- rbind(data.frame(type = "header",
+    dt.extract <- rbind(data.table(type = "header",
                                    index.start = index.header,
                                    index.stop = index.header,
                                    index = NA),
-                        data.frame(type = "chunk",
+                        data.table(type = "chunk",
                                    index.start = index.start.chunk,
                                    index.stop = index.end.chunk,
                                    index = 1:n.chunk))
-    df.extract <- df.extract[order(df.extract$index.start),]
-    n.extract <- NROW(df.extract)
+    setkeyv(dt.extract, "index.start")
+    n.extract <- NROW(dt.extract)
+
+### ** level of the headings
+    indexDT.header <- which(dt.extract$type == "header")
+    index.header <- dt.extract[indexDT.header]$index.start
+    vec.star <- unlist(lapply(strsplit(file.line[index.header], split = "* "),"[[",1))
+    dt.extract[, c("level") := as.integer(NA)]
+    dt.extract[indexDT.header, c("level") := nchar(vec.star)]
+
+### ** end of the headings
+    dt.extract[,c("index.stopHeader") := as.integer(NA)]
+    dt.extract[indexDT.header, c("index.stopHeader") := c(.SD$index.start[-1], length(file.line)), by = "level"]
+
+### ** remove non exported sections
+    dt.extract[, c("export") := TRUE]
+    if(!is.null(rm.noexport)){
+        indexNoexport.header <- grep(":noexport:",file.line[index.header])
+        if(length(indexNoexport.header)>0){
+            
+            dt.extract[indexDT.header[indexNoexport.header], c("export") := FALSE ]
+            
+            ls.index <- mapply(dt.extract[dt.extract$export==FALSE, .SD$index.start],
+                               dt.extract[dt.extract$export==FALSE, .SD$index.stopHeader],
+                               FUN=seq, SIMPLIFY = FALSE)
+            vec.noexport <- sort(unique(unlist(ls.index)))
+
+            dt.extract[dt.extract$index.start %in% vec.noexport, c("export") := FALSE]
+        }
+       
+    }
     
 ### ** create string
     file.content <- NULL
     
     for(iE in 1:n.extract){ # iE <- 1
-        iType <- as.character(df.extract[iE,"type"])
-        iStart <- df.extract[iE,"index.start"]
-        iEnd <- df.extract[iE,"index.stop"]
+        iType <- as.character(dt.extract[iE,.SD$type])
+        iStart <- dt.extract[iE,.SD$index.start]
+        iEnd <- dt.extract[iE,.SD$index.stop]
         if(iType == "chunk"){
             test.export.none <- length(grep(":exports none",file.line[iStart],fixed = TRUE))
             if(rm.export.none && test.export.none==1){
-                    next
+                next
             }
             iStart <- iStart + 1
             iEnd <- iEnd - 1
         }
-        
+        if(dt.extract[iE,.SD$export]==FALSE){
+            next
+        }
         add.before <- switch(iType,
                              "header"=NULL,
-                             "chunk"=if(index.chunk){paste0("## chunk ",df.extract[iE,"index"],"")}else{NULL})
+                             "chunk"=if(index.chunk){paste0("## chunk ",dt.extract[iE,.SD$index],"")}else{NULL})
 
         prefix.add <- switch(iType,
                              "header"="## ",
@@ -144,7 +190,7 @@ extractRchunk <- function(file, newfile = NULL,
         toAdd <- paste0(prefix.add,file.line[iStart:iEnd])
         
         add.after <- switch(iType,
-                            "header"=if(iE<n.extract&&df.extract[iE+1,"type"]=="chunk"){""}else{NULL},
+                            "header"=if(iE<n.extract&&dt.extract[iE+1,.SD$type]=="chunk"){""}else{NULL},
                             "chunk"="")
         
         file.content <- c(file.content,add.before,toAdd,add.after)

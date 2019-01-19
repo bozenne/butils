@@ -10,12 +10,12 @@
 qqplot2(object, ...)
 
 \method{qqplot2}{lvmfit}(object, variables = NULL, residuals = NULL,
-  plot = TRUE, mfrow = NULL, mar = c(2, 2, 2, 2), type = "qqtest",
-  name.model = "", centralPercents = 0.95, ...)
+  plot = TRUE, mfrow = NULL, mar = c(2, 2, 2, 2),
+  qq.type = "qqtest", name.model = "", centralPercents = 0.95, ...)
 
 \method{qqplot2}{list}(object, plot = TRUE, mfrow = NULL, mar = c(2,
-  2, 2, 2), type = "qqtest", name.model = "", centralPercents = 0.95,
-  ...)
+  2, 2, 2), qq.type = "qqtest", name.model = "",
+  centralPercents = 0.95, ...)
 
 \method{qqplot2}{multigroupfit}(object, residuals = NULL,
   name.model = NULL, plot = TRUE, ...)
@@ -36,7 +36,7 @@ qqplot2(object, ...)
 \item{mar}{[numeric vector] the number of lines of margin
 to be specified on the four sides of the plot (bottom, left, top, right).}
 
-\item{type}{the function used to display the qqplot. Can be qqtest or qqnorm.}
+\item{qq.type}{the function used to display the qqplot. Can be qqtest or qqnorm.}
 
 \item{name.model}{[character vector] character string to be displayed before the variable name in the title of the plot.
 If \code{NULL} and \code{object} is a list, the names of the list will be used to define the title of the plots.}

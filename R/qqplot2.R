@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug 30 2017 (09:26) 
 ## Version: 
-## last-updated: sep 18 2018 (11:55) 
+## last-updated: nov  9 2018 (12:01) 
 ##           By: Brice Ozenne
-##     Update #: 94
+##     Update #: 97
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -30,7 +30,7 @@
 #' @param mar [numeric vector] the number of lines of margin
 #' to be specified on the four sides of the plot (bottom, left, top, right).
 #' @param plot [logical] should the graphic be displayed?
-#' @param type the function used to display the qqplot. Can be qqtest or qqnorm.
+#' @param qq.type the function used to display the qqplot. Can be qqtest or qqnorm.
 #' @param centralPercents argument passed to \code{qqtest}. See the help of \code{\link{qqtest}}.
 #' @param ... additional arguments to be passed to qqtest.
 #' 
@@ -66,7 +66,7 @@ qqplot2 <- function (object, ...) {
 #' @export
 qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL,
                            plot = TRUE, mfrow = NULL, mar = c(2,2,2,2),
-                           type = "qqtest", name.model = "", centralPercents = 0.95, ...){
+                           qq.type = "qqtest", name.model = "", centralPercents = 0.95, ...){
 
     ## ** prepare
     if(is.null(residuals)){
@@ -81,7 +81,7 @@ qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL,
                     plot = plot,
                     mfrow = mfrow,
                     mar = mar,
-                    type = type,
+                    qq.type = qq.type,
                     name.model = name.model,
                     centralPercents = centralPercents)
     
@@ -93,7 +93,7 @@ qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL,
 #' @export
 qqplot2.list <- function(object, 
                          plot = TRUE, mfrow = NULL, mar = c(2,2,2,2),
-                         type = "qqtest", name.model = "", centralPercents = 0.95, ...){
+                         qq.type = "qqtest", name.model = "", centralPercents = 0.95, ...){
 
     n.list <- length(object)
     ls.residuals <- vector(mode = "list", length = n.list)
@@ -125,7 +125,7 @@ qqplot2.list <- function(object,
                     plot = plot,
                     mfrow = mfrow,
                     mar = mar,
-                    type = type,
+                    qq.type = qq.type,
                     name.model = name.model,
                     centralPercents = centralPercents)
     return(invisible(out))
@@ -166,15 +166,15 @@ qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, p
 ## * .qqplot2
 .qqplot2 <- function(variables, residuals,
                      plot, mfrow, mar,
-                     type, name.model, centralPercents, ...){
+                     qq.type, name.model, centralPercents, ...){
 
     ## ** check arguments
     if(any(variables %in% colnames(residuals) == FALSE)){
         txt <- paste(variables[variables %in% colnames(residuals) == FALSE], collapse = "\" \"")
         stop("unknown variable(s): \"",,"\"\n")
     }
-    if(type %in% c("qqtest","qqnorm") == FALSE){
-        stop("wrong specification of type \n",
+    if(qq.type %in% c("qqtest","qqnorm") == FALSE){
+        stop("wrong specification of qq.type \n",
              "must be \"qqtest\" or \"qqnorm\" \n")
     }
 
@@ -198,11 +198,11 @@ qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, p
             if(all(resid < 1e-5)){
                 graphics::plot(0,0, col = "white", axes = FALSE, xlab = "", ylab = "", main = iMain)
                 graphics::text(0,0,"all residuals < 1e-5")
-            }else if(envir$type == "qqtest"){
+            }else if(envir$qq.type == "qqtest"){
                 qqtest::qqtest(resid, main = iMain,
                                centralPercents = envir$centralPercents,
                                ...)
-            }else if(envir$type == "qqnorm"){
+            }else if(envir$qq.type == "qqnorm"){
                 stats::qqnorm(resid, main = iMain)
             }
         })
@@ -217,7 +217,7 @@ qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, p
                     name.model = name.model,
                     variables = variables,
                     centralPercents = centralPercents,
-                    type = type)
+                    qq.type = qq.type)
     
     if(plot){
         warper_display(ls.data)

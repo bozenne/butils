@@ -11,13 +11,14 @@ ggHeatmap(data, name.x, name.y, name.fill, add.text, plot = TRUE,
   midpoint = 0, limits = NULL, text.size = 15, angle.x = 90)
 }
 \arguments{
-\item{data}{the dataset containing the correlation values.}
+\item{data}{the dataset containing the correlation values.
+Either a matrix where each element is a correlation value or a data.frame/data.table containing in columns the correlation coefficients.}
 
-\item{name.x}{name of the column containing the label of the first outcome involved in the correlation}
+\item{name.x}{name of the column containing the label of the first outcome involved in the correlation.}
 
-\item{name.y}{name of the column containing the label of the second outcome involved in the correlation}
+\item{name.y}{name of the column containing the label of the second outcome involved in the correlation.}
 
-\item{name.fill}{name of the column containing the value of the correlation}
+\item{name.fill}{name of the column containing the value of the correlation.}
 
 \item{add.text}{additional information to be displayed above the squares representing the correlation. Must name a column in data.}
 
@@ -25,29 +26,29 @@ ggHeatmap(data, name.x, name.y, name.fill, add.text, plot = TRUE,
 
 \item{round}{if not \code{NULL}, the number of digit used to round add.text using signif. Can also be \code{p.value} to indicates with the usual convention the significance level.}
 
-\item{title}{the title of the plot}
+\item{title}{the title of the plot.}
 
-\item{xlab}{the name of the x axis}
+\item{xlab}{the name of the x axis.}
 
-\item{ylab}{the name of the y axis}
+\item{ylab}{the name of the y axis.}
 
-\item{legend_title}{the name of the legend}
+\item{legend_title}{the name of the legend.}
 
 \item{na.value}{the color used to display missing values (NA).}
 
-\item{col_low}{the color used to diplay low correlation values}
+\item{col_low}{the color used to diplay low correlation values,}
 
-\item{col_midpoint}{the color used to diplay intermediate correlation values}
+\item{col_midpoint}{the color used to diplay intermediate correlation values.}
 
-\item{col_high}{the color used to diplay high correlation values}
+\item{col_high}{the color used to diplay high correlation values.}
 
 \item{midpoint}{the value corresponding to intermediate correlation value.}
 
-\item{limits}{the minimum and maximum correlation values used to build the color panel}
+\item{limits}{the minimum and maximum correlation values used to build the color panel.}
 
-\item{text.size}{the size of the text in the plot}
+\item{text.size}{the size of the text in the plot.}
 
-\item{angle.x}{the inclination of the x labels}
+\item{angle.x}{the inclination of the x labels.}
 }
 \value{
 a list containing:
@@ -69,7 +70,11 @@ df <- cbind(expand.grid(x = 1:4, y = 1:4),fill = fill)
 ggHeatmap(df, name.x = "x", name.y = "y", name.fill = "fill")
 
 M <- matrix(fill,4,4)
+M[upper.tri(M)] <- NA
 ggHeatmap(M)
+
+rownames(M) <- paste0("R",1:4)
+ggHeatmap(M, limits = c(0,0.5), add.text = "fill", round = 2)
 
 }
 \keyword{correlation}

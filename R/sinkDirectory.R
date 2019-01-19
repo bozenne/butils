@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 22 2018 (09:24) 
 ## Version: 
-## Last-Updated: apr 11 2018 (16:39) 
+## Last-Updated: nov 28 2018 (09:21) 
 ##           By: Brice Ozenne
-##     Update #: 20
+##     Update #: 27
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,9 +15,11 @@
 ## 
 ### Code:
 
+## * sinkDirectory (documentation)
 ##' @title Import All .rds Files in a Directory.
 ##' @description Import all .rds files in a directory.
-##'
+##' @name sinkDirectory
+##' 
 ##' @param path [character] path to the directory.
 ##' @param string.keep [regexp] character string indicating files to import. 
 ##' @param string.exclude [regexp] character string indicating files to ignore.  
@@ -38,14 +40,33 @@
 ##' so that they can be combined.
 ##' @return A \code{data.table} object.
 ##' @author Brice Ozenne
+##'
+
+## * sinkDirectoy (code)
+##' @rdname sinkDirectory
 ##' @export
 sinkDirectory <- function(path, string.keep = NULL, string.exclude = NULL,
                           addMissingCol = FALSE, fixed = FALSE,
                           trace = TRUE){
+
+    ## ** import all files
+    if(!dir.exists(path)){
+
+        possible.dirs <- setdiff(list.dirs(file.path(path,".."), full.names = FALSE), "")
+        
+        stop("Directory ",path," does not exists \n",
+             "Existing dir. in parent dir.: \"",paste0(possible.dirs,collapse = "\" \""),"\"\n")
+    }
+    
     allFiles <- list.files(path)
+
+    if(length(allFiles)==0){
+        warning("Empty directory \n")
+        return(NULL)
+    }
     index.file <- 1:length(allFiles)
 
-### ** subset files
+    ## ** subset files
     if(!is.null(string.keep)){
         index.file <- intersect(index.file,grep(string.keep,allFiles,fixed = fixed))
     }
@@ -54,8 +75,12 @@ sinkDirectory <- function(path, string.keep = NULL, string.exclude = NULL,
     }
 
     n.files <- length(index.file)
-
-    #### ** merge files
+    if(n.files==0){
+        warning("No file matching the query \n")
+        return(NULL)
+    }
+    
+    ## ** merge files
     dt.merge <- NULL
     if(trace){
         cat("read ",n.files," files \n", sep = "")
@@ -97,7 +122,7 @@ sinkDirectory <- function(path, string.keep = NULL, string.exclude = NULL,
     }
     if(trace){close(pb)}
 
-#### ** export
+    ## ** export
     return(dt.merge)
 }
 

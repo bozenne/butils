@@ -6,7 +6,7 @@
 \usage{
 extractRchunk(file, newfile = NULL, file.header = NULL,
   file.start.SRC = NULL, file.end.SRC = NULL, rm.export.none = TRUE,
-  index.chunk = TRUE, overwrite = FALSE)
+  rm.noexport = TRUE, index.chunk = TRUE, overwrite = FALSE)
 }
 \arguments{
 \item{file}{name of the file from which the R chunks should be extracted.}
@@ -20,6 +20,8 @@ extractRchunk(file, newfile = NULL, file.header = NULL,
 \item{file.end.SRC}{string indicating the end of a code block.}
 
 \item{rm.export.none}{should chunks of code with \code{:export none} be ignored?}
+
+\item{rm.noexport}{should header with \code{:noexport:} be ignored?}
 
 \item{index.chunk}{should the code block be numbered in the .R file?}
 
