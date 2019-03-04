@@ -42,6 +42,7 @@ Suggests:
     lavaSearch2,
     lme4,
     mgcv,
+	multcomp,
     numDeriv,
     pbapply,
     Publish,
@@ -51,4 +52,4 @@ Suggests:
     testthat
 LazyLoad: yes
 NeedsCompilation: no
-RoxygenNote: 6.1.0.9000
+RoxygenNote: 6.1.1

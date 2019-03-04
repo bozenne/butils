@@ -262,18 +262,21 @@ bootReg.lvmfit <- function(object,
     }else if(identical(type,"coef")){
         FUN.stdError <- function(x){
             M <- summary(x)$coef
-            return(setNames(M[names(x$opt$estimate),"Std. Error"],rownames(M)))
+            return(M[names(x$opt$estimate),"Std. Error"])
         }        
         FUN.estimate <- function(x){
             M <- summary(x)$coef
-            return(setNames(M[names(x$opt$estimate),"Estimate"],rownames(M)))
+            return(M[names(x$opt$estimate),"Estimate"])
         }
     }else{
         stop("arguments \'FUN.estimate\' must be specified \n",
              "when type is not \"coef\" \n")
     }
 
-    ### ** run boostratp    
+    ## ** export model + function estimate.lvm when doint parallel computation
+    attr(load.library, "load.object") <- c(as.character(object$call$x), "estimate.lvm")
+    
+    ## ** run boostratp    
     out <- .bootReg(object,
                     data = data, name.cluster = name.cluster,
                     FUN.estimate = FUN.estimate,
@@ -281,7 +284,7 @@ bootReg.lvmfit <- function(object,
                     load.library = load.library,
                     ...)
 
-### ** export
+    ## ** export
     return(out)
     
 }
@@ -292,7 +295,6 @@ bootReg.lvmfit <- function(object,
 .bootReg <- function(object, data, strata = NULL, name.cluster,
                      FUN.estimate, FUN.stdError, FUN.resample = NULL, FUN.iid = NULL,
                      n.boot = 1e3, n.cpus = 1, load.library, seed = 1, rejectIfWarning = TRUE,
-
                      trace = TRUE){
 
     .Random.seed_save <- .Random.seed
@@ -306,7 +308,7 @@ bootReg.lvmfit <- function(object,
     }
     n.coef <- length(e.coef)
     name.coef <- names(e.coef)
-    
+
 ### ** identify clusters
     setkeyv(data, name.cluster)
     unique.cluster = unique(data[[name.cluster]])
@@ -383,8 +385,8 @@ bootReg.lvmfit <- function(object,
     }
   
 ### ** boot
-  if(n.cpus>1){
-      vec.export <- c("object","tryWithWarnings")
+    if(n.cpus>1){
+      vec.export <- c("object","tryWithWarnings",attr(load.library,"load.object"))
       b <- NULL ## for CRAN check
 
       cl <- snow::makeSOCKcluster(n.cpus)
@@ -413,7 +415,6 @@ bootReg.lvmfit <- function(object,
       }else{
           option <- NULL
       }
-      
       ls.boot <- foreach::`%dopar%`(
                               foreach::foreach(b=1:n.boot,
                                                .packages=c(load.library,"data.table"),
@@ -481,7 +482,6 @@ bootReg.lvmfit <- function(object,
                value = .Random.seed_save,
                envir = globalenv())
     }
-    
     out <- list(call = object$call,
                 estimate = e.coef,
                 stdError = e.stdError,
