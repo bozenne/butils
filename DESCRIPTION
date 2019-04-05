@@ -12,7 +12,7 @@ Depends:
     data.table,
     ggplot2
 Imports:
-    boot,
+    boot,	
     corrplot,
     doParallel,
     doSNOW,
@@ -37,6 +37,7 @@ Imports:
 	gstat
 Suggests:
     AICcmodavg,
+	blandr,
     gridExtra,
     heplots,
     lavaSearch2,
