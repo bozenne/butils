@@ -6,7 +6,8 @@
 \usage{
 \method{autoplot}{LoA}(object, display.ci = TRUE, plot = TRUE,
   line.size = 1.5, alpha = 0.25, name.legend = "",
-  colors = c("red", "blue", "forestgreen"), linetype = c(1, 2, 2), ...)
+  labels = c("bias", "LoA (lower)", "LoA (upper)"), colors = c("red",
+  "blue", "forestgreen"), linetype = c(1, 2, 2), ...)
 }
 \arguments{
 \item{object}{An object of class \code{LoA}, output of the \code{LoA} function.}
@@ -20,6 +21,8 @@
 \item{alpha}{[numeric 0-1] transparency parameter for the confidence intervals.}
 
 \item{name.legend}{[character] character string displayed in the caption.}
+
+\item{labels}{[character of length 3] text shown in the caption for the bias, lower, and upper LoA.}
 
 \item{colors}{[character of length 3] colors used to display the bias, lower, and upper LoA.}
 

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: apr  5 2019 (09:46) 
 ## Version: 
-## Last-Updated: apr  5 2019 (13:11) 
+## Last-Updated: apr  5 2019 (13:39) 
 ##           By: Brice Ozenne
-##     Update #: 91
+##     Update #: 92
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -151,12 +151,14 @@ print.LoA <- function(x, digits = 2, eps = 1e-4, print = TRUE, ...){
 ##' @param alpha [numeric 0-1] transparency parameter for the confidence intervals.
 ##' @param name.legend [character] character string displayed in the caption.
 ##' @param colors [character of length 3] colors used to display the bias, lower, and upper LoA.
+##' @param labels [character of length 3] text shown in the caption for the bias, lower, and upper LoA.
 ##' @param linetype [numeric of length 3] type of lines used to display the bias, lower, and upper LoA.
 ##' @param ...  not used, for compatibility with the generic method.
 ##' 
 ##' @export
 autoplot.LoA <- function(object, display.ci = TRUE, plot = TRUE,
                          line.size = 1.5, alpha = 0.25, name.legend = "",
+                         labels = c("bias","LoA (lower)","LoA (upper)"),
                          colors = c("red","blue","forestgreen"), linetype = c(1,2,2),
                          ...){
 
@@ -182,18 +184,18 @@ autoplot.LoA <- function(object, display.ci = TRUE, plot = TRUE,
                           ggplot2::aes_string(yintercept = "estimate", linetype = "type", color = "type"), size = line.size)
 
     gg <- gg + ggplot2::scale_colour_manual(name = name.legend,
-                                   labels = c("bias","LoA (lower)","LoA (upper)"),
+                                   labels = labels,
                                    values = c("bias" = colors[1], 
                                               "lowerLoA" = colors[2],
                                               "upperLoA" = colors[3]))
     gg <- gg + ggplot2::scale_fill_manual(name = name.legend,
-                                 labels = c("bias","LoA (lower)","LoA (upper)"),
+                                 labels = labels,
                                  values = c("bias" = colors[1], 
                                             "lowerLoA" = colors[2],
                                             "upperLoA" = colors[3]))
     
     gg <- gg + ggplot2::scale_linetype_manual(name = name.legend,
-                                     labels = c("bias","LoA (lower)","LoA (upper)"),
+                                     labels = labels,
                                      values = c("bias" = linetype[1], 
                                                 "lowerLoA" = linetype[2],
                                                 "upperLoA" = linetype[3]))

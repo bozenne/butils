@@ -5,7 +5,8 @@
 \title{Descriptive Table for Continuous, Categorical, and Date Variables}
 \usage{
 descriptiveTable(formula, data, guess.categorical = 5,
-  add.groupVariable = FALSE, FCT.center = "mean", FCT.spread = "sd")
+  add.groupAll = TRUE, add.groupNA = TRUE, add.groupVariable = FALSE,
+  FCT.center = "mean", FCT.spread = "sd")
 }
 \arguments{
 \item{formula}{[formula] A formula where the left hand side (lhs) describe potential subgroups
@@ -15,6 +16,10 @@ and the right hand side (rhs) the variable to be described.}
 
 \item{guess.categorical}{[integer,>0] When the type of the variables is not specified, numeric variables with
 number of unique values lower than the specified value are treated as categorical variabels.}
+
+\item{add.groupAll}{[logical] should the descriptives of the whole dataset be computed?}
+
+\item{add.groupNA}{[logical] should the descriptives of the observations where the group variable is missing be computed?}
 
 \item{add.groupVariable}{[logical] should the name of the variable used to generate the sub-groups be printed in the table.}
 
