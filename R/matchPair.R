@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 13 2019 (10:56) 
 ## Version: 
-## Last-Updated: jun 14 2019 (16:12) 
+## Last-Updated: jun 14 2019 (16:22) 
 ##           By: Brice Ozenne
-##     Update #: 79
+##     Update #: 84
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -100,7 +100,11 @@ matchPair <- function(value, method, strata, type, ...){
 
 ## ** .matchPairCorr
 ##' @rdname matchPair
-.matchPairCorr <- function(value, method, strata, n, Umethod, method.correlation = "full", ...){
+.matchPairCorr <- function(value, method, strata, method.correlation = "full", ...){
+
+    dots <- list(...)
+    n <- dots$n
+    Umethod <- dots$Umethod
     
     ## ** compute sufficient statistics
     method.correlation <- match.arg(method.correlation, c("full","discordant"))
@@ -181,15 +185,19 @@ matchPair <- function(value, method, strata, type, ...){
 
 ## ** .matchPairMax
 ##' @rdname matchPair
-.matchPairMax <- function(value, method, strata, n, Umethod, ...){
+.matchPairMax <- function(value, method, strata, ...){
+
+    dots <- list(...)
+    n <- dots$n
+    Umethod <- dots$Umethod
+
     ls.strata <- tapply(1:n, strata, function(x){x} )
 
     ls.test <- lapply(ls.strata, function(x){
         iValue <- value[x]
         iMethod <- method[x]
         stats::mcnemar.test(iValue[iMethod == Umethod[1]],
-                            iValue[iMethod == Umethod[2]],
-                            ...)}
+                            iValue[iMethod == Umethod[2]])}
         )
 
     
@@ -207,8 +215,11 @@ matchPair <- function(value, method, strata, type, ...){
 }
 ## ** .matchPairPerm
 ##' @rdname matchPair
-.matchPairPerm <- function(value, method, strata, id, Umethod, n.perm = 1e3, ...){
-    
+.matchPairPerm <- function(value, method, strata, id, n.perm = 1e3, ...){
+
+    dots <- list(...)
+    Umethod <- dots$Umethod
+
     dtL <- data.table::data.table(value = value,
                                   method = method,
                                   strata = strata,

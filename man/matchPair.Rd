@@ -9,12 +9,11 @@
 \usage{
 matchPair(value, method, strata, type, ...)
 
-.matchPairCorr(value, method, strata, n, Umethod,
-  method.correlation = "full", ...)
+.matchPairCorr(value, method, strata, method.correlation = "full", ...)
 
-.matchPairMax(value, method, strata, n, Umethod, ...)
+.matchPairMax(value, method, strata, ...)
 
-.matchPairPerm(value, method, strata, id, Umethod, n.perm = 1000, ...)
+.matchPairPerm(value, method, strata, id, n.perm = 1000, ...)
 }
 \arguments{
 \item{value}{[numeric vector] vector of binary values.}
