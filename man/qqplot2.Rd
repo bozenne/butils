@@ -41,7 +41,7 @@ to be specified on the four sides of the plot (bottom, left, top, right).}
 \item{name.model}{[character vector] character string to be displayed before the variable name in the title of the plot.
 If \code{NULL} and \code{object} is a list, the names of the list will be used to define the title of the plots.}
 
-\item{centralPercents}{argument passed to \code{qqtest}. See the help of \code{\link{qqtest}}.}
+\item{centralPercents}{argument passed to \code{qqtest}. See the help of \code{qqtest}.}
 }
 \value{
 a data frame/cvlvm object containing the convergence status (by default 0 indicates successful convergence, see ?optim), the value of the log-likelihood and the estimated parameters (in columns) for each initialization (in rows)

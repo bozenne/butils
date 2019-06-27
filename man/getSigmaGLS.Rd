@@ -45,6 +45,7 @@ print("BB")
 fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), 
             data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
 getSigmaGLS(fm1)
+getSigmaGLS(fm1, upper = TRUE)
 }
 }
 \keyword{correlation}

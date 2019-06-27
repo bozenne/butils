@@ -149,8 +149,8 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
     object.data <- extractData(object, design.matrix = TRUE)
 
     ## find all strata in the original object
-    coxInfo <- riskRegression_coxVariableName(object,
-                                              model.frame = object.data)
+    coxInfo <- riskRegression::coxVariableName(object,
+                                               model.frame = object.data)
     name.Xstrata <- coxInfo$stratavars.original
     ##terms.special <- prodlim::strip.terms(terms(coxFormula(object)), special = "strata")
     name.Xlp <- coxInfo$lpvars#attr(terms.special, "term.labels")

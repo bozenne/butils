@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 29 2018 (09:39) 
 ## Version: 
-## Last-Updated: nov 29 2018 (10:54) 
+## Last-Updated: jun 27 2019 (09:40) 
 ##           By: Brice Ozenne
-##     Update #: 34
+##     Update #: 35
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -88,6 +88,7 @@ sim2Dimage <- function(n, coords = NULL, x.sites, y.sites, mu, vgm, name.X = "X"
     }
     
     ## ** simulate background noise and add mean
+    requireNamespace("gstat")
     g.model <- gstat::gstat(formula = z~1,
                             locations = ~x+y,
                             dummy = T,

@@ -1,7 +1,7 @@
 Package: butils
 Type: Package
 Title: Various useful functions
-Version: 1.3.6
+Version: 1.4
 Authors@R: c(
     person("Brice", "Ozenne", role = c("aut", "cre"), email = "brice.mh.ozenne@gmail.com", comment = c(ORCID = "0000-0001-9694-2956")))
 Description: Miscellaneous functions for working in R.
@@ -13,44 +13,40 @@ Depends:
     ggplot2
 Imports:
     boot,	
-    corrplot,
-    doParallel,
     doSNOW,
     foreach,
-    gdata,
-	LaplacesDemon,
     MASS,
     Matrix,
-    merTools,
     methods,
     nlme,
-    optimx,
-    proftools,
-    profvis,
-    qqtest,
-    riskRegression,
+	grDevices,
     snow,
     stats,
-    tmvtnorm,
     tools,
-    utils,
-	gstat
+    utils
 Suggests:
     AICcmodavg,
 	blandr,
+    corrplot,
     gridExtra,
+	gstat,
     heplots,
     lavaSearch2,
     lme4,
+    merTools,
     mgcv,
 	multcomp,
     numDeriv,
+	optimx,
     pbapply,
+    qqtest,
     Publish,
+    riskRegression,	
     segmented,
     sp,
     survival,
-    testthat
+    testthat,
+    tmvtnorm
 LazyLoad: yes
 NeedsCompilation: no
 RoxygenNote: 6.1.1

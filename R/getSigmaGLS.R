@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: maj 26 2017 (13:56) 
 ## Version: 
-## last-updated: apr 23 2018 (17:26) 
+## last-updated: jun 27 2019 (09:01) 
 ##           By: Brice Ozenne
-##     Update #: 11
+##     Update #: 14
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -44,6 +44,7 @@
 #' fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), 
 #'             data = Ovary, correlation = corAR1(form = ~ 1 | Mare))
 #' getSigmaGLS(fm1)
+#' getSigmaGLS(fm1, upper = TRUE)
 #' }
 #' @keywords function correlation display gls
 #' @export
@@ -159,9 +160,9 @@ getSigmaGLS <- function(gls,
     ## manage matrix
     if(!is.null(upper)){
         if(upper){
-            gdata::lowerTriangle(Sigma) <- NA
+            lowerTriangle(Sigma) <- NA
         }else{
-            gdata::upperTriangle(Sigma) <- NA
+            upperTriangle(Sigma) <- NA
         }
     }
     

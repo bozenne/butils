@@ -323,6 +323,7 @@ calcPartialResiduals <- function(model,var,
 predict_merTools <- function(object, newdata, level,conditional, interval, ...){
     if(missing(interval)){interval <- FALSE}
     if(missing(level)){level <- 0.95}
+    requireNamespace("merTools")
     res <- merTools::predictInterval(object, newdata = newdata, level = level,
                                      type = "linear.prediction", n.sims = 1e3,
                                      which = if(conditional){"full"}else{"fixed"},

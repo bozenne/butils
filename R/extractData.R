@@ -121,8 +121,8 @@ extractData.coxph <- function(object, design.matrix = FALSE, as.data.frame = TRU
          if("try-error" %in% class(tryPkg)){
             stop(tryPkg)
         }else{
-            data <- try(riskRegression_coxModelFrame(object), silent = TRUE)
-            strataVar <- riskRegression_coxVariableName(object, model.frame = data)$stratavars.original
+            data <- try(riskRegression::coxModelFrame(object), silent = TRUE)
+            strataVar <- riskRegression::coxVariableName(object, model.frame = data)$stratavars.original
         } 
       
          if(length(strataVar)>0){

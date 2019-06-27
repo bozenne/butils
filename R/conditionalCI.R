@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 20 2018 (14:43) 
 ## Version: 
-## Last-Updated: dec  6 2018 (17:37) 
+## Last-Updated: jun 27 2019 (09:28) 
 ##           By: Brice Ozenne
-##     Update #: 224
+##     Update #: 228
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -109,19 +109,20 @@ conditionalCI <- function(theta, threshold,
             stats::dnorm(x = x, mean = 0, sd = sd, log = FALSE)
         }
     }else if(distribution == "student"){
+        ## see miscellaneous.R for the function pstudent/qstudent/dstudent
         pdist <- function(x, sd, df){
-            LaplacesDemon::pst(q = x, mu = 0, sigma = sd, nu = df, lower.tail = TRUE, log.p = FALSE)
+            pstudent(q = x, mu = 0, sigma = sd, nu = df, lower.tail = TRUE, log.p = FALSE)
         }
         qdist <- function(x, sd, df){
-            LaplacesDemon::qst(p = x, mu = 0, sigma = sd, nu = df, lower.tail = TRUE, log.p = FALSE)
+            qstudent(p = x, mu = 0, sigma = sd, nu = df, lower.tail = TRUE, log.p = FALSE)
         }
         ddist <- function(x, sd, df){
-            LaplacesDemon::dst(x = x, mu = 0, sigma = sd, nu = df, log = FALSE)
+            dstudent(x = x, mu = 0, sigma = sd, nu = df, log = FALSE)
         }
         ## stats::pnorm(q = 0.5, mean = 0, sd = 1)
         ## stats::pnorm(q = -0.5, mean = 0, sd = 1)
-        ## LaplacesDemon::pst(q = 0.5, mu = 0, sigma = 1, nu = 10^5, lower.tail = TRUE, log.p = FALSE)
-        ## LaplacesDemon::pst(q = -0.5, mu = 0, sigma = 1, nu = 10^5, lower.tail = TRUE, log.p = FALSE)
+        ## pstudent(q = 0.5, mu = 0, sigma = 1, nu = 10^5, lower.tail = TRUE, log.p = FALSE)
+        ## pstudent(q = -0.5, mu = 0, sigma = 1, nu = 10^5, lower.tail = TRUE, log.p = FALSE)
     }
     
     ## ** reorder theta according to its relevance
@@ -289,8 +290,8 @@ autoplot.conditionalCI <- function(object, value = TRUE, unconditional.CI = TRUE
                                upper = CI$value + qnorm(1 - alpha/2, mean = 0, sd = object$sigma),
                                value = CI$value)            
         }else if(object$distribution == "student"){
-            df.q <- data.frame(lower = CI$value + LaplacesDemon::qst(alpha/2, mu = 0, sigma = object$sigma, nu = object$df),
-                               upper = CI$value + LaplacesDemon::qst(1 - alpha/2, mu = 0, sigma = object$sigma, nu = object$df),
+            df.q <- data.frame(lower = CI$value + qstudent(alpha/2, mu = 0, sigma = object$sigma, nu = object$df),
+                               upper = CI$value + qstudent(1 - alpha/2, mu = 0, sigma = object$sigma, nu = object$df),
                                value = CI$value)
         }
 
