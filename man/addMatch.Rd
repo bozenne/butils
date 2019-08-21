@@ -45,11 +45,19 @@ myAcc <- createAccount()
 
 #### Ease input with short names ####
 addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
-                           "Sebastian Holst" = c("Seb","Sebastian"))
+                           "Sebastian Holst" = c("Seb","Sebastian"),
+                           "Thomas S" = "Thomas")
 
 #### Add a single - no shuttlecock ####
 addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian","Sebastian")) <- c("Sebastian" = 200)
 addMatch(myAcc, date = "15-06-17", shuttlecock = 5, 
-                involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+                involved = c("Brice","Sebastian")) <- c("Thomas" = 200)
+
+addActivity(myAcc,
+           label = "Shuttlecock-Brice",
+           date = as.Date("18-01-13"),
+           note = "shuttlecock (1 tube)",
+           type = "Buy-Shuttlecock") <- c("Brice" = 170)
 
 }

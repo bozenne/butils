@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: apr  9 2018 (08:01) 
+## Last-Updated: mar 17 2019 (14:00) 
 ##           By: Brice Ozenne
-##     Update #: 474
+##     Update #: 497
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -205,10 +205,16 @@ createAccount <- function(nickName = NULL){
 
     }
 
-    ### ** prepare
+
+### ** prepare
     
     ### *** payment
     all.involved <- union(involved, who.paid)
+    if(any(all.involved %in% names(object$nickName) == FALSE)){
+        txt <- all.involved[all.involved %in% names(object$nickName) == FALSE]
+        stop("User",if(length(txt)>1){"s"}," \"",paste(txt, collapse = "\" \""),"\" not registered \n")
+    }
+
     vec.paid <- rep(0, length(all.involved))
 
     if(test.paid){
@@ -254,12 +260,16 @@ createAccount <- function(nickName = NULL){
                            type = type,
                            label = label,
                            id.entry = id.entry)
-
-    newtable[, c("total.cost","n.participant","participant.cost") := 0]
-    newtable[newtable$name %in% involved, "total.cost" := cost]
-    newtable[newtable$name %in% involved, "n.participant" := .N]
-    newtable[newtable$name %in% involved, "participant.cost" := .SD$total.cost/.SD$n.participant]
-
+    setkeyv(newtable, "name")
+    
+    newtable[, c("total.cost","n.participant","participant.cost","weight") := 0]
+    n.involved <- table(involved)
+    if(length(n.involved)>0){
+        newtable[names(n.involved), "weight" := as.numeric(n.involved)]
+        newtable[, "total.cost" := cost]
+        newtable[, "n.participant" := length(involved)]
+        newtable[, "participant.cost" := .SD$total.cost*.SD$weight/.SD$n.participant]
+    }
     object$table <- rbind(object$table,
                           newtable)
 
@@ -290,13 +300,21 @@ createAccount <- function(nickName = NULL){
 #'
 #' #### Ease input with short names ####
 #' addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
-#'                            "Sebastian Holst" = c("Seb","Sebastian"))
+#'                            "Sebastian Holst" = c("Seb","Sebastian"),
+#'                            "Thomas S" = "Thomas")
 #'
 #' #### Add a single - no shuttlecock ####
 #' addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+#' addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian","Sebastian")) <- c("Sebastian" = 200)
 #' addMatch(myAcc, date = "15-06-17", shuttlecock = 5, 
-#'                 involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+#'                 involved = c("Brice","Sebastian")) <- c("Thomas" = 200)
 #'
+#' addActivity(myAcc,
+#'            label = "Shuttlecock-Brice",
+#'            date = as.Date("18-01-13"),
+#'            note = "shuttlecock (1 tube)",
+#'            type = "Buy-Shuttlecock") <- c("Brice" = 170)
+#' 
 #' @export
 `addMatch<-` <-
     function(object, ..., value) UseMethod("addMatch<-")
