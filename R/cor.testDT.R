@@ -133,19 +133,20 @@ cor.testDT <- function(data, format,
   Wcorr <- cor.array[,,"correlation"]
   if(!is.null(reorder)){
     
-    if(any(is.na(Wcorr))){ #### imputation for missing values
-      if(is.numeric(imput.value)){
-        Wcorr[is.na(Wcorr)]  <- imput.value
-      }else{
-        index.NA <- which(is.na(Wcorr), arr.ind = TRUE)
-        value.NA <- apply(index.NA, 1, function(x){
-          do.call(imput.value, list(na.omit(c(Wcorr[x[1],],Wcorr[,x[2]]))))
-        })
-        Wcorr[index.NA] <- value.NA
+      if(any(is.na(Wcorr))){ #### imputation for missing values
+          if(is.numeric(imput.value)){
+              Wcorr[is.na(Wcorr)]  <- imput.value
+          }else{
+              index.NA <- which(is.na(Wcorr), arr.ind = TRUE)
+              value.NA <- apply(index.NA, 1, function(x){
+                  do.call(imput.value, list(na.omit(c(Wcorr[x[1],],Wcorr[,x[2]]))))
+              })
+              Wcorr[index.NA] <- value.NA
+          }
       }
-    }  
-    order <- corrplot::corrMatOrder(Wcorr, order = reorder, hclust.method = hclust.method)
-    cor.array <- cor.array[order,order,]
+      requireNamespace("corrplot")
+      order <- corrplot::corrMatOrder(Wcorr, order = reorder, hclust.method = hclust.method)
+      cor.array <- cor.array[order,order,]
   }
   
   #### remove useless values

@@ -78,6 +78,7 @@ cvCheck.lvm <- function(object,
     }
     diag(VCOV) <-  diag(lvm.vcov)*factor.vcov
 
+    requireNamespace("tmvtnorm")
     sample.start <- tmvtnorm::rtmvnorm(n = n.init, mean = e.coef, sigma = VCOV,
                                        lower = c(rep(-Inf, length(mean.param)),
                                                  rep(0, length = length(var.param))),
@@ -208,7 +209,8 @@ summary.cvlvm <- function(object, threshold = NULL, ...){
 
 ## * optimx1
 optimx1 <- function(start,objective,gradient,hessian,...) {
-  
+  requireNamespace("optimx")
+    
   nlminbcontrols <- c("eval.max","iter.max","trace","abs.tol","rel.tol","x.tol","step.min","optim.method","optimx.method")
   dots <- list(...)
   control <- list(...)$control

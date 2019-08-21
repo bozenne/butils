@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: nov  1 2018 (17:28) 
+## Last-Updated: maj  8 2019 (17:56) 
 ##           By: Brice Ozenne
-##     Update #: 180
+##     Update #: 206
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,14 +15,18 @@
 ## 
 ### Code:
 
+## * descriptiveTable - doc
 ##' @title Descriptive Table for Continuous, Categorical, and Date Variables
 ##' @description Descriptive table for continuous, categorical, and date variables.
-##'
+##' @name descriptiveTable
+##' 
 ##' @param formula [formula] A formula where the left hand side (lhs) describe potential subgroups
 ##' and the right hand side (rhs) the variable to be described.
 ##' @param data [data.frame/data.table] Dataset
 ##' @param guess.categorical [integer,>0] When the type of the variables is not specified, numeric variables with
 ##' number of unique values lower than the specified value are treated as categorical variabels.
+##' @param add.groupAll [logical] should the descriptives of the whole dataset be computed?
+##' @param add.groupNA [logical] should the descriptives of the observations where the group variable is missing be computed?
 ##' @param add.groupVariable [logical] should the name of the variable used to generate the sub-groups be printed in the table.
 ##' @param FCT.center [function] function used to assess the center of the distribution.
 ##' @param FCT.spread [function] function used to assess the spread of the distribution.
@@ -34,9 +38,12 @@
 ##'                  data = veteran)
 ##' descriptiveTable(trt ~ celltype + time + status +karno,
 ##'                  data = veteran)
+
+## * descriptiveTable - code
+##' @rdname descriptiveTable
 ##' @export
 descriptiveTable <- function(formula, data, guess.categorical = 5,
-                             add.groupVariable = FALSE,
+                             add.groupAll = TRUE, add.groupNA = TRUE, add.groupVariable = FALSE,
                              FCT.center = "mean", FCT.spread = "sd"){
 
     data <- data.table::as.data.table(data)
@@ -96,8 +103,8 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
     type <- trimws(type, which = "both") ## remove white spaces
 
     ## ** define groups of observations
-    nObs.group <- NROW(data)
     group <- "All"
+    nObs.group <- NROW(data)
     if(length(group.var)>0){
         dt.tempo <- data[,.N, by = group.var]
         if(add.groupVariable){
@@ -111,7 +118,7 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
     }
     name.group <- paste0(group, " (n=",nObs.group,")")
 
-    ## ** all observations
+    ## ** all observations    
     ls.res <- lapply(1:n.X, function(iX){
         iOut <- .summaryStat(values = data[[X.var[iX]]], type = type[iX],
                              FCT.center = FCT.center, FCT.spread = FCT.spread)
@@ -138,7 +145,20 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
     type.merge <- type
     type.merge[type.merge == "binary"] <- "categorical"
     out <- tapply(ls.res, type.merge, function(iList){
-        do.call(rbind, iList)
+        iOut <- do.call(rbind, iList)
+        
+        name.rm <- NULL
+        if(add.groupAll == FALSE){ ## iList <- ls.res[[1]]
+            name.rm <- c(name.rm,name.group[which(group=="All")])
+        }
+        if(add.groupNA == FALSE){ ## iList <- ls.res[[1]]
+            name.rm <- c(name.rm,name.group[which(group=="NA")])
+        }
+        if(length(name.rm)>0){
+            iOut <- iOut[iOut$group != name.rm,]
+        }
+        return(iOut)
+
     })
 
     ## ** export
@@ -156,6 +176,8 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
 ##'
 ##' @param x output of \code{descriptiveTable}.
 ##' @param print [logical] should the descriptive table be printed?
+##' @param print.minmax [logical] should minimum and maximum values be displayed?
+##' @param print.spread [logical] should the spread of the values be displayed?
 ##' @param digit.frequency [integer, >=0] number of digit when printing frequencies.
 ##' @param digit.center [integer, >=0] number of digit when printing center parameters.
 ##' @param digit.spread [integer, >=0] number of digit when printing spread parameters.
@@ -164,6 +186,8 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
 ##' 
 ##' @export
 print.descriptiveTable <- function(x, print = TRUE,
+                                   print.minmax = TRUE,
+                                   print.spread = TRUE,
                                    digit.frequency = 2,
                                    digit.center = 2,
                                    digit.spread = 2,
@@ -180,12 +204,17 @@ print.descriptiveTable <- function(x, print = TRUE,
 
     ## ** rounding
     if("date" %in% name.type){
+        vec.value <- c("center","[min;max]","n.NA")
+        if(print.minmax == FALSE){
+            vec.value <- vec.value[vec.value!="[min;max]"]
+        }
+
         out$date <- data.table::copy(data.table::as.data.table(x[["date"]]))
         out$date[, c("center") := format(.SD[["center"]], format = format.date)]
         out$date[, c("min") := format(.SD[["min"]], format = format.date)]
         out$date[, c("max") := format(.SD[["max"]], format = format.date)]
         out$date[,c("[min;max]") := paste(" [",.SD$min,";",.SD$max,"]",sep="")]
-        out$date <- dcast(out$date, value.var = c("center","[min;max]","n.NA"), formula = variable ~ group)
+        out$date <- dcast(out$date, value.var = vec.value, formula = variable ~ group)
     }
     if("constant" %in% name.type){
         out$constant <- data.table::copy(data.table::as.data.table(x[["constant"]]))
@@ -199,13 +228,21 @@ print.descriptiveTable <- function(x, print = TRUE,
         out$categorical <- dcast(out$categorical, value.var = c("n","frequency"), formula = variable + level ~ group)        
     }
     if("continuous" %in% name.type){
+        vec.value <- c("center","spread","[min;max]","n.NA")
+        if(print.spread == FALSE){
+            vec.value <- vec.value[vec.value!="spread"]
+        }
+        if(print.minmax == FALSE){
+            vec.value <- vec.value[vec.value!="[min;max]"]
+        }
+               
         out$continuous <- data.table::copy(data.table::as.data.table(x[["continuous"]]))
         out$continuous[, c("center") := round(.SD[["center"]], digits = digit.center)]
         out$continuous[, c("min") := round(.SD[["min"]], digits = digit.center)]
         out$continuous[, c("max") := round(.SD[["max"]], digits = digit.center)]
         out$continuous[, c("spread") := paste0("(",round(.SD[["spread"]], digits = digit.center),")")]
         out$continuous[, c("[min;max]") := paste0("[",.SD[["min"]],";",.SD[["max"]],"]")]
-        out$continuous <- dcast(out$continuous, value.var = c("center","spread","[min;max]","n.NA"), formula = variable ~ group)        
+        out$continuous <- dcast(out$continuous, value.var = vec.value, formula = variable ~ group)        
     }
 
     ## ** rename according to center and scale
@@ -225,10 +262,9 @@ print.descriptiveTable <- function(x, print = TRUE,
             setnames(out$continuous, old = names(out$continuous), new = new.names)
         }
     }
-    
+
     ## ** print
     out.print <- vector(mode = "list", length = n.type)
-    
     if(print){
 
         for(iType in 1:n.type){

@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug 30 2017 (09:26) 
 ## Version: 
-## last-updated: nov  9 2018 (12:01) 
+## last-updated: jun 27 2019 (09:58) 
 ##           By: Brice Ozenne
-##     Update #: 97
+##     Update #: 108
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -31,7 +31,7 @@
 #' to be specified on the four sides of the plot (bottom, left, top, right).
 #' @param plot [logical] should the graphic be displayed?
 #' @param qq.type the function used to display the qqplot. Can be qqtest or qqnorm.
-#' @param centralPercents argument passed to \code{qqtest}. See the help of \code{\link{qqtest}}.
+#' @param centralPercents argument passed to \code{qqtest}. See the help of \code{qqtest}.
 #' @param ... additional arguments to be passed to qqtest.
 #' 
 #' @details 
@@ -67,7 +67,7 @@ qqplot2 <- function (object, ...) {
 qqplot2.lvmfit <- function(object, variables = NULL, residuals = NULL,
                            plot = TRUE, mfrow = NULL, mar = c(2,2,2,2),
                            qq.type = "qqtest", name.model = "", centralPercents = 0.95, ...){
-
+    
     ## ** prepare
     if(is.null(residuals)){
         residuals <- stats::predict(object, residual = TRUE)
@@ -199,6 +199,7 @@ qqplot2.multigroupfit <- function(object, residuals = NULL, name.model = NULL, p
                 graphics::plot(0,0, col = "white", axes = FALSE, xlab = "", ylab = "", main = iMain)
                 graphics::text(0,0,"all residuals < 1e-5")
             }else if(envir$qq.type == "qqtest"){
+                requireNamespace("qqtest")
                 qqtest::qqtest(resid, main = iMain,
                                centralPercents = envir$centralPercents,
                                ...)

@@ -4,14 +4,18 @@
 \alias{print.descriptiveTable}
 \title{Print Function for the Descriptive Table}
 \usage{
-\method{print}{descriptiveTable}(x, print = TRUE, digit.frequency = 2,
-  digit.center = 2, digit.spread = 2, format.date = "\%Y-\%m-\%d",
-  ...)
+\method{print}{descriptiveTable}(x, print = TRUE, print.minmax = TRUE,
+  print.spread = TRUE, digit.frequency = 2, digit.center = 2,
+  digit.spread = 2, format.date = "\%Y-\%m-\%d", ...)
 }
 \arguments{
 \item{x}{output of \code{descriptiveTable}.}
 
 \item{print}{[logical] should the descriptive table be printed?}
+
+\item{print.minmax}{[logical] should minimum and maximum values be displayed?}
+
+\item{print.spread}{[logical] should the spread of the values be displayed?}
 
 \item{digit.frequency}{[integer, >=0] number of digit when printing frequencies.}
 

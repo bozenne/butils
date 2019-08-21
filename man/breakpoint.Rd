@@ -5,7 +5,7 @@
 \title{Find One or Two Breakpoints}
 \usage{
 breakpoint(object, pattern = c("111", "101", "10", "11", "01"),
-  breakpoint.var = NULL, breakpoint.init = NULL, n.iter = 10,
+  breakpoint.var = NULL, breakpoint.init = NULL, n.iter = 25,
   tol = 0.001, n.init = 5, n.points = 5, trace = 2,
   digits = -log10(tol))
 }

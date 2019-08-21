@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 26 2018 (09:13) 
 ## Version: 
-## Last-Updated: sep 11 2018 (15:09) 
+## Last-Updated: mar  1 2019 (17:18) 
 ##           By: Brice Ozenne
-##     Update #: 234
+##     Update #: 282
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -96,7 +96,7 @@
 #' @rdname breakpoint
 #' @export
 breakpoint <- function(object, pattern = c("111","101","10","11","01"), breakpoint.var = NULL, breakpoint.init = NULL,
-                       n.iter = 10, tol = 1e-3, n.init = 5, n.points = 5,
+                       n.iter = 25, tol = 1e-3, n.init = 5, n.points = 5,
                        trace = 2, digits = -log10(tol)){
 
 
@@ -154,7 +154,7 @@ breakpoint <- function(object, pattern = c("111","101","10","11","01"), breakpoi
             stop("Argument \'breakpoint.init\' must be a list containing elements \"",paste(pattern, collapse = "\" \""),"\" \n")
         }
     }
-
+    
     ## ** compute breakpoints
     out <- vector(mode = "list", length = length(pattern))
     names(out) <- paste0("BP",pattern)
@@ -285,7 +285,7 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
         ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::ggtitle(label = title.txt)
         ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::theme(text = element_text(size = text.size))
 
-        if(pattern[which.min(object.BIC)]==iPattern){
+        if(names(object.BIC)[which.min(object.BIC)]==iPattern){
             ls.plot[[iPattern]] <- ls.plot[[iPattern]] + ggplot2::theme(plot.title = element_text(colour = "darkblue"))
         }
     }
@@ -321,6 +321,7 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
                    trace, digits){
 
     n.breakpoint <- nchar(pattern)-1
+    n.obs <- NROW(data)
     
     ## ** lvm model
     ## free flat free
@@ -363,7 +364,7 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
     
     ## ** loop over initializations points
     if(is.null(breakpoint.init)){
-                
+
         probs.breakpoint <- seq(0,1, length.out = n.init+2)[2:(n.init+1)]
         quantile.data <- quantile(data[[breakpoint.var]], probs = probs.breakpoint)
         breakpoint.init <- utils::combn(quantile.data, m = n.breakpoint)
@@ -484,7 +485,7 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
 
 }
 
-## * warperBP
+## * .warperBP
 .warperBP <- function(formula, data,
                       breakpoint.init, breakpoint.var, breakpoint.min, breakpoint.max, n.breakpoint,
                       coef.beta, coef.gamma, pattern,
@@ -497,24 +498,25 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
     }
     iBreakpoint <- breakpoint.init
     cv <- FALSE
-    
+
     for(iIter in 1:n.iter){
         iBreakpointM1 <- iBreakpoint
 
         ## ** update design
-        data[,c("Us") := (.SD[[1]]>iBreakpoint[1])*(.SD[[1]]-iBreakpoint[1]), .SDcols = breakpoint.var]
-        data[,c("Vs") := -as.numeric(.SD[[1]]>iBreakpoint[1]), .SDcols = breakpoint.var]
+        data <- .covariatesBP(data, breakpoint.var = breakpoint.var, breakpoint.value = iBreakpoint)
 
-        if(n.breakpoint>1){
-            data[,c("Us2") := (.SD[[1]]>iBreakpoint[2])*(.SD[[1]]-iBreakpoint[2]), .SDcols = breakpoint.var]
-            data[,c("Vs2") := -as.numeric(.SD[[1]]>iBreakpoint[2]), .SDcols = breakpoint.var]
+        ## ** estimate model coefficients
+        ## ebp <- lm(formula, data = data)
+        ebp <- lm(formula, data = data)
+        if(FALSE){ ## display
+            newdata <- .covariatesBP(data.table(time.num = seq(0,300)), breakpoint.var = breakpoint.var, breakpoint.value = iBreakpoint)
+            newdata$fitted <- predict(ebp, newdata = newdata)
+            plot(newdata$time.num, newdata$fitted, type = "b", ylim = range(data$score))
+            points(data$time.num, data$score, col = "red")
         }
         
-        ## ** estimate model coefficients
-        ebp <- lm(formula, data = data)
-        
         ## ** update breakpoint
-        coef.tempo <- summary(ebp)$coef[,"Estimate"]
+        coef.tempo <- coef(ebp)
         if(pattern=="101"){
             coef.tempo["Us"] <- -coef.tempo[paste0("I(",breakpoint.var," - Us)")]
         }else if(pattern == "10"){
@@ -568,6 +570,7 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
     test.continuity <- all(abs(coef.tempo[coef.gamma])<tol)
     
     return(list(model = ebp,
+                R2 = summary(ebp)$r.squared,
                 coef = coef.tempo,
                 breakpoint = iBreakpoint,
                 breakpoint.init = breakpoint.init,
@@ -575,6 +578,19 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
                 n.iter = n.iter,
                 cv = cv,
                 continuity = test.continuity))
+}
+
+## * .covariatesBP
+.covariatesBP <- function(data, breakpoint.var, breakpoint.value){
+    data <- data.table::copy(data)
+    data[,c("Us") := (.SD[[1]]>breakpoint.value[1])*(.SD[[1]]-breakpoint.value[1]), .SDcols = breakpoint.var]
+    data[,c("Vs") := -as.numeric(.SD[[1]]>breakpoint.value[1]), .SDcols = breakpoint.var]
+
+    if(length(breakpoint.value)>1){
+        data[,c("Us2") := (.SD[[1]]>breakpoint.value[2])*(.SD[[1]]-breakpoint.value[2]), .SDcols = breakpoint.var]
+        data[,c("Vs2") := -as.numeric(.SD[[1]]>breakpoint.value[2]), .SDcols = breakpoint.var]
+    }
+    return(data)
 }
 
 ######################################################################
