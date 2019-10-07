@@ -9,8 +9,8 @@
 addMatch(object, ...) <- value
 
 \method{addMatch}{butilsAccount}(object, involved = NULL,
-  date = as.Date(NA), shuttlecock = NULL, price.shuttlecock = 170/12,
-  refound = NULL, note = "", print.balance = TRUE,
+  date = as.Date(NA), shuttlecock = NULL, price.shuttlecock = 175/12,
+  refund = NULL, note = "", print.balance = TRUE,
   replace.entry = FALSE, ...) <- value
 }
 \arguments{
@@ -28,7 +28,7 @@ addMatch(object, ...) <- value
 
 \item{price.shuttlecock}{[numeric] the price of a single shuttlecock.}
 
-\item{refound}{[list] A named list indicating who has refounded who.}
+\item{refund}{[list] A named list indicating who has refunded who.}
 
 \item{note}{[character] additional text.}
 
