@@ -4,7 +4,7 @@
 \alias{procSummary}
 \title{Compute summary statistics}
 \usage{
-procSummary(formula, data, na.action = na.pass, na.rm = FALSE,
+procSummary(formula, data, na.action = stats::na.pass, na.rm = FALSE,
   which = c("observed", "missing", "mean", "sd", "min", "median", "max"))
 }
 \arguments{

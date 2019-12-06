@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: maj 26 2017 (13:56) 
 ## Version: 
-## last-updated: nov 18 2019 (10:38) 
+## last-updated: dec  6 2019 (18:33) 
 ##           By: Brice Ozenne
-##     Update #: 16
+##     Update #: 17
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -58,8 +58,8 @@ getSigmaGLS <- function(gls,
                         output = "matrix",
                         trace = 1){
     
-    BuyseTest::validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "getSigmaGLS")
-    BuyseTest::validCharacter(type, valid.values = c("correlation","covariance"), valid.length = 1, method = "getSigmaGLS")
+    validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "getSigmaGLS")
+    validCharacter(type, valid.values = c("correlation","covariance"), valid.length = 1, method = "getSigmaGLS")
     if(is.null(data)){
         data <- as.data.table(lavaSearch2::extractData(gls, design.matrix = FALSE))
     }

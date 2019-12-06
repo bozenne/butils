@@ -19,6 +19,8 @@ or the time/repetition variable and the grouping variable, e.g. ~ time|id.}
 \item{data}{[data.frame] dataset (in the long format) containing the observations.}
 
 \item{df}{[logical] Should the degree of freedom be computed using a Satterthwaite approximation?}
+
+\item{...}{passed to \code{nlme::gls}.}
 }
 \description{
 Fit a linear mixed model using either a compound symmetry structure or an unstructured covariance matrix.

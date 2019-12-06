@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: sep 16 2017 (23:42) 
 ## Version: 
-## last-updated: nov 18 2019 (10:49) 
+## last-updated: dec  6 2019 (18:32) 
 ##           By: Brice Ozenne
-##     Update #: 11
+##     Update #: 12
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -23,5 +23,10 @@ boot_boot.return <- get("boot.return", envir = asNamespace("boot"), inherits = F
 lavaSearch2_evalInParentEnv <- get("evalInParentEnv", envir = asNamespace("lavaSearch2"), inherits = FALSE)
 
 estimate.lvm <- get("estimate.lvm", envir = asNamespace("lava"), inherits = FALSE) ## needed for bootReg.lvm since estimate.lvm is saved in the call
+
+
+validCharacter <- get("validCharacter", envir = asNamespace("BuyseTest"), inherits = FALSE) 
+validNames <- get("validNames", envir = asNamespace("BuyseTest"), inherits = FALSE) 
+validPath <- get("validPath", envir = asNamespace("BuyseTest"), inherits = FALSE) 
 #----------------------------------------------------------------------
 ### onload.R ends here

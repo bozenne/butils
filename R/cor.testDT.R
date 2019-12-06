@@ -52,11 +52,11 @@ cor.testDT <- function(data, format,
                        reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
   
-    BuyseTest::validCharacter(format, valid.values = c("wide","long"), valid.length = 1, method = "cor.test.data.table")
-    BuyseTest::validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "cor.test.data.table")
-    BuyseTest::validNames(col.value, refuse.NULL = (format == "long"), valid.values = names(data))
+    validCharacter(format, valid.values = c("wide","long"), valid.length = 1, method = "cor.test.data.table")
+    validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "cor.test.data.table")
+    validNames(col.value, refuse.NULL = (format == "long"), valid.values = names(data))
     if(format == "long"){
-        BuyseTest::validNames(col.group, refuse.NULL = TRUE, valid.values = names(data))
+        validNames(col.group, refuse.NULL = TRUE, valid.values = names(data))
     }else if(!is.null(col.group)){
         warning("Argument \'col.group\' is ignored when argument \'format\' is set to \"wide\"\n")
     }

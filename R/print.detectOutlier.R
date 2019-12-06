@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: okt  5 2017 (10:15) 
 ## Version: 
-## last-updated: nov 18 2019 (10:39) 
+## last-updated: dec  6 2019 (18:33) 
 ##           By: Brice Ozenne
-##     Update #: 5
+##     Update #: 6
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -18,7 +18,7 @@
 ## * print.detectOutlier
 print.detectOutlier <- function(x, type = "value", ...){
   
-  BuyseTest::validCharacter(type, valid.length = 1, valid.values = c("value","index"), method = "print.detectOutlier")
+  validCharacter(type, valid.length = 1, valid.values = c("value","index"), method = "print.detectOutlier")
   
   if(x$type == "numeric"){
     cat.message <- "potential outliers: \n"

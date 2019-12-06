@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  6 2019 (15:49) 
 ## Version: 
-## Last-Updated: dec  6 2019 (18:18) 
+## Last-Updated: dec  6 2019 (18:30) 
 ##           By: Brice Ozenne
-##     Update #: 114
+##     Update #: 121
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -53,11 +53,9 @@
 ##' procSummary(Y1+Y2 ~ gender, data = d2)
 ##' procSummary(Y1+Y2 ~ gender, data = d2, na.rm = TRUE)
 ##' @export
-procSummary <- function(formula, data, na.action = na.pass, na.rm = FALSE,
+procSummary <- function(formula, data, na.action = stats::na.pass, na.rm = FALSE,
                      which = c("observed","missing","mean","sd","min","median","max")){
 
-    require(formula.tools)
-    
     ## ** check and normalize user imput
     valid.which <- c("observed","missing","mean","sd","min","median","max")
     
@@ -91,7 +89,7 @@ procSummary <- function(formula, data, na.action = na.pass, na.rm = FALSE,
     out <- NULL
     for(iY in 1:n.Y){ ## iY <- 1
         iFormula <- update(formula, paste0(name.Y[iY],"~."))
-        iAggregate <- aggregate(iFormula, data=data, function(x){
+        iAggregate <- stats::aggregate(iFormula, data=data, function(x){
             c("observed" = sum(!is.na(x)),
               "missing" = sum(is.na(x)),
               "mean" = mean(x, na.rm = na.rm),
@@ -105,9 +103,9 @@ procSummary <- function(formula, data, na.action = na.pass, na.rm = FALSE,
     }
 
     if(na.rm){
-        attr(out,"correlation") <- cor(data[,name.Y], use = "pairwise")
+        attr(out,"correlation") <- stats::cor(data[,name.Y], use = "pairwise")
     }else{
-        attr(out,"correlation") <- cor(data[,name.Y])
+        attr(out,"correlation") <- stats::cor(data[,name.Y])
     }
     
     ## ** export
@@ -129,6 +127,7 @@ procSummary <- function(formula, data, na.action = na.pass, na.rm = FALSE,
 ##' or the time/repetition variable and the grouping variable, e.g. ~ time|id.
 ##' @param data [data.frame] dataset (in the long format) containing the observations.
 ##' @param df [logical] Should the degree of freedom be computed using a Satterthwaite approximation?
+##' @param ... passed to \code{nlme::gls}.
 ##'  
 ##' @examples
 ##' ## simulate data in the wide format
@@ -234,8 +233,7 @@ lmm <- function(formula, covariance, data, df = FALSE, ...){
     ## ** small sample correction
     if(df){
         stop("not implemented yet!")
-        require(lavaSearch2)
-        sCorrect(e.lmm) <- TRUE
+        ## sCorrect(e.lmm) <- TRUE
     }
 
     ## ** export
@@ -313,10 +311,10 @@ summary.lmm <- function(object, digit = 3, conf.level = 0.95){
                         dimnames = list(c("variance","relative variance"),name.rep))
     if(!is.null(object$modelStruct$varStruct)){
         vec.varcoef <- coef(object$modelStruct$varStruct, unconstrained = FALSE)^2
-        M.varcoef[1,] <- sigma(object)^2*c(1,vec.varcoef)
+        M.varcoef[1,] <- stats::sigma(object)^2*c(1,vec.varcoef)
         M.varcoef[2,] <- c(1,vec.varcoef)
     }else{
-        M.varcoef[1,] <- sigma(object)^2
+        M.varcoef[1,] <- stats::sigma(object)^2
         M.varcoef[2,] <- 1
     }
     print(M.varcoef, digit = digit)
@@ -327,7 +325,7 @@ summary.lmm <- function(object, digit = 3, conf.level = 0.95){
     object2 <- object
     class(object2) <- setdiff(class(object2),"lmm")
     tTable <- summary(object2, verbose=FALSE)$tTable
-    starSymbol <- symnum(tTable[,4], corr = FALSE, na = FALSE,
+    starSymbol <- stats::symnum(tTable[,4], corr = FALSE, na = FALSE,
                          cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
                          symbols = c("***", "**", "*", ".", " "))
     tTable <- data.frame(tTable[,1], nlme::intervals(object, which = "coef", level = conf.level)$coef[,c("lower","upper")],tTable[,2:4],starSymbol)
