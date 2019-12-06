@@ -1,7 +1,7 @@
 Package: butils
 Type: Package
 Title: Various useful functions
-Version: 1.4
+Version: 1.4.1
 Authors@R: c(
     person("Brice", "Ozenne", role = c("aut", "cre"), email = "brice.mh.ozenne@gmail.com", comment = c(ORCID = "0000-0001-9694-2956")))
 Description: Miscellaneous functions for working in R.
@@ -12,9 +12,12 @@ Depends:
     data.table,
     ggplot2
 Imports:
-    boot,	
+    boot,
+	BuyseTest,
     doSNOW,
     foreach,
+	formula.tools,
+    lavaSearch2,
     MASS,
     Matrix,
     methods,
@@ -31,7 +34,6 @@ Suggests:
     gridExtra,
 	gstat,
     heplots,
-    lavaSearch2,
     lme4,
     merTools,
     mgcv,

@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug  8 2017 (14:03) 
 ## Version: 
-## last-updated: jan 19 2018 (16:43) 
+## last-updated: nov 18 2019 (10:27) 
 ##           By: Brice Ozenne
-##     Update #: 103
+##     Update #: 104
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -101,9 +101,9 @@ calcR2 <- function(model, data = NULL, trace = FALSE){
     
     ff <- formula(model)
     if(is.null(data)){
-      data <- as.data.table(extractData(model, design.matrix = FALSE))
+      data <- as.data.table(lavaSearch2::extractData(model, design.matrix = FALSE))
     }else{
-      data <- copy(as.data.table(data))
+      data <- copy(data.table::as.data.table(data))
     }
     n <- NROW(data)
     

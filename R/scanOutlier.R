@@ -93,7 +93,7 @@ numOutlier <- function(x, type = "auto",
                        th.gaussian = 3, th.hampel = 3, th.boxplot = 1.5, 
                        na.rm = FALSE){
   
-  validCharacter(type, valid.values = c("gaussian", "hampel", "boxplot", "auto"), valid.length = 1)
+  BuyseTest::validCharacter(type, valid.values = c("gaussian", "hampel", "boxplot", "auto"), valid.length = 1)
   if(type == "auto"){
     if(stats::mad(x, na.rm = na.rm) == 0){type <- "boxplot"}else{type <- "hampel"}
   }

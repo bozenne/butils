@@ -146,7 +146,7 @@ ggSurv.coxph <- function(object, data = NULL, newdata = NULL, confint = FALSE, .
     . <- strata <- NULL
 
     ## extract the data used to fit the model
-    object.data <- extractData(object, design.matrix = TRUE)
+    object.data <- lavaSearch2::extractData(object, design.matrix = TRUE)
 
     ## find all strata in the original object
     coxInfo <- riskRegression::coxVariableName(object,
@@ -301,13 +301,13 @@ ggSurv.data.table <- function(object, format = "data.table",
   }
   
   ## check object
-  validCharacter(value1 = var.time, name1 = "var.time", valid.length = 1, valid.values = object.name, method = "ggSurv.dt")
-  validCharacter(value1 = var.survival, name1 = "var.survival", valid.length = 1, valid.values = object.name, method = "ggSurv.dt")
-  validCharacter(value1 = var.ci.inf, name1 = "var.ci.inf", valid.length = 1, refuse.NULL = confint, valid.values = object.name, method = "ggSurv.dt")
-  validCharacter(value1 = var.ci.sup, name1 = "var.ci.sup", valid.length = 1, refuse.NULL = confint, valid.values = object.name, method = "ggSurv.dt")
-  validCharacter(value1 = var.event, name1 = "var.event", valid.length = 1, refuse.NULL = events, valid.values = object.name, method = "ggSurv.dt")
-  validCharacter(value1 = var.censor, name1 = "var.censor", valid.length = 1, refuse.NULL = censoring, valid.values = object.name, method = "ggSurv.dt")
-  validCharacter(value1 = var.strata, name1 = "var.strata", valid.length = 1, refuse.NULL = FALSE, valid.values = object.name, method = "ggSurv.dt")
+  BuyseTest::validCharacter(value1 = var.time, name1 = "var.time", valid.length = 1, valid.values = object.name, method = "ggSurv.dt")
+  BuyseTest::validCharacter(value1 = var.survival, name1 = "var.survival", valid.length = 1, valid.values = object.name, method = "ggSurv.dt")
+  BuyseTest::validCharacter(value1 = var.ci.inf, name1 = "var.ci.inf", valid.length = 1, refuse.NULL = confint, valid.values = object.name, method = "ggSurv.dt")
+  BuyseTest::validCharacter(value1 = var.ci.sup, name1 = "var.ci.sup", valid.length = 1, refuse.NULL = confint, valid.values = object.name, method = "ggSurv.dt")
+  BuyseTest::validCharacter(value1 = var.event, name1 = "var.event", valid.length = 1, refuse.NULL = events, valid.values = object.name, method = "ggSurv.dt")
+  BuyseTest::validCharacter(value1 = var.censor, name1 = "var.censor", valid.length = 1, refuse.NULL = censoring, valid.values = object.name, method = "ggSurv.dt")
+  BuyseTest::validCharacter(value1 = var.strata, name1 = "var.strata", valid.length = 1, refuse.NULL = FALSE, valid.values = object.name, method = "ggSurv.dt")
   
   ## normalize object
   object <- object[,.SD, .SDcols = c(var.time,var.survival,var.ci.inf,var.ci.sup, var.event, var.censor, var.strata)]

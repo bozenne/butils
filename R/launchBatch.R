@@ -40,8 +40,8 @@ launchBatch <- function(file, path = ".", dirBatch = NULL,
     stop("Unknown OS")
   }
 
-  validPath(path, type = "dir", method = "launchBatch")
-  validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
+  BuyseTest::validPath(path, type = "dir", method = "launchBatch")
+  BuyseTest::validPath(file.path(path, file), type = "file", method = "launchBatch", extension = c("r","R"))
 
   #### analyse file path
   fileName <- tools::file_path_sans_ext(file)

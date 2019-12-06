@@ -132,7 +132,7 @@ calcPartialResiduals <- function(model,var,
     FUN.formula <- function(model){
       ff <- try(formula(terms(model)), silent = TRUE)
       if("try-error" %in% class(ff)){
-        ff <- evalInParentEnv(model$call[[2]])
+        ff <- lavaSearch2_evalInParentEnv(model$call[[2]])
       }
       
       if("formula" %in% class(ff) == FALSE){
@@ -146,7 +146,7 @@ calcPartialResiduals <- function(model,var,
 
     interval <- match.arg(interval, c("confidence","prediction"))
 
-    design.df <- as.data.table(extractData(model, design.matrix = FALSE))
+    design.df <- as.data.table(lavaSearch2::extractData(model, design.matrix = FALSE))
     
     design.numeric <- sapply(design.df, is.numeric)
     design.factor <- sapply(design.df, is.factor)
