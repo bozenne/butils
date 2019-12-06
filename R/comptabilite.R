@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: apr  9 2018 (08:01) 
+## Last-Updated: okt  7 2019 (22:04) 
 ##           By: Brice Ozenne
-##     Update #: 474
+##     Update #: 525
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -154,7 +154,7 @@ createAccount <- function(nickName = NULL){
     test.paid <- !is.null(who.paid)
 
     if("character" %in% class(date)){
-        date <- as.Date(date)
+        date <- as.Date(date, c("%d-%m-%Y"))
         if(is.na(date)){
             stop("Could not convert the characters encoding the date to the Date format \n")
         }
@@ -205,10 +205,16 @@ createAccount <- function(nickName = NULL){
 
     }
 
-    ### ** prepare
+
+### ** prepare
     
     ### *** payment
     all.involved <- union(involved, who.paid)
+    if(any(all.involved %in% names(object$nickName) == FALSE)){
+        txt <- all.involved[all.involved %in% names(object$nickName) == FALSE]
+        stop("User",if(length(txt)>1){"s"}," \"",paste(txt, collapse = "\" \""),"\" not registered \n")
+    }
+
     vec.paid <- rep(0, length(all.involved))
 
     if(test.paid){
@@ -254,12 +260,16 @@ createAccount <- function(nickName = NULL){
                            type = type,
                            label = label,
                            id.entry = id.entry)
-
-    newtable[, c("total.cost","n.participant","participant.cost") := 0]
-    newtable[newtable$name %in% involved, "total.cost" := cost]
-    newtable[newtable$name %in% involved, "n.participant" := .N]
-    newtable[newtable$name %in% involved, "participant.cost" := .SD$total.cost/.SD$n.participant]
-
+    setkeyv(newtable, "name")
+    
+    newtable[, c("total.cost","n.participant","participant.cost","weight") := 0]
+    n.involved <- table(involved)
+    if(length(n.involved)>0){
+        newtable[names(n.involved), "weight" := as.numeric(n.involved)]
+        newtable[, "total.cost" := cost]
+        newtable[, "n.participant" := length(involved)]
+        newtable[, "participant.cost" := .SD$total.cost*.SD$weight/.SD$n.participant]
+    }
     object$table <- rbind(object$table,
                           newtable)
 
@@ -277,7 +287,7 @@ createAccount <- function(nickName = NULL){
 #' @param date [date] the date at which the activity happen.
 #' @param shuttlecock [interger > 0] the number of shuttlecock used.
 #' @param price.shuttlecock [numeric] the price of a single shuttlecock.
-#' @param refound [list] A named list indicating who has refounded who.
+#' @param refund [list] A named list indicating who has refunded who.
 #' @param note [character] additional text.
 #' @param value [numeric] a named vector describing name paid what.
 #' @param print.balance [logical] should the balance for the match be displayed.
@@ -290,13 +300,21 @@ createAccount <- function(nickName = NULL){
 #'
 #' #### Ease input with short names ####
 #' addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
-#'                            "Sebastian Holst" = c("Seb","Sebastian"))
+#'                            "Sebastian Holst" = c("Seb","Sebastian"),
+#'                            "Thomas S" = "Thomas")
 #'
 #' #### Add a single - no shuttlecock ####
 #' addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+#' addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian","Sebastian")) <- c("Sebastian" = 200)
 #' addMatch(myAcc, date = "15-06-17", shuttlecock = 5, 
-#'                 involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+#'                 involved = c("Brice","Sebastian")) <- c("Thomas" = 200)
 #'
+#' addActivity(myAcc,
+#'            label = "Shuttlecock-Brice",
+#'            date = as.Date("18-01-13"),
+#'            note = "shuttlecock (1 tube)",
+#'            type = "Buy-Shuttlecock") <- c("Brice" = 170)
+#' 
 #' @export
 `addMatch<-` <-
     function(object, ..., value) UseMethod("addMatch<-")
@@ -307,8 +325,8 @@ createAccount <- function(nickName = NULL){
                                        involved = NULL,
                                        date = as.Date(NA),
                                        shuttlecock = NULL,
-                                       price.shuttlecock = 170/12,
-                                       refound = NULL,
+                                       price.shuttlecock = 175/12,
+                                       refund = NULL,
                                        note = "",
                                        print.balance = TRUE,
                                        replace.entry = FALSE,
@@ -316,13 +334,16 @@ createAccount <- function(nickName = NULL){
                                        value){
 
     if("character" %in% class(date)){
-        date <- as.Date(date)
+        date <- as.Date(date, c("%d-%m-%Y"))
         if(is.na(date)){
             stop("Could not convert the characters encoding the date to the Date format \n")
         }
     }
+
     n.involved <- length(involved)
-    if(n.involved==2){
+    if(n.involved==1){
+        type <- "single"
+    }else if(n.involved==2){
         type <- "single"
     }else if(n.involved == 3){
         type <- "double"
@@ -355,14 +376,14 @@ createAccount <- function(nickName = NULL){
                     label = newlabel,
                     type = "Shuttlecock") <- shuttlecock*price.shuttlecock
     }
-    if(!is.null(refound)){
-        n.refound <- length(refound)
-        for(iRefound in 1:n.refound){
+    if(!is.null(refund)){
+        n.refund <- length(refund)
+        for(iRefund in 1:n.refund){
             addActivity(object,
-                        involved = names(refound)[iRefound],
+                        involved = names(refund)[iRefund],
                         date = date,
                         label = newlabel,
-                        type = "Refound") <- refound[[iRefound]]
+                        type = "Refund") <- refund[[iRefund]]
         }        
     }
 
@@ -376,6 +397,9 @@ createAccount <- function(nickName = NULL){
     
     return(object)
 }
+
+
+
 ## * summary/print
 #' @title Summarizing an account.
 #' @description Summarizing an account.
@@ -403,27 +427,34 @@ print.butilsAccount <- function(x, ...){
 #' @export
 summary.butilsAccount <- function(object,
                                   print = TRUE,
+                                  print.title = TRUE,
                                   detail = 0:2,
                                   keep.cols = c("paid","date","type","total.cost","participant.cost"),
                                   digit = 1,
                                   ...){
 
     balance <- label <- paid <- spent <- NULL ## [:CRAN checks] data.table
-    
-    ### ** Count
+
+    ## ** Count
     if(!is.null(object$table)){
-        text.cat <- "#### balance ####\n"
+        if(print.title){
+            text.cat <- "#### balance ####\n"
+        }else{
+            text.cat <- ""
+        }
         
         balance.print <- object$table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.cost)),
                                       by = "name",
                                       .SDcols = c("paid","participant.cost")]
+        balance.print <- rbind(balance.print,
+                               c(name = "Shuttlecock", object$table[type=="Shuttlecock",.(paid = sum(.SD$paid), spent = sum(.SD$participant.cost))])
+                               )
         balance.print[, c("balance") :=  .SD$paid - .SD$spent,
                       .SDcols = c("paid","spent")]
-
+               
         setkeyv(object$table, c("date","id.entry"))
         tempo1 <- object$table[,list(list(.SD)), .SDcols = keep.cols, by = "name"]
         detail1.print <- setNames(tempo1[[2]],tempo1[[1]])
-
         setkeyv(object$table, c("label", "paid"))
 
         Ulab <- as.character(object$table[,1,by="label"][,label])
@@ -459,7 +490,7 @@ summary.butilsAccount <- function(object,
                 cat("\n\n")
             }
             
-            cat("#### detail of the spending by individual ####")
+            if(print.title){cat("#### detail of the spending by individual ####")}
             detail1.print <- lapply(detail1.print, as.data.frame)
             for(iName in names(detail1.print)){
                 cat("\n ")
@@ -477,7 +508,7 @@ summary.butilsAccount <- function(object,
                 cat("\n\n")
             }
             
-            cat("#### detail of the spending by activity ####")
+            if(print.title){cat("#### detail of the spending by activity ####")}
             detail2.print <- lapply(detail2.print, as.data.frame)
             for(iAct in names(detail2.print)){
                 cat("\n ")

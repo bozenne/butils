@@ -9,8 +9,8 @@
 addMatch(object, ...) <- value
 
 \method{addMatch}{butilsAccount}(object, involved = NULL,
-  date = as.Date(NA), shuttlecock = NULL, price.shuttlecock = 170/12,
-  refound = NULL, note = "", print.balance = TRUE,
+  date = as.Date(NA), shuttlecock = NULL, price.shuttlecock = 175/12,
+  refund = NULL, note = "", print.balance = TRUE,
   replace.entry = FALSE, ...) <- value
 }
 \arguments{
@@ -28,7 +28,7 @@ addMatch(object, ...) <- value
 
 \item{price.shuttlecock}{[numeric] the price of a single shuttlecock.}
 
-\item{refound}{[list] A named list indicating who has refounded who.}
+\item{refund}{[list] A named list indicating who has refunded who.}
 
 \item{note}{[character] additional text.}
 
@@ -45,11 +45,19 @@ myAcc <- createAccount()
 
 #### Ease input with short names ####
 addNickName(myAcc) <- list("Brice Ozenne" = "Brice",
-                           "Sebastian Holst" = c("Seb","Sebastian"))
+                           "Sebastian Holst" = c("Seb","Sebastian"),
+                           "Thomas S" = "Thomas")
 
 #### Add a single - no shuttlecock ####
 addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+addMatch(myAcc, date = "12-06-2017", involved = c("Brice","Sebastian","Sebastian")) <- c("Sebastian" = 200)
 addMatch(myAcc, date = "15-06-17", shuttlecock = 5, 
-                involved = c("Brice","Sebastian")) <- c("Sebastian" = 200)
+                involved = c("Brice","Sebastian")) <- c("Thomas" = 200)
+
+addActivity(myAcc,
+           label = "Shuttlecock-Brice",
+           date = as.Date("18-01-13"),
+           note = "shuttlecock (1 tube)",
+           type = "Buy-Shuttlecock") <- c("Brice" = 170)
 
 }
