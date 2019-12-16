@@ -13,16 +13,15 @@ Depends:
     ggplot2
 Imports:
     boot,
-	BuyseTest,
+    BuyseTest,
     doSNOW,
     foreach,
-	formula.tools,
     lavaSearch2,
     MASS,
     Matrix,
     methods,
     nlme,
-	grDevices,
+    grDevices,
     snow,
     stats,
     tools,

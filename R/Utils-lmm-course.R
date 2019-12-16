@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  6 2019 (15:49) 
 ## Version: 
-## Last-Updated: dec  6 2019 (18:30) 
+## Last-Updated: dec  8 2019 (22:43) 
 ##           By: Brice Ozenne
-##     Update #: 121
+##     Update #: 124
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -73,15 +73,15 @@ procSummary <- function(formula, data, na.action = stats::na.pass, na.rm = FALSE
              "Variable(s) \"",paste(invalid, collapse = "\" \""),"\" could not be found in the dataset. \n",
              sep = "")
     }
-    
-    name.Y <- formula.tools::lhs.vars(formula)
+
+    name.Y <- lhs.vars(formula)
     n.Y <- length(name.Y)
     if(n.Y==0){
         stop("Wrong specification of argument \'formula\'. \n",
              "there need to be at least one variable in the left hand side of the formula. \n")
     }
     
-    name.X <- formula.tools::rhs.vars(formula)
+    name.X <- rhs.vars(formula)
     n.X <- length(name.Y)
 
     
@@ -181,7 +181,7 @@ lmm <- function(formula, covariance, data, df = FALSE, ...){
         stop("Argument \'covariance\' must be of class formula. \n",
              "Shoud be something like: ~ 1|id (compound symmetry) or ~ time|id (unstructured). \n")
     }
-    if(length(formula.tools::lhs.vars(covariance))!=0){
+    if(length(lhs.vars(covariance))!=0){
         stop("Incorrect specification of argument \'covariance\'. \n",
              "Should not have any variable on the left hand side. \n",
              "Shoud be something like: ~ 1|id (compound symmetry) or ~ time|id (unstructured). \n")
@@ -346,6 +346,92 @@ summary.lmm <- function(object, digit = 3, conf.level = 0.95){
                           variance = M.varcoef,
                           mean = tTable)))
 }
+
+## * From the package formula.tools (in conflit with lava)
+# -----------------------------------------------------------------------------
+# lhs.vars
+# -----------------------------------------------------------------------------
+
+#' @aliases lhs.vars
+#' @rdname get.vars
+
+setGeneric( 'lhs.vars', function(x, ... ) standardGeneric( 'lhs.vars' ) )
+
+#' @rdname get.vars
+#' @aliases .lhs.vars 
+.lhs.vars <- function(x, ..., data=NULL) 
+{
+  if( 
+      class( x[[1]] )   == 'name' &&
+      deparse( x[[1]] ) %in% operators() 
+  ) {
+    get.vars( lhs(x), ..., data=data ) 
+  } else {
+    warning( "There is no relational operator defined for ", deparse(x)  )
+  }
+
+}
+
+
+#' @rdname get.vars
+#' @aliases lhs.vars,formula-method
+setMethod( 'lhs.vars' , 'formula', .lhs.vars )
+
+#' @rdname get.vars
+#' @aliases lhs.vars,call-method
+setMethod( 'lhs.vars' , 'call'   , .lhs.vars )
+
+#' @rdname get.vars
+#' @aliases lhs.vars,expression-method
+setMethod( 'lhs.vars' , 'expression', function(x,...) lapply(x, .lhs.vars, ...))
+
+# -----------------------------------------------------------------------------
+# rhs.vars
+# -----------------------------------------------------------------------------
+
+#' @rdname get.vars
+#' @aliases rhs.vars
+setGeneric( 'rhs.vars', function(x, ... ) standardGeneric( 'rhs.vars' ) )
+
+#' @rdname get.vars
+#' @aliases .rhs.vars
+.rhs.vars <- 
+  function(x, ..., data=NULL) 
+  {
+    if( 
+        class( x[[1]] )   == 'name' &&
+        deparse( x[[1]] ) %in% operators()  
+    ) {
+  
+      term.rhs <- terms( x, data=data, ... ) 
+      labels   <- attr( term.rhs, 'term.labels' )
+      order    <- attr( term.rhs, 'order' )
+      vars.rhs <- labels[ order == 1 ]
+  
+      vars.rhs
+  
+    } else {
+      warning( "There is no relational operator defined for ", deparse(x)  )
+    }
+  
+  }
+
+
+
+
+
+#' @rdname get.vars
+#' @aliases rhs.vars,formula-method
+setMethod( 'rhs.vars' , 'formula', .rhs.vars )
+
+#' @rdname get.vars
+#' @aliases rhs.vars,call-method
+setMethod( 'rhs.vars' , 'call'   , .rhs.vars )
+
+#' @rdname get.vars
+#' @aliases rhs.vars,expression-method
+setMethod( 'rhs.vars' , 'expression', function(x,...) lapply(x, rhs.vars, ...))
+
 
 ######################################################################
 ### Utils-lmm-course.R ends here

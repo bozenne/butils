@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: sep 16 2017 (23:42) 
 ## Version: 
-## last-updated: dec  6 2019 (18:32) 
+## last-updated: dec  8 2019 (22:29) 
 ##           By: Brice Ozenne
-##     Update #: 12
+##     Update #: 13
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -26,6 +26,7 @@ estimate.lvm <- get("estimate.lvm", envir = asNamespace("lava"), inherits = FALS
 
 
 validCharacter <- get("validCharacter", envir = asNamespace("BuyseTest"), inherits = FALSE) 
+validLogical <- get("validLogical", envir = asNamespace("BuyseTest"), inherits = FALSE) 
 validNames <- get("validNames", envir = asNamespace("BuyseTest"), inherits = FALSE) 
 validPath <- get("validPath", envir = asNamespace("BuyseTest"), inherits = FALSE) 
 #----------------------------------------------------------------------
