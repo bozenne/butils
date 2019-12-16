@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: okt  7 2019 (22:04) 
+## Last-Updated: dec 16 2019 (22:41) 
 ##           By: Brice Ozenne
-##     Update #: 525
+##     Update #: 540
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -103,7 +103,7 @@ createAccount <- function(nickName = NULL){
 #' @param object the account.
 #' @param involved [vector of characters] who was involved in the activity?
 #' @param type [character] the name of the activity.
-#' @param date [date] the date at which the activity happen.
+#' @param date [date, %d-%m-%Y] the date at which the activity happen.
 #' @param note [character] additional text.
 #' @param value [numeric] a named vector describing name paid what.
 #' @param label [label] a label associated with the activity. When
@@ -411,6 +411,8 @@ createAccount <- function(nickName = NULL){
 #' @param detail [logical] should the balance per individual (1) and by activity (2) be displayed.
 #' @param keep.cols [character vector] the columns to be displayed in the detail.
 #' @param digit [integer] the number of decimal to be displayed.
+#' @param start [date, %d-%m-%Y] define the start of the period where the balance should be computed.
+#' @param stop [date, %d-%m-%Y] define the end of the period where the balance should be computed.
 #' @param ... ignored
 #' 
 
@@ -431,6 +433,8 @@ summary.butilsAccount <- function(object,
                                   detail = 0:2,
                                   keep.cols = c("paid","date","type","total.cost","participant.cost"),
                                   digit = 1,
+                                  start = NULL,
+                                  stop = NULL,
                                   ...){
 
     balance <- label <- paid <- spent <- NULL ## [:CRAN checks] data.table
@@ -442,27 +446,43 @@ summary.butilsAccount <- function(object,
         }else{
             text.cat <- ""
         }
+        object.table <- object$table
+
+        if(!is.null(start)){
+            if(!inherits(start,"Date")){
+                start <- as.Date(start, c("%d-%m-%Y"))
+            }
+            object.table <- object.table[object.table$date>=start]
+        }
+        if(!is.null(stop)){
+            if(!inherits(stop,"Date")){
+                start <- as.Date(stop, c("%d-%m-%Y"))
+            }
+            object.table <- object.table[object.table$date<=stop]
+        }
         
-        balance.print <- object$table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.cost)),
+        balance.print <- object.table[,list(paid = sum(.SD$paid), spent = sum(.SD$participant.cost)),
                                       by = "name",
                                       .SDcols = c("paid","participant.cost")]
-        balance.print <- rbind(balance.print,
-                               c(name = "Shuttlecock", object$table[type=="Shuttlecock",.(paid = sum(.SD$paid), spent = sum(.SD$participant.cost))])
-                               )
+        if("Shuttlecock" %in% object.table$type){
+            balance.print <- rbind(balance.print,
+                                   c(name = "Shuttlecock", object.table[type=="Shuttlecock",.(paid = sum(.SD$paid), spent = sum(.SD$participant.cost))])
+                                   )
+        }
         balance.print[, c("balance") :=  .SD$paid - .SD$spent,
                       .SDcols = c("paid","spent")]
                
-        setkeyv(object$table, c("date","id.entry"))
-        tempo1 <- object$table[,list(list(.SD)), .SDcols = keep.cols, by = "name"]
+        setkeyv(object.table, c("date","id.entry"))
+        tempo1 <- object.table[,list(list(.SD)), .SDcols = keep.cols, by = "name"]
         detail1.print <- setNames(tempo1[[2]],tempo1[[1]])
-        setkeyv(object$table, c("label", "paid"))
+        setkeyv(object.table, c("label", "paid"))
 
-        Ulab <- as.character(object$table[,1,by="label"][,label])
+        Ulab <- as.character(object.table[,1,by="label"][,label])
         n.label <- length(Ulab)
         detail2.print <- vector(mode = "list", length = n.label)
         names(detail2.print) <- Ulab
         for(iLab in 1:n.label){ ## iLab <- 1  
-            detail2.print[[Ulab[iLab]]] <- object$table[label == Ulab[iLab],.SD[1], .SDcols = setdiff(keep.cols, "paid"), by = "id.entry"]                   
+            detail2.print[[Ulab[iLab]]] <- object.table[label == Ulab[iLab],.SD[1], .SDcols = setdiff(keep.cols, "paid"), by = "id.entry"]                   
         }
     }else{
         text.cat <- "the account is empty \n"
@@ -473,8 +493,6 @@ summary.butilsAccount <- function(object,
     }
     
     ### ** Display
-
-    
     if(!is.null(detail)){
         if(0 %in% detail){
             cat(text.cat)
