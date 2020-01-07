@@ -5,13 +5,13 @@
 ##' @name calcPartialResiduals
 ##' 
 ##' @param model Model object (e.g. \code{lm})
-##' @param var Variable relative to which the partial residual will be displayed.
-##' @param keep.intercept should the partial residual be computed keeping the contribution of the reference level?
-##' @param conditional are the predictions conditional to the random effect? (if any)
-##' @param interval Type of interval calculation ("confidence" or "prediction").
-##' @param level Level of confidence limits (default 95\%)
-##' @param npoints Length of the vector of unique values relative to each continuous variable.
-##' @param quantile.range the quantiles (for the continous covariates) between which the fitted values will be computed.
+##' @param var [character] Independent variable(s) whose effect should be kept in the partial residuals.
+##' @param keep.intercept [logical] should the partial residual be computed keeping the contribution of the reference level?
+##' @param conditional [logical] are the predictions conditional to the random effect? (if any)
+##' @param interval [character] Type of interval calculation ("confidence" or "prediction").
+##' @param level [numeric, 0-1] Level of confidence limits (default 95\%)
+##' @param npoints [integer] Length of the vector of unique values relative to each continuous variable.
+##' @param quantile.range [numeric vector, 0-1] the quantiles (for the continous covariates) between which the fitted values will be computed.
 ##' @param FUN.df Optional function returning the residual degree of freedoms.
 ##' @param \dots additional arguments to lower level functions
 ##' 
@@ -23,6 +23,7 @@
 ##' or
 ##' \deqn{\varepsilon_{X} = \alpha + \beta X + \varepsilon}
 ##' depending on the value of the argument \code{keep.intercept}.
+##' The X matrix is defined contains the variables defined by the \code{var} argument.
 ##' 
 ##' When using mixed models, the confidence and prediction intervals
 ##' ignore the uncertainty of the covariance parameters.
@@ -45,9 +46,18 @@
 ##' d <- lava::sim(n = 1e2, m.lvm)
 ##'  
 ##' m <- lm(Y~X1+X2, data = d)
-##' pres1 <- calcPartialResiduals(m, var = "X1")
-##' pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
+##' pres0 <- calcPartialResiduals(m, var = NULL)
+##' range(residuals(m) - pres0$data$pResiduals)
 ##'
+##' pres1 <- calcPartialResiduals(m, var = "X1")
+##' fit1 <- coef(m)["(Intercept)"] + coef(m)["X2"] * d$X2
+##' range((d$Y - fit1) - pres1$data$pResiduals)
+##' cor(d$X1, pres1$data$pResiduals)
+##' lava::partialcor(~X2,d[,c("Y","X1","X2")])
+##'
+##' pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
+##' fit2 <- coef(m)["(Intercept)"]
+##' range((d$Y - fit2) - pres2$data$pResiduals)
 ##' 
 ##' @keywords regression
 
