@@ -33,9 +33,9 @@ test_that("extractData (gls/lme/lmer)", {
 
 library(lava)
 test_that("extractData (lvm)", {
-  e <- estimate(lvm(Y ~ G), data = df.sim)
-  expect_named(extractData(e, design.matrix = TRUE),
-               expected = c("Y","G"))
+    e <- estimate(lvm(Y ~ G), data = df.sim)
+    expect_named(extractData(e, design.matrix = TRUE),
+                 expected = c("Y","G"))
 })
 
 
