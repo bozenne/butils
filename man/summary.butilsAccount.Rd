@@ -9,7 +9,8 @@
 
 \method{summary}{butilsAccount}(object, print = TRUE,
   print.title = TRUE, detail = 0:2, keep.cols = c("paid", "date",
-  "type", "total.cost", "participant.cost"), digit = 1, ...)
+  "type", "total.cost", "participant.cost"), digit = 1, start = NULL,
+  stop = NULL, ...)
 }
 \arguments{
 \item{x}{an object of class butilsAccount.}
@@ -25,6 +26,10 @@
 \item{keep.cols}{[character vector] the columns to be displayed in the detail.}
 
 \item{digit}{[integer] the number of decimal to be displayed.}
+
+\item{start}{[date, d-m-Y] define the start of the period where the balance should be computed.}
+
+\item{stop}{[date, d-m-Y] define the end of the period where the balance should be computed.}
 }
 \description{
 Summarizing an account.

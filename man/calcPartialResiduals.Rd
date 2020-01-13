@@ -11,19 +11,19 @@ calcPartialResiduals(model, var, keep.intercept = FALSE,
 \arguments{
 \item{model}{Model object (e.g. \code{lm})}
 
-\item{var}{Variable relative to which the partial residual will be displayed.}
+\item{var}{[character] Independent variable(s) whose effect should be kept in the partial residuals.}
 
-\item{keep.intercept}{should the partial residual be computed keeping the contribution of the reference level?}
+\item{keep.intercept}{[logical] should the partial residual be computed keeping the contribution of the reference level?}
 
-\item{conditional}{are the predictions conditional to the random effect? (if any)}
+\item{conditional}{[logical] are the predictions conditional to the random effect? (if any)}
 
-\item{interval}{Type of interval calculation ("confidence" or "prediction").}
+\item{interval}{[character] Type of interval calculation ("confidence" or "prediction").}
 
-\item{level}{Level of confidence limits (default 95\%)}
+\item{level}{[numeric, 0-1] Level of confidence limits (default 95\%)}
 
-\item{npoints}{Length of the vector of unique values relative to each continuous variable.}
+\item{npoints}{[integer] Length of the vector of unique values relative to each continuous variable.}
 
-\item{quantile.range}{the quantiles (for the continous covariates) between which the fitted values will be computed.}
+\item{quantile.range}{[numeric vector, 0-1] the quantiles (for the continous covariates) between which the fitted values will be computed.}
 
 \item{FUN.df}{Optional function returning the residual degree of freedoms.}
 
@@ -48,6 +48,7 @@ The partial residuals are defined by:
 or
 \deqn{\varepsilon_{X} = \alpha + \beta X + \varepsilon}
 depending on the value of the argument \code{keep.intercept}.
+The X matrix is defined contains the variables defined by the \code{var} argument.
 
 When using mixed models, the confidence and prediction intervals
 ignore the uncertainty of the covariance parameters.
@@ -60,9 +61,18 @@ categorical(m.lvm, K = 5) <- ~Id+Id2
 d <- lava::sim(n = 1e2, m.lvm)
  
 m <- lm(Y~X1+X2, data = d)
-pres1 <- calcPartialResiduals(m, var = "X1")
-pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
+pres0 <- calcPartialResiduals(m, var = NULL)
+range(residuals(m) - pres0$data$pResiduals)
 
+pres1 <- calcPartialResiduals(m, var = "X1")
+fit1 <- coef(m)["(Intercept)"] + coef(m)["X2"] * d$X2
+range((d$Y - fit1) - pres1$data$pResiduals)
+cor(d$X1, pres1$data$pResiduals)
+lava::partialcor(~X2,d[,c("Y","X1","X2")])
+
+pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
+fit2 <- coef(m)["(Intercept)"]
+range((d$Y - fit2) - pres2$data$pResiduals)
 
 }
 \seealso{

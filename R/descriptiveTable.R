@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: maj  8 2019 (17:56) 
+## Last-Updated: jan 13 2020 (15:19) 
 ##           By: Brice Ozenne
-##     Update #: 206
+##     Update #: 212
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -336,13 +336,23 @@ print.descriptiveTable <- function(x, print = TRUE,
 .summaryStat <- function(values, type, FCT.center, FCT.spread){
 
     if(type == "date"){
-        out <- data.frame(n = length(values),
-                          n.NA = sum(is.na(values)),                 
-                          center = do.call(FCT.center, args = list(values, na.rm = TRUE)),
-                          spread = do.call(FCT.spread, args = list(values, na.rm = TRUE))/(3600*24),
-                          min = min(values, na.rm = TRUE),
-                          max = max(values, na.rm = TRUE),
-                          stringsAsFactors = FALSE)
+        if(all(is.na(values))){
+            out <- data.frame(n = length(values),
+                              n.NA = sum(is.na(values)),                 
+                              center = NA,
+                              spread = NA,
+                              min = NA,
+                              max = NA,
+                              stringsAsFactors = FALSE)
+        }else{
+            out <- data.frame(n = length(values),
+                              n.NA = sum(is.na(values)),                 
+                              center = do.call(FCT.center, args = list(values, na.rm = TRUE)),
+                              spread = do.call(FCT.spread, args = list(values, na.rm = TRUE))/(3600*24),
+                              min = min(values, na.rm = TRUE),
+                              max = max(values, na.rm = TRUE),
+                              stringsAsFactors = FALSE)
+        }
     }else if(type == "constant"){
         out <- data.frame(n = length(values),
                           n.NA = sum(is.na(values)),
@@ -356,13 +366,23 @@ print.descriptiveTable <- function(x, print = TRUE,
                           frequency = as.double(table.values)/sum(table.values),
                           stringsAsFactors = FALSE)        
     }else if(type == "continuous"){
-        out <- data.frame(n = length(values),
-                          n.NA = sum(is.na(values)),
-                          center = do.call(FCT.center, args = list(values, na.rm = TRUE)),
-                          spread = do.call(FCT.spread, args = list(values, na.rm = TRUE)),
-                          min = min(values, na.rm = TRUE),
-                          max = max(values, na.rm = TRUE),
-                          stringsAsFactors = FALSE)
+        if(all(is.na(values))){
+            out <- data.frame(n = length(values),
+                              n.NA = sum(is.na(values)),
+                              center = NA,
+                              spread = NA,
+                              min = NA,
+                              max = NA,
+                              stringsAsFactors = FALSE)
+        }else{
+            out <- data.frame(n = length(values),
+                              n.NA = sum(is.na(values)),
+                              center = do.call(FCT.center, args = list(values, na.rm = TRUE)),
+                              spread = do.call(FCT.spread, args = list(values, na.rm = TRUE)),
+                              min = min(values, na.rm = TRUE),
+                              max = max(values, na.rm = TRUE),
+                              stringsAsFactors = FALSE)
+        }
     } 
     return(out)
 }
