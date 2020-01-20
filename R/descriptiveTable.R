@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: jan 13 2020 (15:19) 
+## Last-Updated: jan 13 2020 (17:26) 
 ##           By: Brice Ozenne
-##     Update #: 212
+##     Update #: 251
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -30,6 +30,8 @@
 ##' @param add.groupVariable [logical] should the name of the variable used to generate the sub-groups be printed in the table.
 ##' @param FCT.center [function] function used to assess the center of the distribution.
 ##' @param FCT.spread [function] function used to assess the spread of the distribution.
+##' @param test.categorical [function] function used to compute the p-value when comparing the categorical outcomes across sub-groups.
+##' @param test.continuous [function] function used to compute the p-value when comparing the continuous outcomes across sub-groups.
 ##' 
 ##' @examples
 ##' data(veteran, package = "survival")
@@ -44,7 +46,8 @@
 ##' @export
 descriptiveTable <- function(formula, data, guess.categorical = 5,
                              add.groupAll = TRUE, add.groupNA = TRUE, add.groupVariable = FALSE,
-                             FCT.center = "mean", FCT.spread = "sd"){
+                             FCT.center = "mean", FCT.spread = "sd",
+                             test.categorical = NULL, test.continuous = NULL){
 
     data <- data.table::as.data.table(data)
     name.data <- names(data)
@@ -139,8 +142,46 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
             }
         }
 
-    }
+        if(!is.null(test.categorical) && any(c("categorical","binary") %in% type)){
+            index.categorical <- which(type %in% c("categorical","binary"))
+            n.categorical <- length(index.categorical)
+            p.value.categorical <- vector(mode = "numeric", length = n.categorical)
+            names(p.value.categorical) <- X.var[index.categorical]
+                
+            for(iX in 1:n.categorical) { ## iX <- 1
+                tableXxX <- table(lapply(iData[[2]],"[[",X.var[index.categorical[iX]]))
+                if(NROW(tableXxX)<2 || NCOL(tableXxX)<2 || any(NA %in% tableXxX)){
+                    p.value.categorical[iX] <- NA
+                }else{
+                    p.value.categorical[iX] <- do.call(test.categorical, args = list(tableXxX))$p.value
+                }
+            }
+        }else{
+            test.categorical <- NULL
+        }
 
+        if(!is.null(test.continuous) && any("continuous" %in% type)){
+            index.continuous <- which(type %in% c("continuous"))
+            n.continuous <- length(index.continuous)
+            p.value.continuous <- vector(mode = "numeric", length = n.continuous)
+            names(p.value.continuous) <- X.var[index.continuous]
+
+            for(iX in 1:n.continuous) { ## iX <- 1
+                lsXY <- lapply(iData[[2]],"[[",X.var[iX])
+                if(any(sapply(lsXY,length)==0) || any(sapply(lsXY, function(iX){sum(!is.na(iX))})==0)){
+                    p.value.continuous[iX] <- NA
+                }else{
+                    p.value.continuous[iX] <- do.call(test.continuous, args = lsXY)$p.value
+                }
+            }
+        }else{
+            test.continuous <- NULL
+        }
+    }else{
+        test.categorical <- NULL
+        test.continuous <- NULL
+    }
+        
     ## ** merge
     type.merge <- type
     type.merge[type.merge == "binary"] <- "categorical"
@@ -161,6 +202,13 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
 
     })
 
+    if(!is.null(test.categorical)){
+        attr(out$categorical,"p.value") <- p.value.categorical
+    }
+    if(!is.null(test.continuous)){
+        attr(out$continuous,"p.value") <- p.value.continuous
+    }
+    
     ## ** export
     class(out) <- "descriptiveTable"
     attr(out, "name.group") <- name.group
@@ -181,6 +229,7 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
 ##' @param digit.frequency [integer, >=0] number of digit when printing frequencies.
 ##' @param digit.center [integer, >=0] number of digit when printing center parameters.
 ##' @param digit.spread [integer, >=0] number of digit when printing spread parameters.
+##' @param digit.spread [integer, >=0] number of digit when printing p-values.
 ##' @param format.date [character] the format used to output dates.
 ##' @param ... Not used. For compatibility with the generic method.
 ##' 
@@ -191,6 +240,7 @@ print.descriptiveTable <- function(x, print = TRUE,
                                    digit.frequency = 2,
                                    digit.center = 2,
                                    digit.spread = 2,
+                                   digit.p = 2,
                                    format.date = "%Y-%m-%d",
                                    ...){
 
@@ -225,7 +275,14 @@ print.descriptiveTable <- function(x, print = TRUE,
         out$categorical <- data.table::copy(data.table::as.data.table(x[["categorical"]]))
         out$categorical[, c("frequency") := round(100*.SD[["frequency"]], digits = digit.frequency)]
         out$categorical[, c("level") := as.character(.SD$level)]
-        out$categorical <- dcast(out$categorical, value.var = c("n","frequency"), formula = variable + level ~ group)        
+        out$categorical <- dcast(out$categorical, value.var = c("n","frequency"), formula = variable + level ~ group)
+
+        p.value <- attr(x[["categorical"]],"p.value")
+        
+        if(!is.null(p.value)){
+            p.value <- format.pval(p.value, digits=digit.p,eps=10^{-digit.p})
+            out$categorical[, p.value :=  c(rep(NA, times=.N-1), p.value[.GRP]), by="variable"]
+        }
     }
     if("continuous" %in% name.type){
         vec.value <- c("center","spread","[min;max]","n.NA")
@@ -242,7 +299,13 @@ print.descriptiveTable <- function(x, print = TRUE,
         out$continuous[, c("max") := round(.SD[["max"]], digits = digit.center)]
         out$continuous[, c("spread") := paste0("(",round(.SD[["spread"]], digits = digit.center),")")]
         out$continuous[, c("[min;max]") := paste0("[",.SD[["min"]],";",.SD[["max"]],"]")]
-        out$continuous <- dcast(out$continuous, value.var = vec.value, formula = variable ~ group)        
+        out$continuous <- dcast(out$continuous, value.var = vec.value, formula = variable ~ group)
+
+        p.value <- attr(x[["continuous"]],"p.value")
+        if(!is.null(p.value)){
+            p.value <- format.pval(p.value, digits=digit.p,eps=10^{-digit.p})
+            out$continuous[, c("p.value") :=  p.value]
+        }
     }
 
     ## ** rename according to center and scale
@@ -293,7 +356,7 @@ print.descriptiveTable <- function(x, print = TRUE,
                                  as.data.frame(iOut.print))
 
             ## rename first header
-            names(iOut.print2)[names(iOut.print2) %in% c("variable","level")] <- ""
+            names(iOut.print2)[names(iOut.print2) %in% c("variable","level","p.value")] <- ""
             for(iG in name.group){
                 names(iOut.print2)[grep(iG, names(iOut.print2), fixed = TRUE)] <- paste0(" ",iG)
             }
@@ -364,7 +427,7 @@ print.descriptiveTable <- function(x, print = TRUE,
         out <- data.frame(n = as.double(table.values),
                           level = names(table.values),
                           frequency = as.double(table.values)/sum(table.values),
-                          stringsAsFactors = FALSE)        
+                          stringsAsFactors = FALSE)
     }else if(type == "continuous"){
         if(all(is.na(values))){
             out <- data.frame(n = length(values),
