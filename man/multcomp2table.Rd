@@ -4,25 +4,32 @@
 \alias{multcomp2table}
 \title{Gather P-values and Confidence Intervals in a Table.}
 \usage{
-multcomp2table(object, link, method.multcomp = "glht",
-  conf.level = 0.95, adjust.multiple.comparison = TRUE, digits = 3,
-  ...)
+multcomp2table(object, link, transform = function(x) {     x },
+  seed = NULL, method.glht = "glht", conf.level = 0.95,
+  method.multcomp = NULL, digits = 3, digits.p.value = 3, ...)
 }
 \arguments{
 \item{object}{a fitted model.}
 
 \item{link}{[character vector] null hypotheses or coefficients to be tested.}
 
-\item{method.multcomp}{[character or function] function used to extract the coefficients and variance-covariance matrix from the object.
+\item{transform}{[function] function to backtransform the estimates and the associated confidence intervals.}
+
+\item{seed}{[integer] if not \code{NULL}, integer used to initialize the random number generator. See \code{\link{set.seed}} for details.}
+
+\item{method.glht}{[character or function] function used to extract the coefficients and variance-covariance matrix from the object.
 Recommanded: \code{"glht"} from the multcomp package or \code{"glht2"} from the lavaSearch2 package.}
 
 \item{conf.level}{[numeric, 0-1] Confidence level of the interval.}
 
-\item{adjust.multiple.comparison}{[logical] Should p-values and confidence intervals be adjusted for multiple testing using single step Dunnett.}
+\item{method.multcomp}{[character] the method used to adjust the p-value and confidence intervals (CIs) for multiplicity.
+Note that simultaneous CIs are available only for \code{method.multcomp="none"},  \code{method.multcomp="bonferroni"}, and  \code{method.multcomp"single-step"}.}
 
-\item{digits}{[integer] if not \code{NULL}, the number of decimal places.}
+\item{digits}{[integer] if not \code{NULL}, the number of decimal places used for the estimate and the associated confidence intervals.}
 
-\item{...}{arguments passed to \code{method.multcomp}.}
+\item{digits.p.value}{[integer] if not \code{NULL}, the number of decimal places used for the p-values.}
+
+\item{...}{arguments passed to \code{method.glht}.}
 }
 \description{
 Gather p-values and confidence intervals in a table.
@@ -48,9 +55,9 @@ multcomp2table(e.gls, link = c("X1=0"))
 ## lvm object
 if(require(lava) & require(lavaSearch2)){
 e.lvm <- estimate(m, data = d)
-multcomp2table(e.lvm, method.multcomp = "glht2", link = c("Y~X1"))
-multcomp2table(e.lvm, method.multcomp = "glht2", link = c("Y~X1","Y~X2"))
-multcomp2table(e.lvm, method.multcomp = "glht2", link = c("Y~X1","Y~X2"), rhs = c(1,1))
+multcomp2table(e.lvm, method.glht = "glht2", link = c("Y~X1"))
+multcomp2table(e.lvm, method.glht = "glht2", link = c("Y~X1","Y~X2"))
+multcomp2table(e.lvm, method.glht = "glht2", link = c("Y~X1","Y~X2"), rhs = c(1,1))
 }
 
 }

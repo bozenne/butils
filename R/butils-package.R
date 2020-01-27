@@ -8,6 +8,7 @@
 #' @import data.table
 #' @import lava
 #' @import parallel
+#' @import BuyseTest
 #' @importFrom boot empinf freq.array
 #' @importFrom methods is
 #' @importFrom foreach %dopar% foreach

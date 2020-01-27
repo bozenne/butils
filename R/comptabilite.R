@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: jan 13 2020 (16:37) 
+## Last-Updated: jan 21 2020 (11:14) 
 ##           By: Brice Ozenne
-##     Update #: 543
+##     Update #: 545
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -408,6 +408,7 @@ createAccount <- function(nickName = NULL){
 #' @param x an object of class butilsAccount.
 #' @param object an object of class butilsAccount.
 #' @param print [logical] should the summary be printed in the console.
+#' @param print.title [logical] should the title be printed in the console.
 #' @param detail [logical] should the balance per individual (1) and by activity (2) be displayed.
 #' @param keep.cols [character vector] the columns to be displayed in the detail.
 #' @param digit [integer] the number of decimal to be displayed.

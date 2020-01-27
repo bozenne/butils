@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: jan 13 2020 (17:26) 
+## Last-Updated: jan 27 2020 (15:12) 
 ##           By: Brice Ozenne
-##     Update #: 251
+##     Update #: 265
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -153,7 +153,7 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
                 if(NROW(tableXxX)<2 || NCOL(tableXxX)<2 || any(NA %in% tableXxX)){
                     p.value.categorical[iX] <- NA
                 }else{
-                    p.value.categorical[iX] <- do.call(test.categorical, args = list(tableXxX))$p.value
+                    p.value.categorical[iX] <- try(do.call(test.categorical, args = list(tableXxX))$p.value, silent = FALSE)
                 }
             }
         }else{
@@ -171,7 +171,10 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
                 if(any(sapply(lsXY,length)==0) || any(sapply(lsXY, function(iX){sum(!is.na(iX))})==0)){
                     p.value.continuous[iX] <- NA
                 }else{
-                    p.value.continuous[iX] <- do.call(test.continuous, args = lsXY)$p.value
+                    n.group <- length(lsXY)
+                    df.testContinuous <- data.frame(group = unlist(lapply(1:n.group, function(iG){rep(iG, length(lsXY[[iG]]))})),
+                                                    value = unlist(lsXY))
+                    p.value.continuous[iX] <- try(do.call(test.continuous, args = list(formula = value ~ group, data = df.testContinuous))$p.value, silent = FALSE)
                 }
             }
         }else{
@@ -229,7 +232,7 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
 ##' @param digit.frequency [integer, >=0] number of digit when printing frequencies.
 ##' @param digit.center [integer, >=0] number of digit when printing center parameters.
 ##' @param digit.spread [integer, >=0] number of digit when printing spread parameters.
-##' @param digit.spread [integer, >=0] number of digit when printing p-values.
+##' @param digit.p [integer, >=0] number of digit when printing p-values.
 ##' @param format.date [character] the format used to output dates.
 ##' @param ... Not used. For compatibility with the generic method.
 ##' 
@@ -303,7 +306,11 @@ print.descriptiveTable <- function(x, print = TRUE,
 
         p.value <- attr(x[["continuous"]],"p.value")
         if(!is.null(p.value)){
-            p.value <- format.pval(p.value, digits=digit.p,eps=10^{-digit.p})
+            if(is.numeric(p.value)){
+                p.value <- format.pval(p.value, digits=digit.p,eps=10^{-digit.p})
+            }else{
+                p.value <- as.numeric(NA)
+            }
             out$continuous[, c("p.value") :=  p.value]
         }
     }

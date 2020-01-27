@@ -21,6 +21,8 @@
 
 \item{print}{[logical] should the summary be printed in the console.}
 
+\item{print.title}{[logical] should the title be printed in the console.}
+
 \item{detail}{[logical] should the balance per individual (1) and by activity (2) be displayed.}
 
 \item{keep.cols}{[character vector] the columns to be displayed in the detail.}

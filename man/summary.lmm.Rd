@@ -4,7 +4,7 @@
 \alias{summary.lmm}
 \title{Summary Output for a Linear Mixed Model}
 \usage{
-\method{summary}{lmm}(object, digit = 3, conf.level = 0.95)
+summary.lmm(object, digit = 3, conf.level = 0.95)
 }
 \arguments{
 \item{object}{[lmm] output of the \code{lmm} function.}

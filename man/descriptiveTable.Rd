@@ -6,7 +6,8 @@
 \usage{
 descriptiveTable(formula, data, guess.categorical = 5,
   add.groupAll = TRUE, add.groupNA = TRUE, add.groupVariable = FALSE,
-  FCT.center = "mean", FCT.spread = "sd")
+  FCT.center = "mean", FCT.spread = "sd", test.categorical = NULL,
+  test.continuous = NULL)
 }
 \arguments{
 \item{formula}{[formula] A formula where the left hand side (lhs) describe potential subgroups
@@ -26,6 +27,10 @@ number of unique values lower than the specified value are treated as categorica
 \item{FCT.center}{[function] function used to assess the center of the distribution.}
 
 \item{FCT.spread}{[function] function used to assess the spread of the distribution.}
+
+\item{test.categorical}{[function] function used to compute the p-value when comparing the categorical outcomes across sub-groups.}
+
+\item{test.continuous}{[function] function used to compute the p-value when comparing the continuous outcomes across sub-groups.}
 }
 \description{
 Descriptive table for continuous, categorical, and date variables.
