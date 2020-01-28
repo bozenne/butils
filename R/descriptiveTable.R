@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: jan 27 2020 (15:12) 
+## Last-Updated: jan 28 2020 (16:59) 
 ##           By: Brice Ozenne
-##     Update #: 265
+##     Update #: 281
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -40,6 +40,8 @@
 ##'                  data = veteran)
 ##' descriptiveTable(trt ~ celltype + time + status +karno,
 ##'                  data = veteran)
+##' tt <- descriptiveTable(trt ~ celltype + time + status +karno,
+##'                        data = veteran, test.continuous = t.test)
 
 ## * descriptiveTable - code
 ##' @rdname descriptiveTable
@@ -145,15 +147,20 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
         if(!is.null(test.categorical) && any(c("categorical","binary") %in% type)){
             index.categorical <- which(type %in% c("categorical","binary"))
             n.categorical <- length(index.categorical)
-            p.value.categorical <- vector(mode = "numeric", length = n.categorical)
+            p.value.categorical <- vector(mode = "list", length = n.categorical)
             names(p.value.categorical) <- X.var[index.categorical]
                 
             for(iX in 1:n.categorical) { ## iX <- 1
-                tableXxX <- table(lapply(iData[[2]],"[[",X.var[index.categorical[iX]]))
-                if(NROW(tableXxX)<2 || NCOL(tableXxX)<2 || any(NA %in% tableXxX)){
-                    p.value.categorical[iX] <- NA
+                lsXY <- lapply(iData[[2]],"[[",X.var[index.categorical[iX]])
+
+                if(any(sapply(lsXY,length)==0) || any(sapply(lsXY, function(iXX){sum(!is.na(iXX))})==0)){
+                    p.value.categorical[[iX]] <- NA
                 }else{
-                    p.value.categorical[iX] <- try(do.call(test.categorical, args = list(tableXxX))$p.value, silent = FALSE)
+                    n.group <- length(lsXY)
+                    df.testCategorical <- data.frame(x = unlist(lapply(1:n.group, function(iG){rep(iG, length(lsXY[[iG]]))})),
+                                                     y = unlist(lsXY))                    
+
+                    p.value.categorical[[iX]] <- try(do.call(test.categorical, args = as.list(df.testCategorical))$p.value, silent = FALSE)
                 }
             }
         }else{
@@ -163,18 +170,19 @@ descriptiveTable <- function(formula, data, guess.categorical = 5,
         if(!is.null(test.continuous) && any("continuous" %in% type)){
             index.continuous <- which(type %in% c("continuous"))
             n.continuous <- length(index.continuous)
-            p.value.continuous <- vector(mode = "numeric", length = n.continuous)
+            p.value.continuous <- vector(mode = "list", length = n.continuous)
             names(p.value.continuous) <- X.var[index.continuous]
 
             for(iX in 1:n.continuous) { ## iX <- 1
-                lsXY <- lapply(iData[[2]],"[[",X.var[iX])
-                if(any(sapply(lsXY,length)==0) || any(sapply(lsXY, function(iX){sum(!is.na(iX))})==0)){
-                    p.value.continuous[iX] <- NA
+                lsXY <- lapply(iData[[2]],"[[",X.var[index.continuous[iX]])
+                
+                if(any(sapply(lsXY,length)==0) || any(sapply(lsXY, function(iXX){sum(!is.na(iXX))})==0)){
+                    p.value.continuous[[iX]] <- NA
                 }else{
                     n.group <- length(lsXY)
                     df.testContinuous <- data.frame(group = unlist(lapply(1:n.group, function(iG){rep(iG, length(lsXY[[iG]]))})),
                                                     value = unlist(lsXY))
-                    p.value.continuous[iX] <- try(do.call(test.continuous, args = list(formula = value ~ group, data = df.testContinuous))$p.value, silent = FALSE)
+                    p.value.continuous[[iX]] <- try(do.call(test.continuous, args = list(formula = value ~ group, data = df.testContinuous))$p.value, silent = FALSE)
                 }
             }
         }else{
@@ -281,9 +289,14 @@ print.descriptiveTable <- function(x, print = TRUE,
         out$categorical <- dcast(out$categorical, value.var = c("n","frequency"), formula = variable + level ~ group)
 
         p.value <- attr(x[["categorical"]],"p.value")
-        
         if(!is.null(p.value)){
-            p.value <- format.pval(p.value, digits=digit.p,eps=10^{-digit.p})
+            p.value <- unlist(lapply(p.value, function(iP){
+                if(is.numeric(iP)){
+                    return(format.pval(iP, digits=digit.p,eps=10^{-digit.p}))
+                }else{
+                    return(NA)
+                }
+            }))
             out$categorical[, p.value :=  c(rep(NA, times=.N-1), p.value[.GRP]), by="variable"]
         }
     }
@@ -306,11 +319,13 @@ print.descriptiveTable <- function(x, print = TRUE,
 
         p.value <- attr(x[["continuous"]],"p.value")
         if(!is.null(p.value)){
-            if(is.numeric(p.value)){
-                p.value <- format.pval(p.value, digits=digit.p,eps=10^{-digit.p})
-            }else{
-                p.value <- as.numeric(NA)
-            }
+            p.value <- unlist(lapply(p.value, function(iP){
+                if(is.numeric(iP)){
+                    return(format.pval(iP, digits=digit.p,eps=10^{-digit.p}))
+                }else{
+                    return(NA)
+                }
+            }))
             out$continuous[, c("p.value") :=  p.value]
         }
     }

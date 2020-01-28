@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb 18 2019 (09:35) 
 ## Version: 
-## Last-Updated: jan 23 2020 (18:30) 
+## Last-Updated: jan 27 2020 (15:20) 
 ##           By: Brice Ozenne
-##     Update #: 51
+##     Update #: 52
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -118,9 +118,9 @@ multcomp2table <- function(object, link, transform = function(x){x}, seed = NULL
 
     ## ** extract estimates and CIs
     if(method.multcomp == "single-step"){
-        out[,c("Estimate","Lower","Upper")] <- stats::confint(eS.glht, level = conf.level, calpha = adjusted_calpha())$confint
+        out[,c("Estimate","Lower","Upper")] <- stats::confint(eS.glht, level = conf.level, calpha = multcomp::adjusted_calpha())$confint
     }else if(method.multcomp == "none"){
-        out[,c("Estimate","Lower","Upper")] <- stats::confint(eS.glht, level = conf.level, calpha = univariate_calpha())$confint
+        out[,c("Estimate","Lower","Upper")] <- stats::confint(eS.glht, level = conf.level, calpha = multcomp::univariate_calpha())$confint
     }else if(method.multcomp == "bonferroni"){
         out[,c("Estimate","Lower","Upper")] <- stats::confint(eS.glht, level = 1-(1-conf.level)/NROW(eS.glht$linfct), calpha = univariate_calpha())$confint
     }else{

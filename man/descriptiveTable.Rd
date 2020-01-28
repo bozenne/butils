@@ -42,4 +42,6 @@ descriptiveTable( ~ celltype + time + status +karno,
                  data = veteran)
 descriptiveTable(trt ~ celltype + time + status +karno,
                  data = veteran)
+tt <- descriptiveTable(trt ~ celltype + time + status +karno,
+                       data = veteran, test.continuous = t.test)
 }
