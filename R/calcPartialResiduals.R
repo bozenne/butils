@@ -45,19 +45,36 @@
 ##' categorical(m.lvm, K = 5) <- ~Id+Id2
 ##' d <- lava::sim(n = 1e2, m.lvm)
 ##'  
-##' m <- lm(Y~X1+X2, data = d)
+##' m <- lm(Y~X1+X2+Id, data = d)
+##'
+##' ## partial residuals relative to no variable matches the residuals
 ##' pres0 <- calcPartialResiduals(m, var = NULL)
 ##' range(residuals(m) - pres0$data$pResiduals)
 ##'
+##' ## partial residuals regarding the variable X1
 ##' pres1 <- calcPartialResiduals(m, var = "X1")
-##' fit1 <- coef(m)["(Intercept)"] + coef(m)["X2"] * d$X2
+##' fit1 <- coef(m)["(Intercept)"] + coef(m)["X2"] * d$X2 +  coef(m)["Id"] * d$Id
 ##' range((d$Y - fit1) - pres1$data$pResiduals)
 ##' cor(d$X1, pres1$data$pResiduals)
-##' lava::partialcor(~X2,d[,c("Y","X1","X2")])
-##'
+##' lava::partialcor(~X2+Id,d[,c("Y","X1","X2","Id")])
+##' 
+##' ##  partial residuals regarding both X1 and X2
 ##' pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
 ##' fit2 <- coef(m)["(Intercept)"]
 ##' range((d$Y - fit2) - pres2$data$pResiduals)
+##'
+##' ## partial residauls binary variable
+##' pres3 <- calcPartialResiduals(m, var = "Id")
+##' 
+##' if(require(ggplot2)){
+##'    pres3$data$Id.char <- factor(pres3$data$Id,
+##'                                 levels = 0:4,
+##'                                 labels = c("a","b","c","d","e"))
+##'    gg <- ggplot(pres3$data, aes(y = pResiduals, group = Id.char, x = Id.char))
+##'    gg <- gg + geom_boxplot()
+##'    gg <- gg + geom_dotplot(binaxis = "y", stackdir = "center")
+##'    gg
+##' }
 ##' 
 ##' @keywords regression
 
