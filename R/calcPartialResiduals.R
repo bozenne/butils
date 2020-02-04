@@ -172,7 +172,6 @@ calcPartialResiduals <- function(model,var,
     # {{{ normalize input
 
     interval <- match.arg(interval, c("confidence","prediction"))
-
     design.df <- as.data.table(lavaSearch2::extractData(model, design.matrix = FALSE))
     
     design.numeric <- sapply(design.df, is.numeric)
@@ -191,7 +190,6 @@ calcPartialResiduals <- function(model,var,
         stop("Unknown variable(s): \"",paste(var[var %in% name.X.df == FALSE], collapse = "\" \""),"\" \n",
              "argument \'var\' should be in \"",paste(name.X.df,collapse = "\" \""),"\" \n")
     }
-
     # }}}
   
     # {{{ additional tests
@@ -216,14 +214,14 @@ calcPartialResiduals <- function(model,var,
             if(design.numeric[i0]){
                 newdata.fit[[i0]][] <- 0
             }else{
-                newdata.fit[[i0]][] <- xlevels[[i0]][1]
+                newdata.fit[[i0]] <- factor(xlevels[[i0]][1], levels = xlevels[[i0]])
             }
             
         }
     }
     # }}}
-    
-    # {{{ intercept
+
+                                        # {{{ intercept
     model.formula <- FUN.formula(model)
     beta <- FUN.coef(model)
     test.intercept <- as.logical(attr(terms(model.formula),"intercept"))
@@ -240,20 +238,23 @@ calcPartialResiduals <- function(model,var,
     }
     # }}}
 
-    # {{{ partial residuals
+                                        # {{{ partial residuals
     design.mat <- model.matrix(model.formula, data = newdata.fit)    
     if(!is.null(name.intercept) && keep.intercept){
-      # add the residual due to the intercept
-      # since it is among the variable of interest
-      design.mat[,name.intercept] <- 0
+                                        # add the residual due to the intercept
+                                        # since it is among the variable of interest
+        design.mat[,name.intercept] <- 0
     }
-    design.df$pFit <- as.numeric(design.mat %*% beta)
+
+    index.nna <- setdiff(1:NROW(newdata.fit),model$na.action)
+    design.df$pFit <- as.numeric(NA)
+    design.df$pFit[index.nna] <- as.numeric(design.mat %*% beta)
     design.df$pResiduals <- newdata.fit[[name.Y]] - design.df$pFit
-    # }}}
+                                        # }}}
     
     # {{{ partial fitted values
     ## newdata
-    ls.forGrid <- lapply(name.X.df, function(x){
+    ls.forGrid <- lapply(name.X.df, function(x){ ## x <- name.X.df[1]
         if(x %in% var == FALSE){
             if(design.numeric[x]){
                 return(0)
@@ -265,7 +266,7 @@ calcPartialResiduals <- function(model,var,
                        stats::quantile(design.df[[x]], na.rm=TRUE, probs = quantile.range[2]),
                        length.out = npoints))
         }else{ 
-            return(unique(design.df[[x]]))
+            return(intersect(unique(design.df[[x]]),xlevels[[x]]))
         }
     })
 
@@ -274,17 +275,18 @@ calcPartialResiduals <- function(model,var,
     names(grid.predict) <- name.X.df
     grid.predict[[name.Y]] <- 0
     ## restaure factor variables
-    if(any(design.factor)){         
-        for(iVar in names(which(design.factor))){
+    if(any(design.numeric == FALSE)){         
+        for(iVar in names(which(design.numeric == FALSE))){
             grid.predict[[iVar]] <- factor(grid.predict[[iVar]], levels = xlevels[[iVar]])
         }
     }
     ## convert to design matrix
+    grid.predict$OC
     design.grid.predict <- model.matrix(model.formula, grid.predict)
     ## remove intercept
     if(!is.null(name.intercept) && keep.intercept == FALSE){
-        # remive the intercept from the prediction
-        # when it is not among the variable of interest
+                                        # remive the intercept from the prediction
+                                        # when it is not among the variable of interest
         design.grid.predict[,name.intercept] <- 0
     }
     grid.predict$fit <- as.numeric(design.grid.predict %*% beta)

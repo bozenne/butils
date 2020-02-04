@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: maj 25 2017 (20:41) 
 ## Version: 
-## last-updated: jan 24 2018 (17:31) 
+## last-updated: feb  4 2020 (17:28) 
 ##           By: Brice Ozenne
-##     Update #: 70
+##     Update #: 72
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -220,7 +220,7 @@ test_that("no random effect no intercept", {
 })
 
 
-## *  gls
+## * gls
 test_that("gls", {
     gls0 <- gls(y ~ x0 + x1*x2, correlation = corCompSymm(form=~ 1|Id), dd)
 
@@ -234,7 +234,38 @@ test_that("gls", {
     expect_equal(GS.F, res1$data$pResiduals)
     expect_equal(GS.T, res2$data$pResiduals)    
 })
+## * categorical variables and missing values
+mSim <- lvm(AUC ~ OC + Age + Work)
+categorical(mSim, labels = c("Yes","No")) <- ~OC
+categorical(mSim, labels = c("Study","Rest","Work")) <- ~Work
 
+set.seed(10)
+d <- lava::sim(mSim, n=1e2)
+d[1,] <- NA
 
+test_that("partial residuals (categorical variables and missing values)", {
+    ## no interaction
+    e <- lm(AUC ~ OC + Age + Work, data = d)
+    e.PR <- calcPartialResiduals(e, var = "OC")
+
+    X <- rbind(NA,model.matrix(e))
+    keep.coef <- c("(Intercept)","Age","WorkRest","WorkWork")
+    GS <- d$AUC - X[,keep.coef] %*% coef(e)[keep.coef]
+    expect_equal(as.double(GS[,1]), as.double(e.PR$data$pResiduals))
+
+    ## interaction
+    e.I <- lm(AUC ~ OC * Age + Work, data = d)
+
+    e.I.PR <- calcPartialResiduals(e.I, var = "OC")
+    X.I <- rbind(NA,model.matrix(e.I))
+    keep.coef.I <- c("(Intercept)","Age","WorkRest","WorkWork")
+    GS.I <- d$AUC - X.I[,keep.coef.I] %*% coef(e.I)[keep.coef.I]
+    expect_equal(as.double(GS.I[,1]), as.double(e.I.PR$data$pResiduals))
+
+    e.I.PR <- calcPartialResiduals(e.I, var = c("OC","Work"))
+    keep.coef.I <- c("(Intercept)","Age")
+    GS.I <- d$AUC - X.I[,keep.coef.I] %*% coef(e.I)[keep.coef.I]
+    expect_equal(as.double(GS.I[,1]), as.double(e.I.PR$data$pResiduals))
+})
 #----------------------------------------------------------------------
 ### test-calcPartialResiduals.R ends here

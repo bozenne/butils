@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: jan 28 2020 (16:59) 
+## Last-Updated: jan 31 2020 (11:50) 
 ##           By: Brice Ozenne
-##     Update #: 281
+##     Update #: 286
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -392,8 +392,16 @@ print.descriptiveTable <- function(x, print = TRUE,
         }
     }
 
+    officer.print <- lapply(out.print, function(iT){
+        iT2 <- rbind(names(iT),iT)
+        names(iT2) <- NULL
+        iT2[is.na(iT2)] <- ""
+        return(iT2)
+    })
+    
     return(invisible(list(table = out,
-                          table.print = iOut.print2)))
+                          table.print = out.print,
+                          table.officer = officer.print)))
 }
     
 
