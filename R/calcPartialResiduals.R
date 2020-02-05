@@ -60,7 +60,7 @@
 ##' 
 ##' ##  partial residuals regarding both X1 and X2
 ##' pres2 <- calcPartialResiduals(m, var = c("X1","X2"))
-##' fit2 <- coef(m)["(Intercept)"]
+##' fit2 <- coef(m)["(Intercept)"] + d$Id * coef(m)["Id"]
 ##' range((d$Y - fit2) - pres2$data$pResiduals)
 ##'
 ##' ## partial residauls binary variable
@@ -75,6 +75,14 @@
 ##'    gg <- gg + geom_dotplot(binaxis = "y", stackdir = "center")
 ##'    gg
 ##' }
+##'
+##' ## partial residuals in presence of interactions
+##' m.I <- lm(Y~X1*X2+Id, data = d)
+##' pres.I <- calcPartialResiduals(m.I, var = c("X1","X2"))
+##' fit.I <- coef(m.I)["(Intercept)"] + d$Id * coef(m.I)["Id"]
+##' range((d$Y - fit.I) - pres.I$data$pResiduals)
+##'
+##' 
 ##' 
 ##' @keywords regression
 
@@ -246,7 +254,13 @@ calcPartialResiduals <- function(model,var,
         design.mat[,name.intercept] <- 0
     }
 
-    index.nna <- setdiff(1:NROW(newdata.fit),model$na.action)
+
+    newdata.index <- try(as.numeric(rownames(design.mat)),silent=FALSE)
+    if(!is.null(newdata.index) && !inherits(newdata.index,"try-error")){
+        index.nna <- newdata.index
+    }else{
+        index.nna <- setdiff(1:NROW(newdata.fit),model$na.action)
+    }
     design.df$pFit <- as.numeric(NA)
     design.df$pFit[index.nna] <- as.numeric(design.mat %*% beta)
     design.df$pResiduals <- newdata.fit[[name.Y]] - design.df$pFit
