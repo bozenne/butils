@@ -389,20 +389,16 @@ predict_AICcmodavg <- function(object, newdata, level, conditional, interval, ..
     return(list(fit = M.res))
 }
 
-#' @rdname lavaSearch2-deprecated
-#' @section \code{calcPartialResiduals}:
-#' For \code{calcPartialResiduals}, use \code{\link{partialResiduals}}.
-#'
-#' @export
-calcPartialResiduals <- function(model,var,
-                                 keep.intercept = FALSE,
-                                 conditional = FALSE,
-                                 interval = "confidence",                                 
-                                 level = 0.95,
-                                 npoints = 100,
-                                 quantile.range = c(0,1),                                 
-                                 FUN.df,
-                                 ...) {
+## * calcPartialResiduals
+##' @title Deprecated Function Computing Partial Residuals
+##' @description Deprecated function computing partial residuals,
+##' use \code{\link{partialResiduals}} instead.
+##'
+##' @param ... not used.
+##' 
+##'
+##' @export
+calcPartialResiduals <- function(...) {
     .Deprecated("partialResiduals")
 }
 

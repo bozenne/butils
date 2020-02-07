@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb  6 2020 (13:28) 
 ## Version: 
-## Last-Updated: feb  6 2020 (14:27) 
+## Last-Updated: feb  6 2020 (17:37) 
 ##           By: Brice Ozenne
-##     Update #: 24
+##     Update #: 82
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -43,12 +43,14 @@
 ##' 
 ##' @export
 `partialCorrelation` <-
-    function(object, var, fisher.transform) UseMethod("partialCorrelation")
+    function(object, var, fisher.transform, cluster) UseMethod("partialCorrelation")
 
 ## * partialCorrelation.lm
 ##' @rdname partialCorrelation
 ##' @export
-partialCorrelation.lm <- function(object, var, fisher.transform = FALSE){
+partialCorrelation.lm <- function(object, var, fisher.transform = FALSE, cluster = NULL){
+
+    ## ** normalize arguments
     if(length(var)!=1){
         stop("Argument \'var\' must have length 1 \n")
     }
@@ -67,30 +69,106 @@ partialCorrelation.lm <- function(object, var, fisher.transform = FALSE){
     }
     X <- setdiff(name.var, c(Y,var))
 
+    ## ** remove covariate effect
     if(length(X)>0){
-        object2.formula <- paste0(var,"~",Y,"+",paste(X,collapse="+"))
+        object1.formula <- paste0(Y,"~",paste(X,collapse="+"))
+        object2.formula <- paste0(var,"~",paste(X,collapse="+"))
     }else{
-        object2.formula <- paste0(var,"~",Y)
+        object1.formula <- paste0(Y,"~1")
+        object2.formula <- paste0(var,"~1")
     }
-    object2 <- update(object, formula = object2.formula)
+    object1 <- update(object, formula = as.formula(object1.formula))
+    object2 <- update(object, formula = as.formula(object2.formula))
 
-    df.res <- data.frame(res1 = scale(residuals(object)),
-                         res2 = scale(residuals(object2)))
+    ## ** compute residuals and their correlation
+    n.obs <- nobs(object) + length(object$na.action)
+    df.res <- data.frame(matrix(NA, nrow = n.obs, ncol = 2,
+                                dimnames = list(NULL, c("res1","res2"))))
+    df.res[setdiff(1:n.obs,object1$na.action),"res1"] <- scale(residuals(object1))
+    df.res[setdiff(1:n.obs,object2$na.action),"res2"] <- scale(residuals(object2))
+    if(!is.null(cluster)){
+        df.res[[cluster]] <- NA
+        df.res[setdiff(1:n.obs,object1$na.action),cluster] <- extractData(object1)[[cluster]]
+        df.res[setdiff(1:n.obs,object2$na.action),cluster] <- extractData(object2)[[cluster]]
+    }
     e.lmres <- lm(res1 ~ res2, data = df.res)
-    e.lmres <- sCorrect(e.lmres)
-    out <- summary2(e.lmres)$table2["res2",]
-    attr(out,"iid") <- iid2(e.lmres)[,"res2"]
 
-    ## cor.test(df.res$res1,df.res$res2)
-    ## unlist(riskRegression::transformCIBP(estimate = out$estimate, se = cbind(out$std.error), null = 0, type = "atanh", band = FALSE, ci = TRUE, conf.level = 0.95,
-    ##                               min.value = -1, max.value = 1, p.value = TRUE))
-    if(fisher.transform){
+    ## ** extra info for export
+    e.lmres <- sCorrect(e.lmres)
+    e.lmres$sCorrect$data
+    out <- summary2(e.lmres)$table2["res2",]
+    rownames(out) <- NULL
+    e.lmres.iid <- iid2(e.lmres, robust = FALSE, cluster = cluster)
+    attr(out,"iid") <- setNames(e.lmres.iid[,"res2"],attr(e.lmres.iid,"cluster"))
+    ## sqrt(sum(attr(out,"iid")^2))
+
+    if(fisher.transform){ ## to match lava::partialcor
         out.trans <- transformSummaryTable(out, transform = "atanh")
+        out.trans$std.error <- sqrt(1/(stats::nobs(e.lmres) - length(X) - 1 - 3))
         out[,"ci.lower"] <- tanh(out.trans$estimate + qnorm(0.025) * out.trans$std.error) ##tanh(out.trans[,c("ci.lower","ci.upper")])
-        out[,"ci.lower"] <- tanh(out.trans$estimate + qnorm(0.025) * out.trans$std.error) ##tanh(out.trans[,c("ci.lower","ci.upper")])
+        out[,"ci.upper"] <- tanh(out.trans$estimate + qnorm(0.975) * out.trans$std.error) ##tanh(out.trans[,c("ci.lower","ci.upper")])
         out[,"df"] <- NA
         out[,"p.value"] <- 2*(1-pnorm(abs(out.trans$estimate)/out.trans$std.error))
     }
+    return(out)
+}
+
+## * partialCorrelation.mmm
+partialCorrelation.mmm <- function(object, var, fisher.transform = FALSE, cluster = NULL){
+
+    ## ** compute partial correlation for each model
+    ls.out <- lapply(object, function(iM){ ## iM <- object[[5]]
+        iVar <- grep(var, all.vars(formula(iM)), value = TRUE)
+        if(length(iVar)>0){
+           return(partialCorrelation(iM, var = iVar, fisher.transform = fisher.transform, cluster = cluster))
+        }else{
+            return(NULL)
+        }
+    })
+    test.null <- sapply(ls.out, length)
+    if(all(test.null==0)){return(NULL)}
+    ls.out <- ls.out[test.null>0]
+    dt.out <- do.call(rbind,ls.out)
+
+    ## ** collect iid across clusters
+    n.model <- length(ls.out)
+    name.model <- names(ls.out)
+    if(!is.null(cluster)){
+        unique.cluster <- unique(unlist(lapply(ls.out, function(iM){
+            names(attr(iM,"iid"))
+        })))
+        n.cluster <- length(unique.cluster)
+        iid.out <- matrix(NA, nrow = n.cluster, ncol = n.model ,
+                                  dimnames = list(unique.cluster, name.model))
+        for(iM in 1:n.model){ ## iM <- 1
+            iid.out[names(attr(ls.out[[iM]],"iid")),iM] <- as.double(attr(ls.out[[iM]],"iid"))
+        }
+    }else{
+        iid.out <- do.call(cbind,lapply(ls.out, function(iM){
+            attr(iM,"iid")
+        }))
+    }
+
+    ## ** compute global vcov
+    vec.sd <- apply(iid.out,2,function(iCol){sqrt(sum(iCol^2,na.rm = TRUE))})
+    M.cor <- cor(iid.out, use = "pairwise")
+    vcov.out <- M.cor * tcrossprod(vec.sd)
+    ## sqrt(diag(attr(out,"vcov")))-out$std.error
+
+    ## ** convert to multcomp
+    linfct <- matrix(0, nrow = n.model, n.model,
+                     dimnames = list(name.model, name.model))
+    diag(linfct) <- 1
+    out <- list(model = NULL,
+                linfct = linfct,
+                rhs = rep(0, n.model),
+                coef = dt.out$estimate,
+                vcov = vcov.out,
+                df = if(any(!is.na(dt.out$df))){dt.out$df}else{0},
+                alternative = "two.sided",
+                type = NULL,
+                robust = FALSE)
+    class(out) <- c("glht2","glht")
     return(out)
 }
 
