@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov  1 2018 (14:00) 
 ## Version: 
-## Last-Updated: jan 31 2020 (11:50) 
+## Last-Updated: feb 10 2020 (18:42) 
 ##           By: Brice Ozenne
-##     Update #: 286
+##     Update #: 291
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -275,18 +275,18 @@ print.descriptiveTable <- function(x, print = TRUE,
         out$date[, c("min") := format(.SD[["min"]], format = format.date)]
         out$date[, c("max") := format(.SD[["max"]], format = format.date)]
         out$date[,c("[min;max]") := paste(" [",.SD$min,";",.SD$max,"]",sep="")]
-        out$date <- dcast(out$date, value.var = vec.value, formula = variable ~ group)
+        out$date <- data.table::dcast(out$date, value.var = vec.value, formula = variable ~ group)
     }
     if("constant" %in% name.type){
         out$constant <- data.table::copy(data.table::as.data.table(x[["constant"]]))
         out$constant[, c("level") := as.character(.SD$level)]
-        out$constant <- dcast(out$constant, value.var = c("n","frequency","n.NA"), formula = variable + level ~ group)        
+        out$constant <- data.table::dcast(out$constant, value.var = c("n","frequency","n.NA"), formula = variable + level ~ group)        
     }
     if("categorical" %in% name.type){
         out$categorical <- data.table::copy(data.table::as.data.table(x[["categorical"]]))
         out$categorical[, c("frequency") := round(100*.SD[["frequency"]], digits = digit.frequency)]
         out$categorical[, c("level") := as.character(.SD$level)]
-        out$categorical <- dcast(out$categorical, value.var = c("n","frequency"), formula = variable + level ~ group)
+        out$categorical <- data.table::dcast(out$categorical, value.var = c("n","frequency"), formula = variable + level ~ group)
 
         p.value <- attr(x[["categorical"]],"p.value")
         if(!is.null(p.value)){
@@ -315,7 +315,7 @@ print.descriptiveTable <- function(x, print = TRUE,
         out$continuous[, c("max") := round(.SD[["max"]], digits = digit.center)]
         out$continuous[, c("spread") := paste0("(",round(.SD[["spread"]], digits = digit.center),")")]
         out$continuous[, c("[min;max]") := paste0("[",.SD[["min"]],";",.SD[["max"]],"]")]
-        out$continuous <- dcast(out$continuous, value.var = vec.value, formula = variable ~ group)
+        out$continuous <- data.table::dcast(out$continuous, value.var = vec.value, formula = variable ~ group)
 
         p.value <- attr(x[["continuous"]],"p.value")
         if(!is.null(p.value)){
