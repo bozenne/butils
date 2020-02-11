@@ -3,11 +3,15 @@
 \name{partialCorrelation}
 \alias{partialCorrelation}
 \alias{partialCorrelation.lm}
+\alias{partialCorrelation.mmm}
 \title{Compute the Partial Correlation Between the Outcome and a Covariate}
 \usage{
 partialCorrelation(object, var, fisher.transform, cluster)
 
 \method{partialCorrelation}{lm}(object, var, fisher.transform = FALSE,
+  cluster = NULL)
+
+\method{partialCorrelation}{mmm}(object, var, fisher.transform = FALSE,
   cluster = NULL)
 }
 \arguments{

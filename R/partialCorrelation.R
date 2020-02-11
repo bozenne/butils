@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb  6 2020 (13:28) 
 ## Version: 
-## Last-Updated: feb  6 2020 (17:37) 
+## Last-Updated: feb 11 2020 (17:34) 
 ##           By: Brice Ozenne
-##     Update #: 82
+##     Update #: 84
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -103,7 +103,7 @@ partialCorrelation.lm <- function(object, var, fisher.transform = FALSE, cluster
     ## sqrt(sum(attr(out,"iid")^2))
 
     if(fisher.transform){ ## to match lava::partialcor
-        out.trans <- transformSummaryTable(out, transform = "atanh")
+        out.trans <- lavaSearch2::transformSummaryTable(out, transform = "atanh")
         out.trans$std.error <- sqrt(1/(stats::nobs(e.lmres) - length(X) - 1 - 3))
         out[,"ci.lower"] <- tanh(out.trans$estimate + qnorm(0.025) * out.trans$std.error) ##tanh(out.trans[,c("ci.lower","ci.upper")])
         out[,"ci.upper"] <- tanh(out.trans$estimate + qnorm(0.975) * out.trans$std.error) ##tanh(out.trans[,c("ci.lower","ci.upper")])
@@ -114,6 +114,8 @@ partialCorrelation.lm <- function(object, var, fisher.transform = FALSE, cluster
 }
 
 ## * partialCorrelation.mmm
+##' @rdname partialCorrelation
+##' @export
 partialCorrelation.mmm <- function(object, var, fisher.transform = FALSE, cluster = NULL){
 
     ## ** compute partial correlation for each model
