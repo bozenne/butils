@@ -7,7 +7,7 @@
 ##' @param model Model object (e.g. \code{lm})
 ##' @param var [character] Independent variable(s) whose effect should be kept in the partial residuals.
 ##' @param keep.intercept [logical] should the partial residual be computed keeping the contribution of the reference level?
-##' @param conditional [logical] are the predictions conditional to the random effect? (if any)
+##' @param conditional [logical] should the partial residuals be computed without the random effects? (if any)
 ##' @param interval [character] Type of interval calculation ("confidence" or "prediction").
 ##' @param level [numeric, 0-1] Level of confidence limits (default 95\%)
 ##' @param npoints [integer] Length of the vector of unique values relative to each continuous variable.
@@ -24,9 +24,10 @@
 ##' \deqn{\varepsilon_{X} = \alpha + \beta X + \varepsilon}
 ##' depending on the value of the argument \code{keep.intercept}.
 ##' The X matrix is defined contains the variables defined by the \code{var} argument.
-##' 
+##'
+##' Confidence intervals are only valid in homoschedastic models.
 ##' When using mixed models, the confidence and prediction intervals
-##' ignore the uncertainty of the covariance parameters.
+##' ignore the uncertainty of the covariance parameters/random effects.
 ##' 
 ##' @return list with following members:
 ##' \item{data}{Original dataset with an additional column containing the partial residuals}
@@ -99,46 +100,44 @@ partialResiduals <- function(model,var,
                              FUN.df,
                              ...) {
 
-    if (!inherits(model,"lmerMod") && !inherits(model,"lme") && !inherits(model,"gls") && !inherits(model,"lm")){
-        stop("partialResiduals can only deal with lm, lme, and lmerMod objects \n")
+    test.lm <- inherits(model,"lm")
+    test.gls <- inherits(model,"gls")
+    test.lme <- inherits(model,"lme")
+    test.lmer <- inherits(model,"lmerMod")
+    if(test.lm==FALSE && test.gls==FALSE && test.lme==FALSE && test.lmer==FALSE){
+        stop("partialResiduals can only deal with lm, gls, lme, and lmerMod objects \n")
     }
-
-    model.class <- class(model)
-    attributes(model.class) <- NULL
-
+    
     out <- list()
-#
     ## ** define class specific functions
-    if(any(model.class %in% c("lme","lmerMod"))){
+    if(test.lme ||test.lmer){
         FUN.coef <- function(object, ...){
             fixef(object, ...)
         }
-    }else if(any(model.class %in% c("lm","gls"))){
+    }else if(test.lm || test.gls){
         FUN.coef <- function(object, ...){
             coef(object, ...)
         }
     }
 
-    if(any(model.class == "lme")){
+    if(test.lmer){
         FUN.ranef <- function(object, ...){
-            ranef(object, ...)
+            predict(model, re.form = NULL, random.only = TRUE, type = "response")
         }
-    }else if(any(model.class == "lmerMod")){
+    }else if(test.lme){
         FUN.ranef <- function(object, ...){
-            ranef(object, ...)
+            predict(model) - predict(model, level = 0)
         }
-    }else if(any(model.class %in% c("lm","gls","lme"))){
-        FUN.ranef <- function(object, ...){
-            coef(object, ...)
-        }
+    }else if(test.lm || test.gls){
+        stop("Argument \'conditional=TRUE\' not applicable to lm or gls objects. \n")
     }
     
     
-    if(any(model.class=="lmerMod")){
+    if(test.lmer){
         FUN.vcov <- function(object, ...){
             as.matrix(stats::vcov(object, ...))  
         }
-    }else if(any(model.class %in% c("lm","gls","lme"))){
+    }else if(test.lm || test.gls || test.lmer){
         FUN.vcov <- function(object, ...){
             stats::vcov(object, ...)
         }
@@ -153,11 +152,11 @@ partialResiduals <- function(model,var,
     }
 
     if(missing(FUN.df)){
-        if(any(model.class %in% c("lmerMod","lme","gls"))){
+        if(test.lmer || test.lme || test.gls){
             FUN.df <- function(model, level){
                 NULL
             }
-        }else if(any(model.class=="lm")){
+        }else if(test.lm){
             FUN.df <- function(model, level){
                 model$df.residual
             }
@@ -178,7 +177,6 @@ partialResiduals <- function(model,var,
     }
 
     ## ** normalize input
-
     interval <- match.arg(interval, c("confidence","prediction"))
     design.df <- as.data.table(lavaSearch2::extractData(model, design.matrix = FALSE))
     
@@ -198,17 +196,7 @@ partialResiduals <- function(model,var,
         stop("Unknown variable(s): \"",paste(var[var %in% name.X.df == FALSE], collapse = "\" \""),"\" \n",
              "argument \'var\' should be in \"",paste(name.X.df,collapse = "\" \""),"\" \n")
     }
-  
-    ## ** additional tests
-    ## if (inherits(model,"lmerMod")) {
-    ##     warning(interval," intervals may not be reliable (see ?lme4:::predict.merMod) \n")
-    ## }
-
-    if(conditional){ # https://stackoverflow.com/questions/25538199/design-matrix-for-mlm-from-librarylme4-with-fixed-and-random-effects
-        stop("no yet implemented \n")
-    }
-
-
+ 
     ## ** Reference level
     n <- NROW(design.df)
     p <- length(name.X.df)
@@ -232,21 +220,21 @@ partialResiduals <- function(model,var,
     test.intercept <- as.logical(attr(terms(model.formula),"intercept"))
     
     if(test.intercept){
-      name.intercept <- "(Intercept)"
+        name.intercept <- "(Intercept)"
     }else if(any(design.factor)){ # find reference level
-            design.mat <- FUN.model.matrix(model.formula, data = design.df[1,,drop=FALSE])
-            attr.assign <- attr(design.mat, "assign")
-            indexRef <- which(tapply(attr.assign, attr.assign, function(x){any(duplicated(x))}))
-            name.intercept <- names(beta)[match(indexRef, attr.assign)]
+        design.mat <- FUN.model.matrix(model.formula, data = design.df[1,,drop=FALSE])
+        attr.assign <- attr(design.mat, "assign")
+        indexRef <- which(tapply(attr.assign, attr.assign, function(x){any(duplicated(x))}))
+        name.intercept <- names(beta)[match(indexRef, attr.assign)]
     }else{
-      name.intercept <- NULL
+        name.intercept <- NULL
     }
 
-    ## ** partial residuals
+    ## ** partial fit
     design.mat <- model.matrix(model.formula, data = newdata.fit)    
     if(!is.null(name.intercept) && keep.intercept){
-                                        # add the residual due to the intercept
-                                        # since it is among the variable of interest
+        ## add the residual due to the intercept
+        ## since it is among the variable of interest
         design.mat[,name.intercept] <- 0
     }
 
@@ -259,7 +247,16 @@ partialResiduals <- function(model,var,
     }
     design.df$pFit <- as.numeric(NA)
     design.df$pFit[index.nna] <- as.numeric(design.mat %*% beta)
-    design.df$pResiduals <- newdata.fit[[name.Y]] - design.df$pFit
+
+    ## ** random effect
+    if(conditional){ # https://stackoverflow.com/questions/25538199/design-matrix-for-mlm-from-librarylme4-with-fixed-and-random-effects
+        design.df$ranef[index.nna] <- FUN.ranef(model)
+    }else{
+        design.df$ranef <- 0
+    }
+
+    ## ** partial residuals
+    design.df$pResiduals <- newdata.fit[[name.Y]] - design.df$pFit - design.df$ranef
     
     ## ** partial fitted values
     ## newdata

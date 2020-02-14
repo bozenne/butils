@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr  4 2017 (15:45) 
 ## Version: 
-## last-updated: feb  6 2020 (15:37) 
+## last-updated: feb 14 2020 (11:03) 
 ##           By: Brice Ozenne
-##     Update #: 181
+##     Update #: 182
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -117,6 +117,7 @@ autoplot.partialResiduals <- function(object, alpha.ggplot = 0.25, ...){
         gg <- gg + ggplot2::scale_fill_manual("",values = "grey")
     }
     gg <- gg + ggplot2::ylab(paste0("Partial residuals \n",name.Y," | ",paste0(object.var,collapse = ", ")))
+    gg <- gg + ggplot2::theme(legend.position = "bottom")
     print(gg)
      
 ## ** export
