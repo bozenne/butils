@@ -137,7 +137,7 @@ partialResiduals <- function(model,var,
         FUN.vcov <- function(object, ...){
             as.matrix(stats::vcov(object, ...))  
         }
-    }else if(test.lm || test.gls || test.lmer){
+    }else if(test.lm || test.gls || test.lme){
         FUN.vcov <- function(object, ...){
             stats::vcov(object, ...)
         }
