@@ -15,7 +15,7 @@ partialResiduals(model, var, keep.intercept = FALSE,
 
 \item{keep.intercept}{[logical] should the partial residual be computed keeping the contribution of the reference level?}
 
-\item{conditional}{[logical] are the predictions conditional to the random effect? (if any)}
+\item{conditional}{[logical] should the partial residuals be computed without the random effects? (if any)}
 
 \item{interval}{[character] Type of interval calculation ("confidence" or "prediction").}
 
@@ -50,8 +50,9 @@ or
 depending on the value of the argument \code{keep.intercept}.
 The X matrix is defined contains the variables defined by the \code{var} argument.
 
+Confidence intervals are only valid in homoschedastic models.
 When using mixed models, the confidence and prediction intervals
-ignore the uncertainty of the covariance parameters.
+ignore the uncertainty of the covariance parameters/random effects.
 }
 \examples{
 library(lava)

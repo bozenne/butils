@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb 14 2020 (17:23) 
 ## Version: 
-## Last-Updated: feb 14 2020 (18:25) 
+## Last-Updated: feb 18 2020 (11:40) 
 ##           By: Brice Ozenne
-##     Update #: 18
+##     Update #: 110
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,8 +21,10 @@
 #' @description Perform a linear regression on an unobserved exposure (X) using a proxy (Z) whose relationship with the exposure has been studied using an external dataset.
 #'
 #' @param formula formula for the linear model.
-#' @param data dataset used to fit the linear model relating the outcome (Y) to the (unobserved) exposure (X).
+#' @param data [data.frame] dataset used to fit the linear model relating the outcome (Y) to the (unobserved) exposure (X).
 #' @param calibration a \code{lm} object or \code{nls} object relating a proxy (Z) to the unobserved exposure (X).
+#' @param method [character] Can be \code{"delta"} or \code{"MI"} to use, respectively, a delta method or multiple imputation.
+#' @param n.impute [integer, >0] Number of imputed dataset to be used. Only relevant when \code{method="MI"}.
 #'
 #' @details Consider a first sample \eqn{(X_i,Z_i)_{i \in \{1,\ldots,m\}}} that is used to estimate \eqn{\alpha} in:
 #' \deqn{X = f(alpha,Z) + \varepsilon_{\alpha}}
@@ -31,12 +33,18 @@
 #' The aim is to use a second sample \eqn{(Y_j,Z_j)_{j \in \{1,\ldots,n\}}} to estimate \eqn{\beta_1} in:
 #' \deqn{Y = \beta_0 + \beta_1 X + \varepsilon_{\beta}}
 #' The formula of this model should be given to the argument \code{formula} and the dataset to the argument \code{data}.
-#' This function uses the predictions of the first model to estimate \(\X\) for the second sample.
-#' The uncertainty is decomposed into two part:
+#' 
+#' The exposure \(X\) in the second sample is computed:
+#'\itemize{
+#' \item based on the conditional expectation of the exposure given the proxy from the first model (\code{method="delta"}).
+#' \item based on multiple sampling of the coefficients from the first model (\code{method="MI"}).
+#' For each sample an exposure is computed, a linear model is then estimated based on this exposure. The results are then pooled using \code{mice::pool}.
+#' }
+#' 
+#' When using the delta method, the uncertainty is decomposed into two parts:
 #' \itemize{
 #' \item one related to the finite number of observations in the second sample.
 #' \item one related to the estimation of the parameters in the calibration model, to account for the fact that \(X\) is estimated and not observed.
-#' This part of the variance is estimated using a delta method.
 #' }
 #' 
 #' @return A data.frame containing the estimates, standard errors, confidence intervals and p-values for each regression coefficient.
@@ -76,53 +84,150 @@
 #' d1.nlin$fit <- fitted(e1.nlin)
 #' 
 #' ## gg + geom_line(data = d1.nlin, aes(y = fit), color = "red")
+#'
+#' res.nlin <- calreg(fMRI ~ occ, data = d2.nlin, calibration = e1.nlin)
+#' res.nlin
+#' summary(attr(res.nlin, "regression"))$coef
+#' 
 
 ## * calreg (code)
 ##' @rdname calreg
 ##' @export
-calreg <- function(formula, data, calibration){
+calreg <- function(formula, data, calibration, method = "delta", n.impute = 50){
+
+    ## ** extract information
+    formula.calibration <- formula(calibration)
+    name.X <- all.vars(formula.calibration)[1]
+    args.txt <- names(coef(calibration))
+
+    alpha <- coef(calibration)
+    name.alpha <- names(alpha)
+    vcov_alpha <- vcov(calibration)
 
     ## ** check arguments
     if(!inherits(calibration,"lm") && !inherits(calibration,"nls")){
         stop("Only compatible with lm and nls objects \n")
     }
+    method <- match.arg(method, choices = c("delta","MI"))
 
-    ## ** extract information
-    name.X <- all.vars(formula(calibration))[1]
-    X <- model.matrix(calibration)
-    alpha <- coef(calibration)
-    vcov_alpha <- vcov(calibration)
-    
-    ## ** fit new regression
-    refit <- function(p){
-        data[[name.X]] <- X %*% p
-        return(lm(formula, data = data))
+    if(name.X %in% all.vars(formula)[-1] == FALSE){
+        stop("The outcome of the calibration model should be an covariate in the argument \'formula\' \n")
     }
-    regression <- refit(alpha)
+    
+    ## ** prepare prediction
+    if(inherits(calibration,"lm")){
+        Z <- model.matrix(calibration)
+        refit <- function(p){
+            if(is.null(p)){
+                p <- coef(calibration)
+            }
+            data[[name.X]] <- Z %*% p
+            return(lm(formula, data = data))
+        }
+    }else if(inherits(calibration,"nls")){
+        class(calibration) <- append("nls.calreg",class(calibration))
+        refit <- function(p){
+            data[[name.X]] <- predict(calibration, newdata = data, newparam = p)
+            return(lm(formula, data = data))
+        }
+    }
+
+    ## ** fit model based on the expected exposure conditional on the proxy
+    regression <- refit(NULL) ## default values (same as refit(alpha))
     Sregression <- summary(regression)
-    
-    ## ** delta method
-    dcoef <- numDeriv::jacobian(func = function(x){coef(refit(x))},
-                                x = alpha)
-    var.add <- dcoef %*% vcov_alpha %*% t(dcoef)
-    ## dcoef[1,,drop=FALSE] %*% vcov_alpha %*% t(dcoef[1,,drop=FALSE]) - var.add[1,1]
 
-    newcov <- Sregression$cov.unscaled * sigma(regression)^2 + var.add
-    table2 <- data.frame(matrix(NA, nrow = nrow(Sregression$coef), ncol = 7,
-                                dimnames = list(rownames(Sregression$coef), c("estimate","std.error","df","ci.lower","ci.upper","statistic","p.value"))))
-    table2$estimate <- as.double(Sregression$coef[,"Estimate"])
-    table2$std.error <- as.double(sqrt(diag(newcov)))
-    table2$df <- regression$df.residual
-    table2$ci.lower <- table2$estimate + qt(0.025, df = table2$df) * table2$std.error
-    table2$ci.upper <- table2$estimate + qt(0.975, df = table2$df) * table2$std.error
-    table2$statistic <- table2$estimate/table2$std.error
-    table2$p.value <- 2*(1-pt(abs(table2$statistic), df = table2$df))
-
-    attr(table2, "regression") <- regression
-    attr(table2, "var.add") <- var.add
+    ## ** approach 1: delta method
+    if(method == "delta"){
     
+        ## apply delta method
+        dcoef <- numDeriv::jacobian(func = function(x){coef(refit(x))},
+                                    x = alpha)
+        var.add <- dcoef %*% vcov_alpha %*% t(dcoef)
+        ## dcoef[1,,drop=FALSE] %*% vcov_alpha %*% t(dcoef[1,,drop=FALSE]) - var.add[1,1]
+
+        newcov <- Sregression$cov.unscaled * sigma(regression)^2 + var.add
+        table2 <- data.frame(matrix(NA, nrow = nrow(Sregression$coef), ncol = 7,
+                                    dimnames = list(rownames(Sregression$coef), c("estimate","std.error","df","ci.lower","ci.upper","statistic","p.value"))))
+        table2$estimate <- as.double(Sregression$coef[,"Estimate"])
+        table2$std.error <- as.double(sqrt(diag(newcov)))
+        table2$df <- regression$df.residual
+        table2$ci.lower <- table2$estimate + qt(0.025, df = table2$df) * table2$std.error
+        table2$ci.upper <- table2$estimate + qt(0.975, df = table2$df) * table2$std.error
+        table2$statistic <- table2$estimate/table2$std.error
+        table2$p.value <- 2*(1-pt(abs(table2$statistic), df = table2$df))
+
+        attr(table2, "regression") <- regression
+        attr(table2, "var.add") <- var.add
+    }
+
+    ## ** approach 2: multiple imputation
+    if(method == "MI"){
+        M.impute <- MASS::mvrnorm(n = n.impute, mu = alpha, Sigma = vcov_alpha)
+        regression.MI <- apply(M.impute, 1, function(iCoef){
+            refit(iCoef)
+        })
+        table2 <- summary(mice::pool(regression.MI))
+        table2$ci.lower <- table2$estimate + qt(0.025, df = table2$df) * table2$std.error
+        table2$ci.upper <- table2$estimate + qt(0.975, df = table2$df) * table2$std.error
+        table2 <- table2[,c("estimate","std.error","df","ci.lower","ci.upper","statistic","p.value")]
+
+        attr(table2, "regression") <- regression
+        attr(table2, "var.add") <- table2[name.X,"std.error"]^2 - vcov(regression)[name.X,name.X]
+    }
+
+    ## ** export
     return(table2)
     
+}
+
+## * predict.nls.calreg
+## prediction with new coefficient value 
+predict.nls.calreg <- function(object, newdata = NULL, newparam = NULL, se.fit = FALSE, ...){
+    class(object) <- setdiff(class(object),"nls.calreg")
+
+    if(!is.null(newparam)){
+        if(se.fit){
+            stop("Argument \'se.fit\' must be FALSE when argument \'newparam\' is not NULL. \n")
+        }
+
+        ## ** check names
+        args.param <- names(object$m$getPars())
+        object.env <- object$m$getEnv()
+        object.env.save <- mget(ls(envir = object.env), envir = object.env)
+        if(is.null(names(newparam)) || (any(sort(names(newparam)) != sort(args.param)))){
+            stop("Incorrect specification of argument \'newparam\' \n",
+                 "Must be a vector/list of numeric values with name(s): \"",paste(args.param, collapse = "\" \""),"\"\n")
+        }
+
+        if(any(args.param %in% names(object.env) == FALSE)){ ## then parameters are specified via a vector
+            args.param <- unique(gsub("\\d+$", replacement = "", x = args.param))
+            if(length(args.param)!=1){
+                stop("Could not identify a unique vector of parameters \n")
+            }
+            newparam <- setNames(list(as.double(newparam)), args.param)
+        }else{            
+            newparam <- as.list(newparam)
+        }
+        
+        ## ** assign param
+        n.param <- length(args.param)
+        for(iP in 1:n.param){
+            iParam <- args.param[iP]
+            base::assign(x = iParam, value = as.numeric(newparam[[iParam]]), envir = object.env)
+        }
+    }
+
+    out <- predict(object, newdata = newdata, se.fit = se.fit, ...)
+
+    if(!is.null(newparam)){
+        ## ** restore param
+        for(iP in 1:n.param){
+            iParam <- args.param[iP]
+            base::assign(x = iParam, value = object.env.save[[iParam]], envir = object.env)
+        }
+    }
+        
+    return(out)
 }
 
 ######################################################################
