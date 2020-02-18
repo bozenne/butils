@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb 14 2020 (17:23) 
 ## Version: 
-## Last-Updated: feb 18 2020 (11:40) 
+## Last-Updated: feb 18 2020 (13:49) 
 ##           By: Brice Ozenne
-##     Update #: 110
+##     Update #: 130
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -93,7 +93,7 @@
 ## * calreg (code)
 ##' @rdname calreg
 ##' @export
-calreg <- function(formula, data, calibration, method = "delta", n.impute = 50){
+calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", n.impute = 50){
 
     ## ** extract information
     formula.calibration <- formula(calibration)
@@ -104,6 +104,7 @@ calreg <- function(formula, data, calibration, method = "delta", n.impute = 50){
     name.alpha <- names(alpha)
     vcov_alpha <- vcov(calibration)
 
+    
     ## ** check arguments
     if(!inherits(calibration,"lm") && !inherits(calibration,"nls")){
         stop("Only compatible with lm and nls objects \n")
@@ -113,7 +114,12 @@ calreg <- function(formula, data, calibration, method = "delta", n.impute = 50){
     if(name.X %in% all.vars(formula)[-1] == FALSE){
         stop("The outcome of the calibration model should be an covariate in the argument \'formula\' \n")
     }
-    
+
+    fitter <- match.arg(fitter, c("lm","lmer"))
+    getCoef <- switch(fitter,
+                      "lm" = coef,
+                      "lmer" = lme4::fixef)
+
     ## ** prepare prediction
     if(inherits(calibration,"lm")){
         Z <- model.matrix(calibration)
@@ -122,13 +128,13 @@ calreg <- function(formula, data, calibration, method = "delta", n.impute = 50){
                 p <- coef(calibration)
             }
             data[[name.X]] <- Z %*% p
-            return(lm(formula, data = data))
+            return(do.call(fitter, args = list(formula = formula, data = data)))
         }
     }else if(inherits(calibration,"nls")){
         class(calibration) <- append("nls.calreg",class(calibration))
         refit <- function(p){
             data[[name.X]] <- predict(calibration, newdata = data, newparam = p)
-            return(lm(formula, data = data))
+            return(do.call(fitter, args = list(formula = formula, data = data)))
         }
     }
 
@@ -136,21 +142,36 @@ calreg <- function(formula, data, calibration, method = "delta", n.impute = 50){
     regression <- refit(NULL) ## default values (same as refit(alpha))
     Sregression <- summary(regression)
 
+    if(any(is.na(getCoef(regression)))){
+        warning("One of the regression parameter could not be estimated.\n")
+        table2 <- data.frame(matrix(NA, nrow = nrow(Sregression$coef), ncol = 7,
+                                    dimnames = list(rownames(Sregression$coef), c("estimate","std.error","df","ci.lower","ci.upper","statistic","p.value"))))
+        attr(table2,"regression") <- regression
+        attr(table2,"add.var") <- NA
+        return(table2)
+    }
+
     ## ** approach 1: delta method
     if(method == "delta"){
     
         ## apply delta method
-        dcoef <- numDeriv::jacobian(func = function(x){coef(refit(x))},
+        dcoef <- numDeriv::jacobian(func = function(x){getCoef(refit(x))},
                                     x = alpha)
         var.add <- dcoef %*% vcov_alpha %*% t(dcoef)
         ## dcoef[1,,drop=FALSE] %*% vcov_alpha %*% t(dcoef[1,,drop=FALSE]) - var.add[1,1]
-
-        newcov <- Sregression$cov.unscaled * sigma(regression)^2 + var.add
+        
+        newcov <- vcov(regression) + var.add
         table2 <- data.frame(matrix(NA, nrow = nrow(Sregression$coef), ncol = 7,
                                     dimnames = list(rownames(Sregression$coef), c("estimate","std.error","df","ci.lower","ci.upper","statistic","p.value"))))
         table2$estimate <- as.double(Sregression$coef[,"Estimate"])
         table2$std.error <- as.double(sqrt(diag(newcov)))
-        table2$df <- regression$df.residual
+        if(inherits(regression,"lmerModLmerTest")){
+            table2$df <- unname(summary(regression)$coef[,"df"])
+        }else if(inherits(regression,"lm")){
+            table2$df <- regression$df.residual
+        }else{
+            table2$df <- Inf
+        }
         table2$ci.lower <- table2$estimate + qt(0.025, df = table2$df) * table2$std.error
         table2$ci.upper <- table2$estimate + qt(0.975, df = table2$df) * table2$std.error
         table2$statistic <- table2$estimate/table2$std.error
@@ -163,10 +184,14 @@ calreg <- function(formula, data, calibration, method = "delta", n.impute = 50){
     ## ** approach 2: multiple imputation
     if(method == "MI"){
         M.impute <- MASS::mvrnorm(n = n.impute, mu = alpha, Sigma = vcov_alpha)
+        lmer <- lme4::lmer
+        
         regression.MI <- apply(M.impute, 1, function(iCoef){
             refit(iCoef)
         })
-        table2 <- summary(mice::pool(regression.MI))
+        names(regression.MI) <- paste0("M",1:length(regression.MI))
+        pool.MI <- mice::pool(mice::as.mira(regression.MI))
+        table2 <- summary(pool.MI)
         table2$ci.lower <- table2$estimate + qt(0.025, df = table2$df) * table2$std.error
         table2$ci.upper <- table2$estimate + qt(0.975, df = table2$df) * table2$std.error
         table2 <- table2[,c("estimate","std.error","df","ci.lower","ci.upper","statistic","p.value")]

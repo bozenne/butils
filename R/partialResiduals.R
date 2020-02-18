@@ -120,16 +120,18 @@ partialResiduals <- function(model,var,
         }
     }
 
-    if(test.lmer){
-        FUN.ranef <- function(object, ...){
-            predict(model, re.form = NULL, random.only = TRUE, type = "response")
+    if(conditional){
+        if(test.lmer){
+            FUN.ranef <- function(object, ...){
+                predict(model, re.form = NULL, random.only = TRUE, type = "response")
+            }
+        }else if(test.lme){
+            FUN.ranef <- function(object, ...){
+                predict(model) - predict(model, level = 0)
+            }
+        }else if(test.lm || test.gls){
+            stop("Argument \'conditional=TRUE\' not applicable to lm or gls objects. \n")
         }
-    }else if(test.lme){
-        FUN.ranef <- function(object, ...){
-            predict(model) - predict(model, level = 0)
-        }
-    }else if(test.lm || test.gls){
-        stop("Argument \'conditional=TRUE\' not applicable to lm or gls objects. \n")
     }
     
     
