@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr  4 2017 (15:45) 
 ## Version: 
-## last-updated: feb 14 2020 (11:03) 
+## last-updated: feb 18 2020 (18:28) 
 ##           By: Brice Ozenne
-##     Update #: 182
+##     Update #: 183
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -90,7 +90,7 @@ autoplot.partialResiduals <- function(object, alpha.ggplot = 0.25, ...){
         setkeyv(partialFit, c(var1,var2))
     }
     
-### ** display
+    ## ** display
     gg <- ggplot2::ggplot()
     if(is.null(var2) && !is.numeric(partialFit[[var1]])){
         gg <- gg + ggplot2::geom_point(data = data,

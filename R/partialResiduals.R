@@ -289,7 +289,6 @@ partialResiduals <- function(model,var,
         }
     }
     ## convert to design matrix
-    grid.predict$OC
     design.grid.predict <- model.matrix(model.formula, grid.predict)
     ## remove intercept
     if(!is.null(name.intercept) && keep.intercept == FALSE){
@@ -305,7 +304,7 @@ partialResiduals <- function(model,var,
     }else{
         z <- qt(1 - (1 - level)/2, df = model.df)
     }
-        
+
     model.vcov <- FUN.vcov(model)
     if(interval == "prediction"){
         model.sigma2 <- FUN.sigma2(model)
@@ -316,7 +315,9 @@ partialResiduals <- function(model,var,
     se.tempo <- apply(design.grid.predict, 1, function(x){
         sqrt(rbind(x) %*% model.vcov %*% cbind(x) + model.sigma2)
     })
-
+    ## sqrt(diag(model.vcov)[2])
+    ## se.tempo <- summary(model)$coef[2,2]
+    
     grid.predict$fit.lower <- grid.predict$fit - z * se.tempo
     grid.predict$fit.upper <- grid.predict$fit + z * se.tempo        
 

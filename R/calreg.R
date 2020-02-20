@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb 14 2020 (17:23) 
 ## Version: 
-## Last-Updated: feb 18 2020 (13:49) 
+## Last-Updated: feb 20 2020 (14:36) 
 ##           By: Brice Ozenne
-##     Update #: 130
+##     Update #: 153
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -37,8 +37,10 @@
 #' The exposure \(X\) in the second sample is computed:
 #'\itemize{
 #' \item based on the conditional expectation of the exposure given the proxy from the first model (\code{method="delta"}).
-#' \item based on multiple sampling of the coefficients from the first model (\code{method="MI"}).
+#' \item based on multiple sampling of the coefficients from the first model (\code{method="CMI"}).
 #' For each sample an exposure is computed, a linear model is then estimated based on this exposure. The results are then pooled using \code{mice::pool}.
+#' \item based on multiple sampling of the coefficients from the first model with noise (\code{method="MI"}).
+#' Same as \code{method="CMI"} except that gaussian noise is added to the exposure, according to the residual standard error of the calibration model.
 #' }
 #' 
 #' When using the delta method, the uncertainty is decomposed into two parts:
@@ -109,7 +111,7 @@ calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", 
     if(!inherits(calibration,"lm") && !inherits(calibration,"nls")){
         stop("Only compatible with lm and nls objects \n")
     }
-    method <- match.arg(method, choices = c("delta","MI"))
+    method <- match.arg(method, choices = c("delta","MI","CMI"))
 
     if(name.X %in% all.vars(formula)[-1] == FALSE){
         stop("The outcome of the calibration model should be an covariate in the argument \'formula\' \n")
@@ -123,17 +125,23 @@ calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", 
     ## ** prepare prediction
     if(inherits(calibration,"lm")){
         Z <- model.matrix(calibration)
-        refit <- function(p){
+        refit <- function(p, sd.noise = NULL){
             if(is.null(p)){
                 p <- coef(calibration)
             }
             data[[name.X]] <- Z %*% p
+            if(!is.null(sd.noise)){
+                data[[name.X]] <- data[[name.X]] + rnorm(length(data[[name.X]]), mean = 0, sd = sd.noise)
+            }
             return(do.call(fitter, args = list(formula = formula, data = data)))
         }
     }else if(inherits(calibration,"nls")){
         class(calibration) <- append("nls.calreg",class(calibration))
-        refit <- function(p){
+        refit <- function(p, sd.noise = NULL){
             data[[name.X]] <- predict(calibration, newdata = data, newparam = p)
+            if(!is.null(sd.noise)){
+                data[[name.X]] <- data[[name.X]] + rnorm(length(data[[name.X]]), mean = 0, sd = sd.noise)
+            }
             return(do.call(fitter, args = list(formula = formula, data = data)))
         }
     }
@@ -155,12 +163,20 @@ calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", 
     if(method == "delta"){
     
         ## apply delta method
+        ## For f: Rn -> Rm calculate the m,n Jacobian dy/dx (i.e. numerical approxiamtion of the first derivative)
         dcoef <- numDeriv::jacobian(func = function(x){getCoef(refit(x))},
                                     x = alpha)
         var.add <- dcoef %*% vcov_alpha %*% t(dcoef)
-        ## dcoef[1,,drop=FALSE] %*% vcov_alpha %*% t(dcoef[1,,drop=FALSE]) - var.add[1,1]
         
-        newcov <- vcov(regression) + var.add
+        ## dcoef[1,,drop=FALSE] %*% vcov_alpha %*% t(dcoef[1,,drop=FALSE])
+        ## dcoef[2,,drop=FALSE] %*% vcov_alpha %*% t(dcoef[2,,drop=FALSE])
+        ## numDeriv::grad(func = function(x){getCoef(refit(x))}[1],
+        ##                    x = alpha)
+        ## numDeriv::grad(func = function(x){getCoef(refit(x))}[2],
+        ##                    x = alpha)
+        
+        ## dcoef[1,,drop=FALSE] %*% vcov_alpha %*% t(dcoef[1,,drop=FALSE]) - var.add[1,1]
+        newcov <- as.matrix(vcov(regression)) + var.add ## as.matrix necessary for lmer object to convert sparse matrix to matrix
         table2 <- data.frame(matrix(NA, nrow = nrow(Sregression$coef), ncol = 7,
                                     dimnames = list(rownames(Sregression$coef), c("estimate","std.error","df","ci.lower","ci.upper","statistic","p.value"))))
         table2$estimate <- as.double(Sregression$coef[,"Estimate"])
@@ -182,12 +198,16 @@ calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", 
     }
 
     ## ** approach 2: multiple imputation
-    if(method == "MI"){
+    if(method %in% c("MI","CMI")){
         M.impute <- MASS::mvrnorm(n = n.impute, mu = alpha, Sigma = vcov_alpha)
         lmer <- lme4::lmer
-        
+        if(method == "MI"){
+            sd.noise <- sigma(calibration)
+        }else{
+            sd.noise <- NULL
+        }
         regression.MI <- apply(M.impute, 1, function(iCoef){
-            refit(iCoef)
+            refit(iCoef, sd.noise = sd.noise)
         })
         names(regression.MI) <- paste0("M",1:length(regression.MI))
         pool.MI <- mice::pool(mice::as.mira(regression.MI))
