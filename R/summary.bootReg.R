@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 21 2017 (17:49) 
 ## Version: 
-## Last-Updated: mar  1 2019 (11:20) 
+## Last-Updated: jan 13 2020 (14:48) 
 ##           By: Brice Ozenne
-##     Update #: 338
+##     Update #: 340
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -63,16 +63,17 @@ summary.bootReg <- function(object, p.value = TRUE,
     ### ** Convert to boot
     boot.object <- as.boot(object, index = index)
 
-### ** Compute confidence intervals and p.values
+    ## ** Compute confidence intervals and p.values
     resStat.full <- .calcCIP(boot.object, conf = conf, type = type, index = 1:length(index),
                              p.value = p.value,
                              stdError = object$stdError[index],
                              iid = object$iid[,index,drop=FALSE],
                              boot.stdError = object$boot.stdError[,index,drop=FALSE])
 
-### ** Display results
+    ## ** Display results
     rowM <- cbind(estimate = object$estimate[index],
                   estimate.boot = apply(object$boot.estimate[,index,drop=FALSE],2,mean,na.rm = TRUE),
+                  se = apply(object$boot.estimate[,index,drop=FALSE],2,sd,na.rm = TRUE),
                   resStat.full,
                   nBoot.effective = colSums(!is.na(object$boot.estimate[,index,drop=FALSE])))
     rowM <- as.data.frame(rowM)
@@ -103,7 +104,7 @@ summary.bootReg <- function(object, p.value = TRUE,
         cat(label.type," confidence intervals - see help(boot.ci) \n", sep = "")        
     }
 
-### ** By subset
+    ## ** By subset
     if(!is.null(n.subset)){ # seq.length.out <- 5
         cat("\n\n") 
         

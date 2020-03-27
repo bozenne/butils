@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 23 2018 (13:09) 
 ## Version: 
-## Last-Updated: jun 23 2018 (13:21) 
+## Last-Updated: jan  7 2020 (14:04) 
 ##           By: Brice Ozenne
-##     Update #: 9
+##     Update #: 10
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -31,6 +31,8 @@ NAMES <- function(x){
         return(names(attributes(x)))
     }else if(is.matrix(x)){
         return(colnames(x))
+    }else if(is.array(x)){
+        return(dimnames(x))
     }else{
         return(names(x))
     }

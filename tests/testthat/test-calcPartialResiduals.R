@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: maj 25 2017 (20:41) 
 ## Version: 
-## last-updated: jan 24 2018 (17:31) 
+## last-updated: feb  6 2020 (15:32) 
 ##           By: Brice Ozenne
-##     Update #: 70
+##     Update #: 73
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -43,19 +43,19 @@ test_that("linear model (1) - 1 variable", {
     res2 <- calcPartialResiduals(lm0, var=c("x1"), keep.intercept = FALSE)
     resGS <- plotConf(lm0, var1 = "x1", plot = FALSE)
     
-    expect_equal(res1$data$pResiduals, as.double(resGS$y))
-    expect_equal(res1$data$pResiduals,  res2$data$pResiduals + coef(lm0)[1])
+    expect_equal(res1$pResiduals, as.double(resGS$y))
+    expect_equal(res1$pResiduals,  res2$pResiduals + coef(lm0)[1])
     
     # to get normal quantile instead of student to match lava
     cst <- qnorm(1 - (1 - 0.95)/2)/qt(1 - (1 - 0.95)/2, df = lm0$df.residual)
-    res1$partialFit$fit.lower <- res1$partialFit$fit - cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
-    res1$partialFit$fit.upper <- res1$partialFit$fit + cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
+    attr(res1,"partialFit")$fit.lower <- attr(res1,"partialFit")$fit - cst*(attr(res1,"partialFit")$partialFit$fit.upper-attr(res1,"partialFit")$fit)
+    attr(res1,"partialFit")$fit.upper <- attr(res1,"partialFit")$fit + cst*(attr(res1,"partialFit")$fit.upper-attr(res1,"partialFit")$fit)
     
-    expect_equal(as.double(resGS$x),res1$partialFit$x1)
-    expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
-    expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
-    expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
-    expect_equal(res1$partialFit$fit,res2$partialFit$fit + coef(lm0)[1])
+    expect_equal(as.double(resGS$x),attr(res1,"partialFit")$x1)
+    expect_equal(as.double(resGS$predict$fit[,1]),attr(res1,"partialFit")$fit)
+    expect_equal(as.double(resGS$predict$fit[,2]),attr(res1,"partialFit")$fit.lower)
+    expect_equal(as.double(resGS$predict$fit[,3]),attr(res1,"partialFit")$fit.upper)
+    expect_equal(attr(res1,"partialFit")$fit,attr(res2,"partialFit")$fit + coef(lm0)[1])
 })
 
 test_that("linear model (2) - 1 variable", {
@@ -66,19 +66,19 @@ test_that("linear model (2) - 1 variable", {
     res2 <- calcPartialResiduals(lm0, var=c("Sepal.Width"), keep.intercept = FALSE)
     resGS <- plotConf(lm0,var1="Sepal.Width", plot = FALSE)
     
-    expect_equal(res1$data$pResiduals, as.double(resGS$y))
-    expect_equal(res1$data$pResiduals,  res2$data$pResiduals + coef(lm0)[1])
+    expect_equal(res1$pResiduals, as.double(resGS$y))
+    expect_equal(res1$pResiduals,  res2$pResiduals + coef(lm0)[1])
     
     # to get normal quantile instead of student to match lava
     cst <- qnorm(1 - (1 - 0.95)/2)/qt(1 - (1 - 0.95)/2, df = lm0$df.residual)
-    res1$partialFit$fit.lower <- res1$partialFit$fit - cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
-    res1$partialFit$fit.upper <- res1$partialFit$fit + cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
+    attr(res1,"partialFit")$fit.lower <- attr(res1,"partialFit")$fit - cst*(attr(res1,"partialFit")$fit.upper-attr(res1,"partialFit")$fit)
+    attr(res1,"partialFit")$fit.upper <- attr(res1,"partialFit")$fit + cst*(attr(res1,"partialFit")$fit.upper-attr(res1,"partialFit")$fit)
 
-    expect_equal(as.double(resGS$x),res1$partialFit$Sepal.Width)
-    expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
-    expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
-    expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
-    expect_equal(res1$partialFit$fit,res2$partialFit$fit + coef(lm0)[1])
+    expect_equal(as.double(resGS$x),attr(res1,"partialFit")$Sepal.Width)
+    expect_equal(as.double(resGS$predict$fit[,1]),attr(res1,"partialFit")$fit)
+    expect_equal(as.double(resGS$predict$fit[,2]),attr(res1,"partialFit")$fit.lower)
+    expect_equal(as.double(resGS$predict$fit[,3]),attr(res1,"partialFit")$fit.upper)
+    expect_equal(attr(res1,"partialFit")$fit,attr(res2,"partialFit")$fit + coef(lm0)[1])
 })
 
 test_that("linear model (1) - 2 variables", {
@@ -88,20 +88,20 @@ test_that("linear model (1) - 2 variables", {
     res2 <- calcPartialResiduals(lm0, var=c("x1","x2"), keep.intercept = FALSE)
     resGS <- plotConf(lm0, var1="x1", var2 ="x2", plot = FALSE)
     
-    expect_equal(res1$data$pResiduals, as.double(resGS$y))
-    expect_equal(res1$data$pResiduals,  res2$data$pResiduals + coef(lm0)[1])
+    expect_equal(res1$pResiduals, as.double(resGS$y))
+    expect_equal(res1$pResiduals,  res2$pResiduals + coef(lm0)[1])
     
     
     # to get normal quantile instead of student to match lava
     cst <- qnorm(1 - (1 - 0.95)/2)/qt(1 - (1 - 0.95)/2, df = lm0$df.residual)
-    res1$partialFit$fit.lower <- res1$partialFit$fit - cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
-    res1$partialFit$fit.upper <- res1$partialFit$fit + cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
+    attr(res1,"partialFit")$fit.lower <- attr(res1,"partialFit")$fit - cst*(attr(res1,"partialFit")$fit.upper-attr(res1,"partialFit")$fit)
+    attr(res1,"partialFit")$fit.upper <- attr(res1,"partialFit")$fit + cst*(attr(res1,"partialFit")$fit.upper-attr(res1,"partialFit")$fit)
 
-    expect_equal(as.double(rep(resGS$x,2)),res1$partialFit$x1)
-    expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
-    expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
-    expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
-    expect_equal(res1$partialFit$fit,res2$partialFit$fit + coef(lm0)[1])
+    expect_equal(as.double(rep(resGS$x,2)),attr(res1,"partialFit")$x1)
+    expect_equal(as.double(resGS$predict$fit[,1]),attr(res1,"partialFit")$fit)
+    expect_equal(as.double(resGS$predict$fit[,2]),attr(res1,"partialFit")$fit.lower)
+    expect_equal(as.double(resGS$predict$fit[,3]),attr(res1,"partialFit")$fit.upper)
+    expect_equal(attr(res1,"partialFit")$fit,attr(res2,"partialFit")$fit + coef(lm0)[1])
 })
 
 test_that("linear model (2) - 2 variables", {
@@ -112,20 +112,20 @@ test_that("linear model (2) - 2 variables", {
     res2 <- calcPartialResiduals(lm0, var=c("Sepal.Width","Species"), keep.intercept = FALSE)
     resGS <- plotConf(lm0, var1="Sepal.Width", var2 ="Species", plot = FALSE)
     
-    expect_equal(res1$data$pResiduals, as.double(resGS$y))
-    expect_equal(res1$data$pResiduals,  res2$data$pResiduals + coef(lm0)[1])
+    expect_equal(res1$pResiduals, as.double(resGS$y))
+    expect_equal(res1$pResiduals,  res2$pResiduals + coef(lm0)[1])
     
     
     # to get normal quantile instead of student to match lava
     cst <- qnorm(1 - (1 - 0.95)/2)/qt(1 - (1 - 0.95)/2, df = lm0$df.residual)
-    res1$partialFit$fit.lower <- res1$partialFit$fit - cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
-    res1$partialFit$fit.upper <- res1$partialFit$fit + cst*(res1$partialFit$fit.upper-res1$partialFit$fit)
+    attr(res1,"partialFit")$fit.lower <- attr(res1,"partialFit")$fit - cst*(attr(res1,"partialFit")$fit.upper-attr(res1,"partialFit")$fit)
+    attr(res1,"partialFit")$fit.upper <- attr(res1,"partialFit")$fit + cst*(attr(res1,"partialFit")$fit.upper-attr(res1,"partialFit")$fit)
 
-    expect_equal(as.double(rep(resGS$x,3)),res1$partialFit$Sepal.Width)
-    expect_equal(as.double(resGS$predict$fit[,1]),res1$partialFit$fit)
-    expect_equal(as.double(resGS$predict$fit[,2]),res1$partialFit$fit.lower)
-    expect_equal(as.double(resGS$predict$fit[,3]),res1$partialFit$fit.upper)
-    expect_equal(res1$partialFit$fit,res2$partialFit$fit + coef(lm0)[1])
+    expect_equal(as.double(rep(resGS$x,3)),attr(res1,"partialFit")$Sepal.Width)
+    expect_equal(as.double(resGS$predict$fit[,1]),attr(res1,"partialFit")$fit)
+    expect_equal(as.double(resGS$predict$fit[,2]),attr(res1,"partialFit")$fit.lower)
+    expect_equal(as.double(resGS$predict$fit[,3]),attr(res1,"partialFit")$fit.upper)
+    expect_equal(attr(res1,"partialFit")$fit,attr(res2,"partialFit")$fit + coef(lm0)[1])
 
 })
 
@@ -136,19 +136,19 @@ test_that("linear model - 1 variables no intercept", {
     lm0.center <- lm(y.center ~ 0 +  x0, data = dd)
     
     res1 <- calcPartialResiduals(lm0, var=c("x0"))
-    intercept <- coef(lm(fit ~ x0, res1$partialFit))["(Intercept)"]
+    intercept <- coef(lm(fit ~ x0, attr(res1,"partialFit")))["(Intercept)"]
     expect_equal(as.double(intercept),0)
 
     res1 <- calcPartialResiduals(lm0.center, var=c("x0"))
-    intercept <- coef(lm(fit ~ x0, res1$partialFit))["(Intercept)"]
+    intercept <- coef(lm(fit ~ x0, attr(res1,"partialFit")))["(Intercept)"]
     expect_equal(as.double(intercept),0)
     # plot(res1)
 
     ## only one categorical variable
     lm0 <- lm(y ~ 0 + x2, data = dd)
     res1 <- calcPartialResiduals(lm0, var=c("x2"), keep.intercept = TRUE)
-    expect_equal(res1$data$x2, dd$x2)
-    expect_equal(res1$data$pResiduals, dd$y)
+    expect_equal(res1$x2, dd$x2)
+    expect_equal(res1$pResiduals, dd$y)
     # plot(res1)
 })
 
@@ -156,14 +156,14 @@ test_that("linear model - 2 variables", {
     ## two categorical
     lm0 <- lm(y ~ 0 + strata + x2, dd)
     res1 <- calcPartialResiduals(lm0, var=c("x2","strata"), keep.intercept = TRUE)
-    expect_equal(res1$data$x2, dd$x2)
-    expect_equal(res1$data$pResiduals, dd$y)
+    expect_equal(res1$x2, dd$x2)
+    expect_equal(res1$pResiduals, dd$y)
     # plot(res1)
     
     ## one categorical and one continuous
     res1 <- calcPartialResiduals(lm(y ~ 0 + x0 + x2, dd), var=c("x2"))
     res2 <- calcPartialResiduals(lm(y ~ 0 + x2 + x0, dd), var=c("x2"))
-    expect_equal(res1$data$pResiduals,res2$data$pResiduals)
+    expect_equal(res1$pResiduals,res2$pResiduals)
 })
 
 
@@ -179,19 +179,19 @@ test_that("no random effect", {
     res1 <- calcPartialResiduals(lmer0, var=c("x2"))
     res2 <- calcPartialResiduals(lme0, var=c("x2"))
 
-    expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res1$partialFit$fit, tol = 1e-6)
-    expect_equal(res0$data$pResiduals, res2$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res2$partialFit$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res1$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res1,"partialFit")$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res2$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res2,"partialFit")$fit, tol = 1e-6)
 
     res0 <- calcPartialResiduals(lm0, var=c("x1","x2"))
     res1 <- calcPartialResiduals(lmer0, var=c("x1","x2"))
     res2 <- calcPartialResiduals(lme0, var=c("x1","x2"))
 
-    expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res1$partialFit$fit, tol = 1e-6)
-    expect_equal(res0$data$pResiduals, res2$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res2$partialFit$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res1$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res1,"partialFit")$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res2$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res2,"partialFit")$fit, tol = 1e-6)
 })
 
 
@@ -204,23 +204,23 @@ test_that("no random effect no intercept", {
     res1 <- calcPartialResiduals(lmer0, var=c("x2"))
     res2 <- calcPartialResiduals(lme0, var=c("x2"))
 
-    expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res1$partialFit$fit, tol = 1e-6)
-    expect_equal(res0$data$pResiduals, res2$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res2$partialFit$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res1$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res1,"partialFit")$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res2$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res2,"partialFit")$fit, tol = 1e-6)
 
     res0 <- calcPartialResiduals(lm0, var=c("x1","x2"))
     res1 <- calcPartialResiduals(lmer0, var=c("x1","x2"))
     res2 <- calcPartialResiduals(lme0, var=c("x1","x2"))
 
-    expect_equal(res0$data$pResiduals, res1$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res1$partialFit$fit, tol = 1e-6)
-    expect_equal(res0$data$pResiduals, res2$data$pResiduals, tol = 1e-6)
-    expect_equal(res0$partialFit$fit, res2$partialFit$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res1$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res1,"partialFit")$fit, tol = 1e-6)
+    expect_equal(res0$pResiduals, res2$pResiduals, tol = 1e-6)
+    expect_equal(res0$partialFit$fit, attr(res2,"partialFit")$fit, tol = 1e-6)
 })
 
 
-## *  gls
+## * gls
 test_that("gls", {
     gls0 <- gls(y ~ x0 + x1*x2, correlation = corCompSymm(form=~ 1|Id), dd)
 
@@ -231,10 +231,41 @@ test_that("gls", {
     GS.F <- as.double(gls0.X[,"x0"] * coef(gls0)["x0"] + residuals(gls0))
     GS.T <- as.double(coef(gls0)["(Intercept)"] +  gls0.X[,"x0"] * coef(gls0)["x0"] + residuals(gls0))
 
-    expect_equal(GS.F, res1$data$pResiduals)
-    expect_equal(GS.T, res2$data$pResiduals)    
+    expect_equal(GS.F, res1$pResiduals)
+    expect_equal(GS.T, res2$pResiduals)    
 })
+## * categorical variables and missing values
+mSim <- lvm(AUC ~ OC + Age + Work)
+categorical(mSim, labels = c("Yes","No")) <- ~OC
+categorical(mSim, labels = c("Study","Rest","Work")) <- ~Work
 
+set.seed(10)
+d <- lava::sim(mSim, n=1e2)
+d[1,] <- NA
 
+test_that("partial residuals (categorical variables and missing values)", {
+    ## no interaction
+    e <- lm(AUC ~ OC + Age + Work, data = d)
+    e.PR <- calcPartialResiduals(e, var = "OC")
+
+    X <- rbind(NA,model.matrix(e))
+    keep.coef <- c("(Intercept)","Age","WorkRest","WorkWork")
+    GS <- d$AUC - X[,keep.coef] %*% coef(e)[keep.coef]
+    expect_equal(as.double(GS[,1]), as.double(e.PR$pResiduals))
+
+    ## interaction
+    e.I <- lm(AUC ~ OC * Age + Work, data = d)
+
+    e.I.PR <- calcPartialResiduals(e.I, var = "OC")
+    X.I <- rbind(NA,model.matrix(e.I))
+    keep.coef.I <- c("(Intercept)","Age","WorkRest","WorkWork")
+    GS.I <- d$AUC - X.I[,keep.coef.I] %*% coef(e.I)[keep.coef.I]
+    expect_equal(as.double(GS.I[,1]), as.double(e.I.PR$pResiduals))
+
+    e.I.PR <- calcPartialResiduals(e.I, var = c("OC","Work"))
+    keep.coef.I <- c("(Intercept)","Age")
+    GS.I <- d$AUC - X.I[,keep.coef.I] %*% coef(e.I)[keep.coef.I]
+    expect_equal(as.double(GS.I[,1]), as.double(e.I.PR$pResiduals))
+})
 #----------------------------------------------------------------------
 ### test-calcPartialResiduals.R ends here

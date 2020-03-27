@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  6 2019 (15:49) 
 ## Version: 
-## Last-Updated: dec  8 2019 (22:43) 
+## Last-Updated: feb  7 2020 (14:15) 
 ##           By: Brice Ozenne
-##     Update #: 124
+##     Update #: 125
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -352,13 +352,7 @@ summary.lmm <- function(object, digit = 3, conf.level = 0.95){
 # lhs.vars
 # -----------------------------------------------------------------------------
 
-#' @aliases lhs.vars
-#' @rdname get.vars
-
 setGeneric( 'lhs.vars', function(x, ... ) standardGeneric( 'lhs.vars' ) )
-
-#' @rdname get.vars
-#' @aliases .lhs.vars 
 .lhs.vars <- function(x, ..., data=NULL) 
 {
   if( 
@@ -372,29 +366,18 @@ setGeneric( 'lhs.vars', function(x, ... ) standardGeneric( 'lhs.vars' ) )
 
 }
 
-
-#' @rdname get.vars
-#' @aliases lhs.vars,formula-method
 setMethod( 'lhs.vars' , 'formula', .lhs.vars )
 
-#' @rdname get.vars
-#' @aliases lhs.vars,call-method
 setMethod( 'lhs.vars' , 'call'   , .lhs.vars )
 
-#' @rdname get.vars
-#' @aliases lhs.vars,expression-method
 setMethod( 'lhs.vars' , 'expression', function(x,...) lapply(x, .lhs.vars, ...))
 
 # -----------------------------------------------------------------------------
 # rhs.vars
 # -----------------------------------------------------------------------------
 
-#' @rdname get.vars
-#' @aliases rhs.vars
 setGeneric( 'rhs.vars', function(x, ... ) standardGeneric( 'rhs.vars' ) )
 
-#' @rdname get.vars
-#' @aliases .rhs.vars
 .rhs.vars <- 
   function(x, ..., data=NULL) 
   {
@@ -416,20 +399,10 @@ setGeneric( 'rhs.vars', function(x, ... ) standardGeneric( 'rhs.vars' ) )
   
   }
 
-
-
-
-
-#' @rdname get.vars
-#' @aliases rhs.vars,formula-method
 setMethod( 'rhs.vars' , 'formula', .rhs.vars )
 
-#' @rdname get.vars
-#' @aliases rhs.vars,call-method
 setMethod( 'rhs.vars' , 'call'   , .rhs.vars )
 
-#' @rdname get.vars
-#' @aliases rhs.vars,expression-method
 setMethod( 'rhs.vars' , 'expression', function(x,...) lapply(x, rhs.vars, ...))
 
 

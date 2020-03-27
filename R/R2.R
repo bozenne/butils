@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: aug  8 2017 (14:03) 
 ## Version: 
-## last-updated: nov 18 2019 (10:27) 
+## last-updated: jan 27 2020 (15:20) 
 ##           By: Brice Ozenne
-##     Update #: 104
+##     Update #: 106
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -120,7 +120,10 @@ calcR2 <- function(model, data = NULL, trace = FALSE){
             V <- Matrix::Diagonal(x = std.residuals)
         }else{
             ls.V <- lapply(levels(model$groups), function(x){
-                getSigmaGLS(model, data = data, individual = x, plot = FALSE)
+                if(!inherits(model,"sCorrect")){
+                    model <- sCorrect(model, ssc = model$method, df = NA)
+                }
+                lavaSearch2::getVarCov2(model, data = data, individual = x, plot = FALSE)
             })
             V <- Matrix::bdiag(ls.V)             
         }

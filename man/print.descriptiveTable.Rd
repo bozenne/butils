@@ -6,7 +6,7 @@
 \usage{
 \method{print}{descriptiveTable}(x, print = TRUE, print.minmax = TRUE,
   print.spread = TRUE, digit.frequency = 2, digit.center = 2,
-  digit.spread = 2, format.date = "\%Y-\%m-\%d", ...)
+  digit.spread = 2, digit.p = 2, format.date = "\%Y-\%m-\%d", ...)
 }
 \arguments{
 \item{x}{output of \code{descriptiveTable}.}
@@ -22,6 +22,8 @@
 \item{digit.center}{[integer, >=0] number of digit when printing center parameters.}
 
 \item{digit.spread}{[integer, >=0] number of digit when printing spread parameters.}
+
+\item{digit.p}{[integer, >=0] number of digit when printing p-values.}
 
 \item{format.date}{[character] the format used to output dates.}
 

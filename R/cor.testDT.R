@@ -52,7 +52,7 @@ cor.testDT <- function(data, format,
                        reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
   
-    validCharacter(format, valid.values = c("wide","long"), valid.length = 1, method = "cor.test.data.table")
+    BuyseTest::validCharacter(format, valid.values = c("wide","long"), valid.length = 1, method = "cor.test.data.table")
     validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "cor.test.data.table")
     validNames(col.value, refuse.NULL = (format == "long"), valid.values = names(data))
     if(format == "long"){

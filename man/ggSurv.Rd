@@ -55,7 +55,7 @@ ggSurv(object, ...)
 
 \item{var.strata}{the name of the column in the data.table object containing the strata variable}
 
-\item{plot}{should the plot be displayed}
+\item{plot}{[logical] should the plot be displayed?}
 
 \item{legend.position, title, text.size}{annotations on the plot}
 

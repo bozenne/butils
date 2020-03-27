@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: mar  1 2020 (14:24) 
+## Last-Updated: mar 27 2020 (13:49) 
 ##           By: Brice Ozenne
-##     Update #: 543
+##     Update #: 546
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -103,7 +103,7 @@ createAccount <- function(nickName = NULL){
 #' @param object the account.
 #' @param involved [vector of characters] who was involved in the activity?
 #' @param type [character] the name of the activity.
-#' @param date [date, %d-%m-%Y] the date at which the activity happen.
+#' @param date [date, d-m-Y] the date at which the activity happen.
 #' @param note [character] additional text.
 #' @param value [numeric] a named vector describing name paid what.
 #' @param label [label] a label associated with the activity. When
@@ -406,11 +406,12 @@ createAccount <- function(nickName = NULL){
 #' @param x an object of class butilsAccount.
 #' @param object an object of class butilsAccount.
 #' @param print [logical] should the summary be printed in the console.
+#' @param print.title [logical] should the title be printed in the console.
 #' @param detail [logical] should the balance per individual (1) and by activity (2) be displayed.
 #' @param keep.cols [character vector] the columns to be displayed in the detail.
 #' @param digit [integer] the number of decimal to be displayed.
-#' @param start [date, %d-%m-%Y] define the start of the period where the balance should be computed.
-#' @param stop [date, %d-%m-%Y] define the end of the period where the balance should be computed.
+#' @param start [date, d-m-Y] define the start of the period where the balance should be computed.
+#' @param stop [date, d-m-Y] define the end of the period where the balance should be computed.
 #' @param ... ignored
 #' 
 

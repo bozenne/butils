@@ -15,7 +15,7 @@
 #' @param name.strata the title for the color and fill legend in the plot.
 #' @param var.strata the name of the column in the data.table object containing the strata variable
 #' @param format the format used to export the data. Can be data.table or data.frame.
-#' @param plot should the plot be displayed
+#' @param plot [logical] should the plot be displayed?
 #' @param legend.position,title,text.size annotations on the plot
 #' @param ylim y range (survival)
 #' @param line.size size of the survival curves
