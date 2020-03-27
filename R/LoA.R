@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: apr  5 2019 (09:46) 
 ## Version: 
-## Last-Updated: apr  5 2019 (13:39) 
+## Last-Updated: mar 27 2020 (13:54) 
 ##           By: Brice Ozenne
-##     Update #: 92
+##     Update #: 95
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,8 +22,8 @@
 ##'
 ##' @param x [numeric vector] vector containing the first measurement, each value corresponding to an individual.
 ##' @param y [numeric vector] vector containing the second measurement, each value corresponding to an individual (same as in \code{x}).
-##' @param conf.level [numeric 0-1] confidence level of the confidence intervals.
-##' @param LoA.multiplier [numeric 0-1] confidence level for the limits of agreements.
+##' @param conf.level.CI [numeric 0-1] confidence level of the confidence intervals.
+##' @param conf.level.LoA [numeric 0-1] confidence level for the limits of agreements.
 ##'
 ##' @details The bias is estimated as the average difference between y and x, i.e. bias = E[y-x].
 ##' The upper/lower limit of the limit of agreement are estimated as the bias plus/minus the LoA.multiplier times the standard deviation of y-x,
@@ -57,7 +57,7 @@
 ## * LoA - code
 ##' @rdname LoA
 ##' @export
-LoA <- function(x, y, conf.level = 0.95, LoA.multiplier = qnorm(0.975)){
+LoA <- function(x, y, conf.level.CI = 0.95, conf.level.LoA = 0.95){
         
     ## ** check arguments
     if(length(x) != length(y)){
@@ -65,7 +65,8 @@ LoA <- function(x, y, conf.level = 0.95, LoA.multiplier = qnorm(0.975)){
     }
 
     ## ** normalize arguments
-    alpha <- 1 - conf.level
+    alpha <- 1 - conf.level.CI
+    LoA.multiplier <- qnorm(conf.level.LoA)
     n <- length(x)
     df <- n-1
     critical.quantile <- qt(1-alpha/2, df = df)
@@ -115,7 +116,9 @@ LoA <- function(x, y, conf.level = 0.95, LoA.multiplier = qnorm(0.975)){
 
     ## ** export
     out <- list(data = data,
-                LoA = data.LoA)
+                LoA = data.LoA,
+                conf.level.CI = conf.level.CI,
+                conf.level.LoA = conf.level.LoA)
     class(out) <- "LoA"
     return(out)
 }
