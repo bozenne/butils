@@ -23,7 +23,7 @@ addActivity(object, ...) <- value
 
 \item{type}{[character] the name of the activity.}
 
-\item{date}{[date, d-m-Y] the date at which the activity happen.}
+\item{date}{[date, %d-%m-%Y] the date at which the activity happen.}
 
 \item{note}{[character] additional text.}
 

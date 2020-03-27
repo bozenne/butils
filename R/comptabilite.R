@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  2 2017 (12:29) 
 ## Version: 
-## Last-Updated: jan 21 2020 (11:14) 
+## Last-Updated: mar 27 2020 (13:49) 
 ##           By: Brice Ozenne
-##     Update #: 545
+##     Update #: 546
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -346,11 +346,9 @@ createAccount <- function(nickName = NULL){
     }else if(n.involved==2){
         type <- "single"
     }else if(n.involved == 3){
-        type <- "double"
-    }else if(n.involved == 4){
-        type <- "double"
+        type <- "single"
     }else{
-        stop("length(involved)>4, too many players \n")
+        type <- "double"
     }
     newlabel <- paste0(type,":",as.character(date))
     if(newlabel %in% object$table$label){
@@ -514,6 +512,7 @@ summary.butilsAccount <- function(object,
             for(iName in names(detail1.print)){
                 cat("\n ")
                 iDF <- detail1.print[[iName]]
+                iDF <- iDF[abs(iDF$paid+iDF$total.cost+iDF$participant.cost)>0,]
                 cat("*** name: ",iName,"\n", sep = "")
                 iDF$paid <- round(iDF$paid, digits = digit)
                 iDF$total.cost <- round(iDF$total.cost, digits = digit)
