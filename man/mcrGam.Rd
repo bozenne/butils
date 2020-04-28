@@ -7,8 +7,7 @@
 \usage{
 mcrGam(object, ...)
 
-\method{mcrGam}{gam}(object, increasing = TRUE, lower = NA,
-  upper = NA, ...)
+\method{mcrGam}{gam}(object, increasing = TRUE, lower = NA, upper = NA, ...)
 }
 \arguments{
 \item{object}{[gam] output of the \code{mgcv::gam} function.}

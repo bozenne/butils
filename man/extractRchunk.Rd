@@ -4,9 +4,17 @@
 \alias{extractRchunk}
 \title{Extract code chunks from an .org file}
 \usage{
-extractRchunk(file, newfile = NULL, file.header = NULL,
-  file.start.SRC = NULL, file.end.SRC = NULL, rm.export.none = TRUE,
-  rm.noexport = TRUE, index.chunk = TRUE, overwrite = FALSE)
+extractRchunk(
+  file,
+  newfile = NULL,
+  file.header = NULL,
+  file.start.SRC = NULL,
+  file.end.SRC = NULL,
+  rm.export.none = TRUE,
+  rm.noexport = TRUE,
+  index.chunk = TRUE,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{file}{name of the file from which the R chunks should be extracted.}

@@ -4,9 +4,17 @@
 \alias{conditionalCI}
 \title{Conditional confidence interval}
 \usage{
-conditionalCI(theta, threshold, sigma = 1, conf.level = 0.95,
-  df = NULL, method = "shortest", distribution = "gaussian",
-  trace = length(theta) > 1, ...)
+conditionalCI(
+  theta,
+  threshold,
+  sigma = 1,
+  conf.level = 0.95,
+  df = NULL,
+  method = "shortest",
+  distribution = "gaussian",
+  trace = length(theta) > 1,
+  ...
+)
 }
 \arguments{
 \item{theta}{[numeric vector] the observed value(s) of the statistic.}

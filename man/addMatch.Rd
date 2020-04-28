@@ -8,10 +8,18 @@
 \usage{
 addMatch(object, ...) <- value
 
-\method{addMatch}{butilsAccount}(object, involved = NULL,
-  date = as.Date(NA), shuttlecock = NULL, price.shuttlecock = 175/12,
-  refund = NULL, note = "", print.balance = TRUE,
-  replace.entry = FALSE, ...) <- value
+\method{addMatch}{butilsAccount}(
+  object,
+  involved = NULL,
+  date = as.Date(NA),
+  shuttlecock = NULL,
+  price.shuttlecock = 175/12,
+  refund = NULL,
+  note = "",
+  print.balance = TRUE,
+  replace.entry = FALSE,
+  ...
+) <- value
 }
 \arguments{
 \item{object}{the account.}

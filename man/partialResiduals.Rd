@@ -4,9 +4,18 @@
 \alias{partialResiduals}
 \title{Compute partial residuals for linear and linear mixed models.}
 \usage{
-partialResiduals(model, var, keep.intercept = FALSE,
-  conditional = FALSE, interval = "confidence", level = 0.95,
-  npoints = 100, quantile.range = c(0, 1), FUN.df, ...)
+partialResiduals(
+  model,
+  var,
+  keep.intercept = FALSE,
+  conditional = FALSE,
+  interval = "confidence",
+  level = 0.95,
+  npoints = 100,
+  quantile.range = c(0, 1),
+  FUN.df,
+  ...
+)
 }
 \arguments{
 \item{model}{Model object (e.g. \code{lm})}

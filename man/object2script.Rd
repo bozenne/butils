@@ -11,17 +11,13 @@
 \usage{
 object2script(object, ...)
 
-\method{object2script}{numeric}(object, digits = NULL, print = TRUE,
-  final.space = "\\n", ...)
+\method{object2script}{numeric}(object, digits = NULL, print = TRUE, final.space = "\\n", ...)
 
-\method{object2script}{matrix}(object, digits = NULL, print = TRUE,
-  final.space = "\\n", ...)
+\method{object2script}{matrix}(object, digits = NULL, print = TRUE, final.space = "\\n", ...)
 
-\method{object2script}{data.frame}(object, digits = NULL, print = TRUE,
-  final.space = "\\n", ...)
+\method{object2script}{data.frame}(object, digits = NULL, print = TRUE, final.space = "\\n", ...)
 
-\method{object2script}{data.table}(object, digits = NULL, print = TRUE,
-  final.space = "\\n", ...)
+\method{object2script}{data.table}(object, digits = NULL, print = TRUE, final.space = "\\n", ...)
 
 \method{object2script}{list}(object, digits = NULL, print = TRUE, ...)
 }

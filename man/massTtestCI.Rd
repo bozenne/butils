@@ -4,8 +4,14 @@
 \alias{massTtestCI}
 \title{Mass t-tests with conditional inference}
 \usage{
-massTtestCI(X, Y, threshold, conf.level = 0.95,
-  method.p.adjust = "bonferroni", ...)
+massTtestCI(
+  X,
+  Y,
+  threshold,
+  conf.level = 0.95,
+  method.p.adjust = "bonferroni",
+  ...
+)
 }
 \arguments{
 \item{X}{[numeric matrix] the design matrix for the individuals of the control group.}

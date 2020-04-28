@@ -8,11 +8,9 @@
 \usage{
 partialCorrelation(object, var, fisher.transform, cluster)
 
-\method{partialCorrelation}{lm}(object, var, fisher.transform = FALSE,
-  cluster = NULL)
+\method{partialCorrelation}{lm}(object, var, fisher.transform = FALSE, cluster = NULL)
 
-\method{partialCorrelation}{mmm}(object, var, fisher.transform = FALSE,
-  cluster = NULL)
+\method{partialCorrelation}{mmm}(object, var, fisher.transform = FALSE, cluster = NULL)
 }
 \arguments{
 \item{object}{an \code{lm} object.}

@@ -4,10 +4,18 @@
 \alias{autoplot.LoA}
 \title{Bland and Altman Plot with Limits of Agreement}
 \usage{
-\method{autoplot}{LoA}(object, display.ci = TRUE, plot = TRUE,
-  line.size = 1.5, alpha = 0.25, name.legend = "",
-  labels = c("bias", "LoA (lower)", "LoA (upper)"), colors = c("red",
-  "blue", "forestgreen"), linetype = c(1, 2, 2), ...)
+\method{autoplot}{LoA}(
+  object,
+  display.ci = TRUE,
+  plot = TRUE,
+  line.size = 1.5,
+  alpha = 0.25,
+  name.legend = "",
+  labels = c("bias", "LoA (lower)", "LoA (upper)"),
+  colors = c("red", "blue", "forestgreen"),
+  linetype = c(1, 2, 2),
+  ...
+)
 }
 \arguments{
 \item{object}{An object of class \code{LoA}, output of the \code{LoA} function.}

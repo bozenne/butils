@@ -4,8 +4,13 @@
 \alias{procSummary}
 \title{Compute summary statistics}
 \usage{
-procSummary(formula, data, na.action = stats::na.pass, na.rm = FALSE,
-  which = c("observed", "missing", "mean", "sd", "min", "median", "max"))
+procSummary(
+  formula,
+  data,
+  na.action = stats::na.pass,
+  na.rm = FALSE,
+  which = c("observed", "missing", "mean", "sd", "min", "median", "max")
+)
 }
 \arguments{
 \item{formula}{[formula] on the left hand side the outcome(s) and on the right hand side the grouping variables.

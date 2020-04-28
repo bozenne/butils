@@ -4,11 +4,24 @@
 \alias{cor.testDT}
 \title{Perform pairwise correlation tests between matrix columns}
 \usage{
-cor.testDT(data, format, col.value = NULL, col.group = NULL,
-  lower.tri = TRUE, upper.tri = FALSE, method.cor = "cor.test",
-  use.pairwiseNNA = TRUE, reorder = "AOE", imput.value = 0,
-  hclust.method = "complete", trace = TRUE, plot = TRUE,
-  args.plot = list(), output = "data.table", ...)
+cor.testDT(
+  data,
+  format,
+  col.value = NULL,
+  col.group = NULL,
+  lower.tri = TRUE,
+  upper.tri = FALSE,
+  method.cor = "cor.test",
+  use.pairwiseNNA = TRUE,
+  reorder = "AOE",
+  imput.value = 0,
+  hclust.method = "complete",
+  trace = TRUE,
+  plot = TRUE,
+  args.plot = list(),
+  output = "data.table",
+  ...
+)
 }
 \arguments{
 \item{data}{the dataset.}

@@ -6,8 +6,14 @@
 \alias{factorOutlier}
 \title{Identify outlier}
 \usage{
-numOutlier(x, type = "auto", th.gaussian = 3, th.hampel = 3,
-  th.boxplot = 1.5, na.rm = FALSE)
+numOutlier(
+  x,
+  type = "auto",
+  th.gaussian = 3,
+  th.hampel = 3,
+  th.boxplot = 1.5,
+  na.rm = FALSE
+)
 
 factorOutlier(x, threshold = 0.01, use.NA = "ifany")
 }

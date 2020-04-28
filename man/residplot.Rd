@@ -7,10 +7,19 @@
 \usage{
 residplot(object, ...)
 
-\method{residplot}{lvmfit}(object, res.variables = endogenous(object),
-  obs.variables = res.variables, sd.kernel = 0.5, kernel = "dnorm",
-  plot.weights = FALSE, ncol = NULL, smooth.mean = TRUE,
-  smooth.sd = TRUE, plot = TRUE, ...)
+\method{residplot}{lvmfit}(
+  object,
+  res.variables = endogenous(object),
+  obs.variables = res.variables,
+  sd.kernel = 0.5,
+  kernel = "dnorm",
+  plot.weights = FALSE,
+  ncol = NULL,
+  smooth.mean = TRUE,
+  smooth.sd = TRUE,
+  plot = TRUE,
+  ...
+)
 }
 \arguments{
 \item{object}{a lvm model.}

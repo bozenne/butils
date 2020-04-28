@@ -4,9 +4,18 @@
 \alias{multcomp2table}
 \title{Gather P-values and Confidence Intervals in a Table.}
 \usage{
-multcomp2table(object, link, transform = function(x) {     x },
-  seed = NULL, method.glht = "glht", conf.level = 0.95,
-  method.multcomp = NULL, digits = 3, digits.p.value = 3, ...)
+multcomp2table(
+  object,
+  link,
+  transform = function(x) {     x },
+  seed = NULL,
+  method.glht = "glht",
+  conf.level = 0.95,
+  method.multcomp = NULL,
+  digits = 3,
+  digits.p.value = 3,
+  ...
+)
 }
 \arguments{
 \item{object}{a fitted model.}

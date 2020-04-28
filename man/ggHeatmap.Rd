@@ -4,11 +4,27 @@
 \alias{ggHeatmap}
 \title{Display pairwise correlation}
 \usage{
-ggHeatmap(data, name.x, name.y, name.fill, add.text, plot = TRUE,
-  round = NULL, title = "", xlab = "", ylab = "",
-  legend_title = "correlation", na.value = "grey50",
-  col_low = "blue", col_midpoint = "white", col_high = "red",
-  midpoint = 0, limits = NULL, text.size = 15, angle.x = 90)
+ggHeatmap(
+  data,
+  name.x,
+  name.y,
+  name.fill,
+  add.text,
+  plot = TRUE,
+  round = NULL,
+  title = "",
+  xlab = "",
+  ylab = "",
+  legend_title = "correlation",
+  na.value = "grey50",
+  col_low = "blue",
+  col_midpoint = "white",
+  col_high = "red",
+  midpoint = 0,
+  limits = NULL,
+  text.size = 15,
+  angle.x = 90
+)
 }
 \arguments{
 \item{data}{the dataset containing the correlation values.

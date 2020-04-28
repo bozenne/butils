@@ -2,7 +2,7 @@ Package: butils
 Type: Package
 Title: Various useful functions
 Version: 1.4.6
-Date: 2020-02-20
+Date: 2020-04-23
 Authors@R: c(
     person("Brice", "Ozenne", role = c("aut", "cre"), email = "brice.mh.ozenne@gmail.com", comment = c(ORCID = "0000-0001-9694-2956")))
 Description: Miscellaneous functions for working in R.
@@ -53,4 +53,4 @@ Suggests:
     tmvtnorm
 LazyLoad: yes
 NeedsCompilation: no
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0

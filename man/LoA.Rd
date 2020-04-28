@@ -4,16 +4,16 @@
 \alias{LoA}
 \title{Limits of Agreement}
 \usage{
-LoA(x, y, conf.level = 0.95, LoA.multiplier = qnorm(0.975))
+LoA(x, y, conf.level.CI = 0.95, conf.level.LoA = 0.95)
 }
 \arguments{
 \item{x}{[numeric vector] vector containing the first measurement, each value corresponding to an individual.}
 
 \item{y}{[numeric vector] vector containing the second measurement, each value corresponding to an individual (same as in \code{x}).}
 
-\item{conf.level}{[numeric 0-1] confidence level of the confidence intervals.}
+\item{conf.level.CI}{[numeric 0-1] confidence level of the confidence intervals.}
 
-\item{LoA.multiplier}{[numeric 0-1] confidence level for the limits of agreements.}
+\item{conf.level.LoA}{[numeric 0-1] confidence level for the limits of agreements.}
 }
 \description{
 Computes the limits of agreement between two measurements.
