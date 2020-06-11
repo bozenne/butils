@@ -9,7 +9,8 @@
 #' @param col.group [character] column defining the groups of observations between which the correlation will be computed.
 #' @param lower.tri [logical] should only the lower triangle of the matrix be filled?
 #' @param upper.tri [logical] should only the upper triangle of the matrix be filled?
-#' @param method.cor [character] the method used to compute the correlation. 
+#' @param method.cor [character] the method used to compute the correlation.
+#' Must at least have \code{x} and \code{y} as arguments.
 #' @param use.pairwiseNNA [logical]] If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.
 #' @param reorder [character] argument order of corrMatOrder. If \code{NULL} the original order of the variables is kept.
 #' @param imput.value [numeric] the value to be used in the clustering algorithm in place of NA. Can be a number or an operator (e.g. median). 
@@ -38,11 +39,18 @@
 #' 
 #' @examples 
 #' M <- matrix(rnorm(1e3),100,10)
+#'
+#' ## display correlation matrix with color
 #' cor.testDT(M, format = "wide")
 #' 
+#' ## display correlation matrix with color and text
 #' cor.testDT(M, format = "wide",
 #'            args.plot = list(add.text = "correlation", round = 1))
-#' 
+#'
+#' ## use spearman instead of pearson
+#' cor.testDT(M, format = "wide", method.cor = function(x,y,...){cor.test(x,y,method = "spearman")},
+#'            args.plot = list(add.text = "correlation", round = 1))
+#'
 #' @keywords function correlation test
 #' 
 #' @export
@@ -52,9 +60,12 @@ cor.testDT <- function(data, format,
                        reorder = "AOE", imput.value = 0, hclust.method = "complete",
                        trace = TRUE, plot = TRUE, args.plot = list(), output = "data.table", ...){
   
-    validCharacter(format, valid.values = c("wide","long"), valid.length = 1, method = "cor.test.data.table")
-    validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = 1, method = "cor.test.data.table")
-    validNames(col.value, refuse.NULL = (format == "long"), valid.values = names(data))
+    validCharacter(format, valid.values = c("wide","long"), valid.length = 1,
+                   method = "cor.testDT")
+    validCharacter(output, valid.values = c("data.table","matrix","plot"), valid.length = NULL, refuse.duplicates = TRUE,
+                   method = "cor.testDT")
+    validNames(col.value, refuse.NULL = (format == "long"), valid.values = names(data),
+               method = "cor.testDT")
     if(format == "long"){
         validNames(col.group, refuse.NULL = TRUE, valid.values = names(data))
     }else if(!is.null(col.group)){
@@ -106,7 +117,6 @@ cor.testDT <- function(data, format,
       
       if((n == n.NNA) || (n.NNA>0 && use.pairwiseNNA) ){
         test <- do.call(method.cor, args = list(x = col1[index.NNA], y = col2[index.NNA], ...)) 
-        
         newValues <- list(n.NNA = n.NNA, n.NA = n - n.NNA,
                           correlation = test$estimate, CIinf = test$conf.int[1], CIsup = test$conf.int[2], 
                           p.value = test$p.value)
@@ -170,27 +180,30 @@ cor.testDT <- function(data, format,
                                  }))
   setnames(cor.dt, old = c("Var1", "Var2"), new = paste0(name.group,1:2))
   
-  #### display
-  if(plot || output == "plot"){
-    gg <- do.call("ggHeatmap", args = c(list(data = cor.dt), 
-                                        list(name.x = paste0(name.group,1)), 
-                                        list(name.y = paste0(name.group,2)), 
-                                        list(name.fill = "correlation"), 
-                                        args.plot))
-  }
+#### display
+    if(plot || "plot" %in% output){
+        gg <- do.call("ggHeatmap", args = c(list(data = cor.dt), 
+                                            list(name.x = paste0(name.group,1)), 
+                                            list(name.y = paste0(name.group,2)), 
+                                            list(name.fill = "correlation"), 
+                                            args.plot))
+    }
+    if(plot){
+        print(plot)
+    }
   
   #### output
   out <- list()
-  if(output == "data.table"){
+  if("data.table" %in% output){
     out$dt <- cor.dt
   }
-  if(output == "matrix"){
+  if("matrix" %in% output){
     out$array <- cor.array
   }
-  if(output == "plot"){
-    out$plot <- gg
+  if("plot" %in% output){
+    out$plot <- gg$plot
   }
   
-  return(out)
+  return(invisible(out))
 }
 

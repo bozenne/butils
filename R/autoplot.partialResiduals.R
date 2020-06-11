@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr  4 2017 (15:45) 
 ## Version: 
-## last-updated: feb 18 2020 (18:28) 
+## last-updated: jun 11 2020 (10:56) 
 ##           By: Brice Ozenne
-##     Update #: 183
+##     Update #: 191
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -23,6 +23,7 @@
 #' 
 #' @param x a linear model
 #' @param alpha.ggplot transparency parameter for the points or the bands
+#' @param plot should the plot be displayed?
 #' @param ... additional argument to be passed to \code{partialModel}
 #'
 #' @examples
@@ -45,6 +46,11 @@
 #' autoplot(pres4)
 #'
 #' ## linear mixed model
+#' if(require(nlme)){
+#' mm <- lme(Y~Age+gender, random= ~ 1|gene, data = d)
+#' pres1 <- partialResiduals(mm, var = "Age")
+#' autoplot(pres1)
+#' }
 #' if(require(lme4) && require(merTools) && require(AICcmodavg)){
 #' 
 #' mm <- lmer(Y~Age+gender+(1|gene), data = d)
@@ -59,13 +65,23 @@
 #' pres4 <- partialResiduals(mm, var = c("Age","gender"), FUN.predict = predict_AICcmodavg)
 #' autoplot(pres4)
 #' }
+#'
+#' ## gam
+#' if(require(mgcv)){
+#' set.seed(2) ## simulate some data
+#' dat <- gamSim(1,n=400,dist="normal",scale=2)
+#' b <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat)
+#' b <- gam(y~s(x0)+x1+x2+x3,data=dat)
+#' pres5 <- partialResiduals(b, var = "x0")
+#' autoplot(pres5)
+#' }
 
 
 ## * autoplot.partialResiduals
 #' @rdname autoplot.partialResiduals
 #' @method autoplot partialResiduals
 #' @export
-autoplot.partialResiduals <- function(object, alpha.ggplot = 0.25, ...){    
+autoplot.partialResiduals <- function(object, alpha.ggplot = 0.25, plot = TRUE, ...){    
         
     name.Y <- attr(object,"name.Y")
     object.var <- attr(object,"var")
@@ -118,9 +134,12 @@ autoplot.partialResiduals <- function(object, alpha.ggplot = 0.25, ...){
     }
     gg <- gg + ggplot2::ylab(paste0("Partial residuals \n",name.Y," | ",paste0(object.var,collapse = ", ")))
     gg <- gg + ggplot2::theme(legend.position = "bottom")
-    print(gg)
-     
-## ** export
+
+    if(plot){
+        print(gg)
+    }
+    
+    ## ** export
     return(invisible(gg))
     
 }

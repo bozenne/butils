@@ -24,7 +24,8 @@ In wide format, all the columns will be used if \code{NULL}.}
 
 \item{upper.tri}{[logical] should only the upper triangle of the matrix be filled?}
 
-\item{method.cor}{[character] the method used to compute the correlation.}
+\item{method.cor}{[character] the method used to compute the correlation.
+Must at least have \code{x} and \code{y} as arguments.}
 
 \item{use.pairwiseNNA}{[logical]] If \code{FALSE} correlation is set to NA if their is one NA among the two outcomes. Otherwise the correlation is computed on pairs without NA.}
 
@@ -64,9 +65,16 @@ This function uses the function \code{ggHeatmap} to display the correlation matr
 }
 \examples{
 M <- matrix(rnorm(1e3),100,10)
+
+## display correlation matrix with color
 cor.testDT(M, format = "wide")
 
+## display correlation matrix with color and text
 cor.testDT(M, format = "wide",
+           args.plot = list(add.text = "correlation", round = 1))
+
+## use spearman instead of pearson
+cor.testDT(M, format = "wide", method.cor = function(x,y,...){cor.test(x,y,method = "spearman")},
            args.plot = list(add.text = "correlation", round = 1))
 
 }
