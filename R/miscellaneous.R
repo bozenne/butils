@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 27 2019 (09:02) 
 ## Version: 
-## Last-Updated: jun 27 2019 (09:59) 
+## Last-Updated: sep 26 2020 (18:02) 
 ##           By: Brice Ozenne
-##     Update #: 19
+##     Update #: 20
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -85,11 +85,6 @@ lowerTriangle <- function(x, diag=FALSE, byrow=FALSE){
     return(x)
   }
 }
-
-######################################################################
-### miscellaneous.R ends here
-
-
 
 ## * Documentation student distribution  (LaplacesDemon package)
 ## copy from the LaplacesDemon package
@@ -172,5 +167,10 @@ dstudent <- function(x, mu = 0, sigma = 1, nu = 10, log = FALSE){
         dens <- exp(dens)
     return(dens)
 }
+
+
+######################################################################
+### miscellaneous.R ends here
+
 
 
