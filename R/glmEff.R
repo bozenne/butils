@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 26 2020 (18:00) 
 ## Version: 
-## Last-Updated: sep 26 2020 (19:22) 
+## Last-Updated: sep 28 2020 (18:23) 
 ##           By: Brice Ozenne
-##     Update #: 11
+##     Update #: 37
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -31,12 +31,39 @@
 ## * glmEff (examples)
 #' @rdname glmEff
 #' @examples
-#'
 #' library(lava)
 #'
-#' 
+#' ## continuous case
+#' m.cont <- lvm(Y~T+3*X1-3*X2)
+#' distribution(m.cont,~T) <- binomial.lvm(size=1,p=0.5)
+#' distribution(m.cont,~X1) <- binomial.lvm(size=1,p=0.25)
+#'
+#' set.seed(10)
+#' d <- lava::sim(m.cont, n = 100)
+#'
+#' m.glmeff <- glmEff(outcome = "Y", treatment = "T", covariates = c("X1","X2"), data = d,
+#'                    family.outcome = "gaussian")
+#' m.glmeff ## efficient
+#' tapply(d$Y,d$T,mean) ## naive
+#'
+#' ## binary case
+#' m.bin <- lvm(Y~T+3*X1-3*X2)
+#' distribution(m.bin,~Y) <- binomial.lvm(size=1,p=0.5)
+#' distribution(m.bin,~T) <- binomial.lvm(size=1,p=0.5)
+#' distribution(m.bin,~X1) <- binomial.lvm(size=1,p=0.25)
+#'
+#' set.seed(10)
+#' d <- lava::sim(m.bin, n = 1000)
+#'
+#' m.glmeff <- glmEff(outcome = "Y", treatment = "T", covariates = c("X1","X2"), data = d,
+#'                    family.outcome = "binomial")
+#' m.glmeff ## efficient
+#' tapply(d$Y,d$T,mean) ## naive
+
+## * glmEff (code)
 #' @export
-glmEff <- function(outcome, treatment, covariates, data, family.outcome){
+glmEff <- function(outcome, treatment, covariates, data, family.outcome,
+                   method = "explicit"){
     require(data.table)
     
     ## ** check arguments
@@ -70,8 +97,15 @@ glmEff <- function(outcome, treatment, covariates, data, family.outcome){
         stop("Argument \'data\' should not contain a column called \"intercept\". \n",
              "This name is used internally.")
     }
+    method <- match.arg(method, c("explicit","multiroot"))
 
     family.outcome <- match.arg(family.outcome, c("gaussian","binomial"))
+    link.outcome <- switch(family.outcome,
+                           "gaussian" = function(x){x},
+                           "binomial" = function(x){1/(1+exp(-x))})
+    ilink.outcome <- switch(family.outcome,
+                            "gaussian" = function(x){x},
+                            "binomial" = function(x){log(x/(1-x))})
     
     ## ** prepare
     level.treatment <- sort(unique(data[[treatment]]))
@@ -88,12 +122,10 @@ glmEff <- function(outcome, treatment, covariates, data, family.outcome){
     ## ** fit nuisance model
     ff.nuisance <- as.formula(paste0(outcome,"~",paste0(covariates,collapse="+")))
     
-    ls.nuisance <- lapply(1:length(level.treatment), function(iT){
-        glm(ff.nuisance, data = data[ls.index.treatment[[iT]],], family = family.outcome)
-    })
-    ls.fitted.nuisance <- lapply(ls.nuisance, predict, type = "response")
-    M.fitted.nuisance <- cbind(1-unlist(ls.fitted.nuisance)[order(unlist(ls.index.treatment))],
-                               unlist(ls.fitted.nuisance)[order(unlist(ls.index.treatment))])
+    M.nuisance <- do.call(cbind,lapply(1:length(level.treatment), function(iT){
+        iGLM <- glm(ff.nuisance, data = data[ls.index.treatment[[iT]],], family = family.outcome)
+        predict(iGLM, newdata = data, type = "response")
+    }))
     
     ## ** augmented estimating equation
     pi <- sapply(level.treatment, function(iT){ mean(data[[treatment]]==iT)})
@@ -104,33 +136,21 @@ glmEff <- function(outcome, treatment, covariates, data, family.outcome){
         X <- model.matrix(ff.treatment, iData)
     })
 
-    browser()
-  
-    if(family.outcome == "gaussian"){
-        e0 <- glm(ff.treatment, data = data, family = family.outcome)
+    e0 <- glm(ff.treatment, data = data, family = family.outcome)
+    
+    if(method == "multiroot"){
 
-        a <- mean(data$Y[data$T==0]) + (1/sum(data$T==0)) * sum((data$T-mean(data$T==1))*M.fitted.nuisance[,1])
-        b <- mean(data$Y[data$T==1]) - (1/sum(data$T==1)) * sum((data$T-mean(data$T==1))*M.fitted.nuisance[,2])
-        b-a
-        mean(data$Y[data$T==0]) - (1/sum(data$T==0)) * sum(M.Impi[,1]*M.fitted.nuisance[,1])
-        mean(data$Y[data$T==1]) - (1/sum(data$T==1)) * sum(M.Impi[,2]*M.fitted.nuisance[,2])
-
-        coef(e0) - colSums(M.Impi*M.fitted.nuisance)/(pi*n.obs)
-        ## rhs <- t(X) %*% Y - Reduce("+",lapply(1:length(level.treatment), function(iT){ t(ls.X[[iT]]) %*% (M.fitted.nuisance[,iT] * M.Impi[,iT]) }))
-        ## lhs <- t(X) %*% X - Reduce("+",lapply(1:length(level.treatment), function(iT){ t(ls.X[[iT]]) %*% sweep(ls.X[[iT]], MARGIN = 1, FUN = "*", STATS = M.Impi[,iT])}))
-        ## out <- (solve(lhs) %*% rhs)[,1]
-
-        
-        ## alternative computation
-        
         d1 <- function(theta){ ## theta <- coef(e0)
-            term.score <- - t(X) %*% (Y - X %*% theta)
-            term.aug <- - t(ls.X[[2]]) %*% ((M.fitted.nuisance[,2] - ls.X[[2]] %*% theta) * M.Impi[,2]) + t(ls.X[[1]]) %*% ((M.fitted.nuisance[,1] - ls.X[[1]] %*% theta) * M.Impi[,2])
-            ## term.aug <- Reduce("+",lapply(1:length(level.treatment), function(iT){ ## iT <- 2
-            ##     - t(ls.X[[iT]]) %*% ((M.fitted.nuisance[,iT] - ls.X[[iT]] %*% theta) * M.Impi[,iT])
-            ## }))
+            term.score <- - t(X) %*% (Y - link.outcome(X %*% theta))
+            eXb <- link.outcome(do.call(cbind,lapply(ls.X,`%*%`,theta)))
+            h <- (M.nuisance - eXb) * M.Impi
+            term.aug <- Reduce("+",lapply(1:length(level.treatment), function(iT){- t(ls.X[[iT]]) %*% h[,iT]}))
             return(term.score - term.aug)
         }
+        e <- rootSolve::multiroot(f = d1, start = coef(e0))
+        out <- setNames(c(cumsum(e$root),utils::tail(e$root,1)),c(level.treatment, "difference"))
+
+        ## Gaussian case
         ## d2 <- function(theta){             ## theta <- coef(e0)
         ##     term.score <- t(X) %*% X
         ##     term.aug <- Reduce("+",lapply(1:length(level.treatment), function(iT){ ## iT <- 1
@@ -140,37 +160,11 @@ glmEff <- function(outcome, treatment, covariates, data, family.outcome){
         ## }
 
         ## e <- rootSolve::multiroot(f = d1, jacfunc = d2, start = coef(e0))
-        e <- rootSolve::multiroot(f = d1, start = coef(e0))
-        out <- e$root
 
-        ## t(X) %*% (Y - X %*% theta) - t(ls.X[[1]]) %*% ((M.fitted.nuisance[,1] - ls.X[[1]] %*% theta) * M.Impi[,1]) - t(ls.X[[2]]) %*% ((M.fitted.nuisance[,2] - ls.X[[2]] %*% theta) * M.Impi[,2])
-        
-
-    }else if(family.outcome == "binomial"){
-        ## t(X) %*% (Y - 1/(1+exp(-X %*% theta)))
-        e0 <- glm(ff.treatment, data = data, family = family.outcome)
-        
-        d1 <- function(theta){
-            term.score <- - t(X) %*% (Y - 1/(1+exp(-X %*% theta)))
-            term.aug <- Reduce("+",lapply(1:length(level.treatment), function(iT){ ## iT <- 2
-                - t(ls.X[[iT]]) %*% ((M.fitted.nuisance[,iT] - 1/(1+exp(-ls.X[[iT]] %*% theta))) * M.Impi[,iT])
-            }))
-            return(term.score + term.aug)
-        }
-        
-        d2 <- function(theta){             ## theta <- coef(e0)
-            term.score <- t(X) %*% sweep(X, MARGIN = 1, FUN = "*", STATS = exp(-X %*% theta)/(1+exp(-X %*% theta))^2)
-            term.aug <- Reduce("+",lapply(1:length(level.treatment), function(iT){ ## iT <- 1
-                ls.X[[iT]] %*% sweep(ls.X[[iT]], MARGIN = 1, FUN = "*",
-                                     STATS = exp(-ls.X[[iT]] %*% theta) * M.Impi[,iT]/(1+exp(-ls.X[[iT]] %*% theta))^2)
-            }))
-            return(term.score + term.aug)
-        }
-
-        e <- rootSolve::multiroot(f = d1, jacfunc = d2, start = coef(e0))
-        ## e <- rootSolve::multiroot(f = d1, start = coef(e0))
-        out <- e$root
-    }
+    }else{
+        e <-  link.outcome(cumsum(coef(e0))) - 1/(pi*n.obs) * colSums(M.Impi*M.nuisance)
+        out <- setNames(c(e, diff(e)), c(level.treatment, "difference"))
+    }        
     return(out)
 }
 
