@@ -9,16 +9,31 @@
 \usage{
 qqplot2(object, ...)
 
-\method{qqplot2}{lvmfit}(object, variables = NULL, residuals = NULL,
-  plot = TRUE, mfrow = NULL, mar = c(2, 2, 2, 2),
-  qq.type = "qqtest", name.model = "", centralPercents = 0.95, ...)
+\method{qqplot2}{lvmfit}(
+  object,
+  variables = NULL,
+  residuals = NULL,
+  plot = TRUE,
+  mfrow = NULL,
+  mar = c(2, 2, 2, 2),
+  qq.type = "qqtest",
+  name.model = "",
+  centralPercents = 0.95,
+  ...
+)
 
-\method{qqplot2}{list}(object, plot = TRUE, mfrow = NULL, mar = c(2,
-  2, 2, 2), qq.type = "qqtest", name.model = "",
-  centralPercents = 0.95, ...)
+\method{qqplot2}{list}(
+  object,
+  plot = TRUE,
+  mfrow = NULL,
+  mar = c(2, 2, 2, 2),
+  qq.type = "qqtest",
+  name.model = "",
+  centralPercents = 0.95,
+  ...
+)
 
-\method{qqplot2}{multigroupfit}(object, residuals = NULL,
-  name.model = NULL, plot = TRUE, ...)
+\method{qqplot2}{multigroupfit}(object, residuals = NULL, name.model = NULL, plot = TRUE, ...)
 }
 \arguments{
 \item{object}{a lvm model.}

@@ -4,9 +4,18 @@
 \alias{print.descriptiveTable}
 \title{Print Function for the Descriptive Table}
 \usage{
-\method{print}{descriptiveTable}(x, print = TRUE, print.minmax = TRUE,
-  print.spread = TRUE, digit.frequency = 2, digit.center = 2,
-  digit.spread = 2, digit.p = 2, format.date = "\%Y-\%m-\%d", ...)
+\method{print}{descriptiveTable}(
+  x,
+  print = TRUE,
+  print.minmax = TRUE,
+  print.spread = TRUE,
+  digit.frequency = 2,
+  digit.center = 2,
+  digit.spread = 2,
+  digit.p = 2,
+  format.date = "\%Y-\%m-\%d",
+  ...
+)
 }
 \arguments{
 \item{x}{output of \code{descriptiveTable}.}

@@ -4,8 +4,16 @@
 \alias{summary.bootReg}
 \title{Display the result fo the bootstrap computation}
 \usage{
-\method{summary}{bootReg}(object, p.value = TRUE, conf = 0.95,
-  type = NULL, index = NULL, print = TRUE, n.subset = NULL, ...)
+\method{summary}{bootReg}(
+  object,
+  p.value = TRUE,
+  conf = 0.95,
+  type = NULL,
+  index = NULL,
+  print = TRUE,
+  n.subset = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{object obtained with the function \code{bootReg}}

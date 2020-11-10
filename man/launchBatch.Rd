@@ -4,9 +4,16 @@
 \alias{launchBatch}
 \title{Launching batch}
 \usage{
-launchBatch(file, path = ".", dirBatch = NULL, operator = NULL,
-  add.Rout = TRUE, add.lis = TRUE, add.options = "",
-  rm.newfile = FALSE)
+launchBatch(
+  file,
+  path = ".",
+  dirBatch = NULL,
+  operator = NULL,
+  add.Rout = TRUE,
+  add.lis = TRUE,
+  add.options = "",
+  rm.newfile = FALSE
+)
 }
 \arguments{
 \item{file}{the name of the file. \emph{character}.}

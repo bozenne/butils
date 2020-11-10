@@ -11,20 +11,42 @@ ggSurv(object, ...)
 
 \method{ggSurv}{survfit}(object, ...)
 
-\method{ggSurv}{coxph}(object, data = NULL, newdata = NULL,
-  confint = FALSE, ...)
+\method{ggSurv}{coxph}(object, data = NULL, newdata = NULL, confint = FALSE, ...)
 
-\method{ggSurv}{data.table}(object, format = "data.table",
-  var.time = "time", var.survival = "survival", var.ci.inf = NULL,
-  var.ci.sup = NULL, var.event = NULL, var.censor = NULL,
-  name.strata = NULL, var.strata = NULL, plot = TRUE,
-  legend.position = "top", title = NULL, text.size = NULL,
-  ylim = NULL, line.size = 2, confint = FALSE, alpha.CIfill = 0.2,
-  alpha.CIline = 0.5, censoring = FALSE, alpha.censoring = 1,
-  colour.censoring = rgb(0.2, 0.2, 0.2), shape.censoring = 3,
-  size.censoring = 2, name.censoring = "censoring", events = FALSE,
-  alpha.events = 1, colour.events = rgb(0.2, 0.2, 0.2),
-  shape.events = 8, size.events = 2, name.events = "event", ...)
+\method{ggSurv}{data.table}(
+  object,
+  format = "data.table",
+  var.time = "time",
+  var.survival = "survival",
+  var.ci.inf = NULL,
+  var.ci.sup = NULL,
+  var.event = NULL,
+  var.censor = NULL,
+  name.strata = NULL,
+  var.strata = NULL,
+  plot = TRUE,
+  legend.position = "top",
+  title = NULL,
+  text.size = NULL,
+  ylim = NULL,
+  line.size = 2,
+  confint = FALSE,
+  alpha.CIfill = 0.2,
+  alpha.CIline = 0.5,
+  censoring = FALSE,
+  alpha.censoring = 1,
+  colour.censoring = rgb(0.2, 0.2, 0.2),
+  shape.censoring = 3,
+  size.censoring = 2,
+  name.censoring = "censoring",
+  events = FALSE,
+  alpha.events = 1,
+  colour.events = rgb(0.2, 0.2, 0.2),
+  shape.events = 8,
+  size.events = 2,
+  name.events = "event",
+  ...
+)
 }
 \arguments{
 \item{object}{a coxph object or a survfit object or a data.table object.}

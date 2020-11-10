@@ -7,8 +7,16 @@
 \usage{
 cvCheck(object, ...)
 
-\method{cvCheck}{lvm}(object, data, factor.vcov = 1, n.init = 100,
-  keep.cov = TRUE, ncpus = 1, trace = TRUE, ...)
+\method{cvCheck}{lvm}(
+  object,
+  data,
+  factor.vcov = 1,
+  n.init = 100,
+  keep.cov = TRUE,
+  ncpus = 1,
+  trace = TRUE,
+  ...
+)
 }
 \arguments{
 \item{object}{a lvm model}

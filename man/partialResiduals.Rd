@@ -4,9 +4,18 @@
 \alias{partialResiduals}
 \title{Compute partial residuals for linear and linear mixed models.}
 \usage{
-partialResiduals(model, var, keep.intercept = FALSE,
-  conditional = FALSE, interval = "confidence", level = 0.95,
-  npoints = 100, quantile.range = c(0, 1), FUN.df, ...)
+partialResiduals(
+  model,
+  var,
+  keep.intercept = FALSE,
+  conditional = FALSE,
+  interval = "confidence",
+  level = 0.95,
+  npoints = 100,
+  quantile.range = c(0, 1),
+  FUN.df,
+  ...
+)
 }
 \arguments{
 \item{model}{Model object (e.g. \code{lm})}
@@ -79,7 +88,7 @@ pres2 <- partialResiduals(m, var = c("X1","X2"))
 fit2 <- coef(m)["(Intercept)"] + d$Id * coef(m)["Id"]
 range((d$Y - fit2) - pres2$pResiduals)
 
-## partial residauls binary variable
+## partial residuals binary variable
 pres3 <- partialResiduals(m, var = "Id")
 
 if(require(ggplot2)){

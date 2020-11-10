@@ -4,8 +4,7 @@
 \alias{autoplot.conditionalCI}
 \title{Display Conditional Confidence Intervals}
 \usage{
-\method{autoplot}{conditionalCI}(object, value = TRUE,
-  unconditional.CI = TRUE, plot = TRUE, ...)
+\method{autoplot}{conditionalCI}(object, value = TRUE, unconditional.CI = TRUE, plot = TRUE, ...)
 }
 \arguments{
 \item{object}{output of the function \code{conditionalCI}.}

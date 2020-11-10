@@ -4,10 +4,20 @@
 \alias{autoplot.breakpoint}
 \title{Display Regression Line and Observations}
 \usage{
-\method{autoplot}{breakpoint}(object, newdata = NULL, pattern = NULL,
-  plot = TRUE, combine.plot = TRUE, nrow = NULL, ncol = NULL,
-  title = NULL, text.size = 10, add.cv.title = TRUE,
-  add.bic.title = FALSE, ...)
+\method{autoplot}{breakpoint}(
+  object,
+  newdata = NULL,
+  pattern = NULL,
+  plot = TRUE,
+  combine.plot = TRUE,
+  nrow = NULL,
+  ncol = NULL,
+  title = NULL,
+  text.size = 10,
+  add.cv.title = TRUE,
+  add.bic.title = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{output of \code{breakpoint}}

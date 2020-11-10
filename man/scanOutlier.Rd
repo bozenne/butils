@@ -4,9 +4,15 @@
 \alias{scanOutlier}
 \title{Search potential outliers}
 \usage{
-scanOutlier(data, id, method.numeric = "numOutlier",
-  method.factor = "factorOutlier", method.id = "checkId",
-  args.num = NULL, args.factor = NULL)
+scanOutlier(
+  data,
+  id,
+  method.numeric = "numOutlier",
+  method.factor = "factorOutlier",
+  method.id = "checkId",
+  args.num = NULL,
+  args.factor = NULL
+)
 }
 \arguments{
 \item{data}{the dataset}

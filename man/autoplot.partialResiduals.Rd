@@ -4,10 +4,12 @@
 \alias{autoplot.partialResiduals}
 \title{Display an first order interaction for categorical variables}
 \usage{
-\method{autoplot}{partialResiduals}(object, alpha.ggplot = 0.25, ...)
+\method{autoplot}{partialResiduals}(object, alpha.ggplot = 0.25, plot = TRUE, ...)
 }
 \arguments{
 \item{alpha.ggplot}{transparency parameter for the points or the bands}
+
+\item{plot}{should the plot be displayed?}
 
 \item{...}{additional argument to be passed to \code{partialModel}}
 
@@ -36,6 +38,11 @@ pres4 <- partialResiduals(m, var = "gender")
 autoplot(pres4)
 
 ## linear mixed model
+if(require(nlme)){
+mm <- lme(Y~Age+gender, random= ~ 1|gene, data = d)
+pres1 <- partialResiduals(mm, var = "Age")
+autoplot(pres1)
+}
 if(require(lme4) && require(merTools) && require(AICcmodavg)){
 
 mm <- lmer(Y~Age+gender+(1|gene), data = d)
@@ -49,5 +56,15 @@ pres3 <- partialResiduals(mm, var = c("Age","gender"), FUN.predict = predict_mer
 autoplot(pres3) 
 pres4 <- partialResiduals(mm, var = c("Age","gender"), FUN.predict = predict_AICcmodavg)
 autoplot(pres4)
+}
+
+## gam
+if(require(mgcv)){
+set.seed(2) ## simulate some data
+dat <- gamSim(1,n=400,dist="normal",scale=2)
+b <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat)
+b <- gam(y~s(x0)+x1+x2+x3,data=dat)
+pres5 <- partialResiduals(b, var = "x0")
+autoplot(pres5)
 }
 }

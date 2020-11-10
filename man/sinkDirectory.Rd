@@ -4,8 +4,14 @@
 \alias{sinkDirectory}
 \title{Import All .rds Files in a Directory.}
 \usage{
-sinkDirectory(path, string.keep = NULL, string.exclude = NULL,
-  addMissingCol = FALSE, fixed = FALSE, trace = TRUE)
+sinkDirectory(
+  path,
+  string.keep = NULL,
+  string.exclude = NULL,
+  addMissingCol = FALSE,
+  fixed = FALSE,
+  trace = TRUE
+)
 }
 \arguments{
 \item{path}{[character] path to the directory.}

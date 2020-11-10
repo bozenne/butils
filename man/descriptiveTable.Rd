@@ -4,10 +4,18 @@
 \alias{descriptiveTable}
 \title{Descriptive Table for Continuous, Categorical, and Date Variables}
 \usage{
-descriptiveTable(formula, data, guess.categorical = 5,
-  add.groupAll = TRUE, add.groupNA = TRUE, add.groupVariable = FALSE,
-  FCT.center = "mean", FCT.spread = "sd", test.categorical = NULL,
-  test.continuous = NULL)
+descriptiveTable(
+  formula,
+  data,
+  guess.categorical = 5,
+  add.groupAll = TRUE,
+  add.groupNA = TRUE,
+  add.groupVariable = FALSE,
+  FCT.center = "mean",
+  FCT.spread = "sd",
+  test.categorical = NULL,
+  test.continuous = NULL
+)
 }
 \arguments{
 \item{formula}{[formula] A formula where the left hand side (lhs) describe potential subgroups

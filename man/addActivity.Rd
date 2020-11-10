@@ -8,9 +8,15 @@
 \usage{
 addActivity(object, ...) <- value
 
-\method{addActivity}{butilsAccount}(object, involved = NULL,
-  type = as.character(NA), date = as.Date(NA), note = "",
-  label = NULL, ...) <- value
+\method{addActivity}{butilsAccount}(
+  object,
+  involved = NULL,
+  type = as.character(NA),
+  date = as.Date(NA),
+  note = "",
+  label = NULL,
+  ...
+) <- value
 }
 \arguments{
 \item{object}{the account.}

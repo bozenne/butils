@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 23 2017 (14:57) 
 ## Version: 
-## Last-Updated: dec  4 2017 (15:22) 
+## Last-Updated: nov 10 2020 (10:27) 
 ##           By: Brice Ozenne
-##     Update #: 75
+##     Update #: 76
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -40,7 +40,7 @@
 #' and compute the p.value using the Gaussian distribution (\code{df=NULL}) or a student's t-distribution.
 #' In such a case the degrees of freedom are computed using:
 #' \deqn{Cdf = C * df}
-#' This formula is probably a very crude approximation to the appropriate degrees of freedom of \eqn{diage(CSC)} (assuming they exists).
+#' This formula is probably a very crude approximation to the appropriate degrees of freedom of \eqn{diag(CSC)} (assuming they exists).
 #'
 #' @examples
 #' library(nlme)

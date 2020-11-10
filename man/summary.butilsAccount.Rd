@@ -7,10 +7,17 @@
 \usage{
 \method{print}{butilsAccount}(x, ...)
 
-\method{summary}{butilsAccount}(object, print = TRUE,
-  print.title = TRUE, detail = 0:2, keep.cols = c("paid", "date",
-  "type", "total.cost", "participant.cost"), digit = 1, start = NULL,
-  stop = NULL, ...)
+\method{summary}{butilsAccount}(
+  object,
+  print = TRUE,
+  print.title = TRUE,
+  detail = 0:2,
+  keep.cols = c("paid", "date", "type", "total.cost", "participant.cost"),
+  digit = 1,
+  start = NULL,
+  stop = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{an object of class butilsAccount.}

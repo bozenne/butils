@@ -4,8 +4,14 @@
 \alias{calreg}
 \title{Regression On Unobserved Exposure Using Calibration.}
 \usage{
-calreg(formula, data, fitter = "lm", calibration, method = "delta",
-  n.impute = 50)
+calreg(
+  formula,
+  data,
+  fitter = "lm",
+  calibration,
+  method = "delta",
+  n.impute = 50
+)
 }
 \arguments{
 \item{formula}{formula for the linear model.}

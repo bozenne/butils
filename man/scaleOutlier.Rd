@@ -4,8 +4,15 @@
 \alias{scaleOutlier}
 \title{Robust scaling}
 \usage{
-scaleOutlier(x, center = "median", scale = "mad", method,
-  na.rm = FALSE, noScaleIf0 = FALSE, ...)
+scaleOutlier(
+  x,
+  center = "median",
+  scale = "mad",
+  method,
+  na.rm = FALSE,
+  noScaleIf0 = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{a numeric vector}

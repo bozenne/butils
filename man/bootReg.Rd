@@ -11,24 +11,64 @@
 \usage{
 bootReg(object, type, FUN.estimate, FUN.stdError, data, load.library, ...)
 
-\method{bootReg}{lm}(object, type = "coef", FUN.estimate = NULL,
-  FUN.stdError = NULL, data = NULL, load.library = NULL, ...)
+\method{bootReg}{lm}(
+  object,
+  type = "coef",
+  FUN.estimate = NULL,
+  FUN.stdError = NULL,
+  data = NULL,
+  load.library = NULL,
+  ...
+)
 
-\method{bootReg}{gls}(object, type = "coef", FUN.estimate = NULL,
-  FUN.stdError = NULL, data = NULL, load.library = "nlme", cluster,
-  ...)
+\method{bootReg}{gls}(
+  object,
+  type = "coef",
+  FUN.estimate = NULL,
+  FUN.stdError = NULL,
+  data = NULL,
+  load.library = "nlme",
+  cluster,
+  ...
+)
 
-\method{bootReg}{lme}(object, type = "coef", FUN.estimate = NULL,
-  FUN.stdError = NULL, data = NULL, load.library = "nlme", cluster,
-  ...)
+\method{bootReg}{lme}(
+  object,
+  type = "coef",
+  FUN.estimate = NULL,
+  FUN.stdError = NULL,
+  data = NULL,
+  load.library = "nlme",
+  cluster,
+  ...
+)
 
-\method{bootReg}{lvmfit}(object, type = "coef", FUN.estimate = NULL,
-  FUN.stdError = NULL, data = NULL, load.library = "lava", ...)
+\method{bootReg}{lvmfit}(
+  object,
+  type = "coef",
+  FUN.estimate = NULL,
+  FUN.stdError = NULL,
+  data = NULL,
+  load.library = "lava",
+  ...
+)
 
-.bootReg(object, data, strata = NULL, name.cluster, FUN.estimate,
-  FUN.stdError, FUN.resample = NULL, FUN.iid = NULL, n.boot = 1000,
-  n.cpus = 1, load.library, seed = 1, rejectIfWarning = TRUE,
-  trace = TRUE)
+.bootReg(
+  object,
+  data,
+  strata = NULL,
+  name.cluster,
+  FUN.estimate,
+  FUN.stdError,
+  FUN.resample = NULL,
+  FUN.iid = NULL,
+  n.boot = 1000,
+  n.cpus = 1,
+  load.library,
+  seed = 1,
+  rejectIfWarning = TRUE,
+  trace = TRUE
+)
 }
 \arguments{
 \item{object}{the fitted model.}
