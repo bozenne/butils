@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb 14 2020 (17:23) 
 ## Version: 
-## Last-Updated: feb 20 2020 (14:36) 
+## Last-Updated: feb 20 2020 (17:01) 
 ##           By: Brice Ozenne
-##     Update #: 153
+##     Update #: 156
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -37,10 +37,8 @@
 #' The exposure \(X\) in the second sample is computed:
 #'\itemize{
 #' \item based on the conditional expectation of the exposure given the proxy from the first model (\code{method="delta"}).
-#' \item based on multiple sampling of the coefficients from the first model (\code{method="CMI"}).
+#' \item based on multiple sampling of the coefficients from the first model (\code{method="MI"}).
 #' For each sample an exposure is computed, a linear model is then estimated based on this exposure. The results are then pooled using \code{mice::pool}.
-#' \item based on multiple sampling of the coefficients from the first model with noise (\code{method="MI"}).
-#' Same as \code{method="CMI"} except that gaussian noise is added to the exposure, according to the residual standard error of the calibration model.
 #' }
 #' 
 #' When using the delta method, the uncertainty is decomposed into two parts:
@@ -111,7 +109,7 @@ calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", 
     if(!inherits(calibration,"lm") && !inherits(calibration,"nls")){
         stop("Only compatible with lm and nls objects \n")
     }
-    method <- match.arg(method, choices = c("delta","MI","CMI"))
+    method <- match.arg(method, choices = c("delta","MI"))
 
     if(name.X %in% all.vars(formula)[-1] == FALSE){
         stop("The outcome of the calibration model should be an covariate in the argument \'formula\' \n")
@@ -125,23 +123,17 @@ calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", 
     ## ** prepare prediction
     if(inherits(calibration,"lm")){
         Z <- model.matrix(calibration)
-        refit <- function(p, sd.noise = NULL){
+        refit <- function(p){
             if(is.null(p)){
                 p <- coef(calibration)
             }
             data[[name.X]] <- Z %*% p
-            if(!is.null(sd.noise)){
-                data[[name.X]] <- data[[name.X]] + rnorm(length(data[[name.X]]), mean = 0, sd = sd.noise)
-            }
             return(do.call(fitter, args = list(formula = formula, data = data)))
         }
     }else if(inherits(calibration,"nls")){
         class(calibration) <- append("nls.calreg",class(calibration))
-        refit <- function(p, sd.noise = NULL){
+        refit <- function(p){
             data[[name.X]] <- predict(calibration, newdata = data, newparam = p)
-            if(!is.null(sd.noise)){
-                data[[name.X]] <- data[[name.X]] + rnorm(length(data[[name.X]]), mean = 0, sd = sd.noise)
-            }
             return(do.call(fitter, args = list(formula = formula, data = data)))
         }
     }
@@ -198,16 +190,11 @@ calreg <- function(formula, data, fitter = "lm", calibration, method = "delta", 
     }
 
     ## ** approach 2: multiple imputation
-    if(method %in% c("MI","CMI")){
+    if(method %in% "MI"){
         M.impute <- MASS::mvrnorm(n = n.impute, mu = alpha, Sigma = vcov_alpha)
         lmer <- lme4::lmer
-        if(method == "MI"){
-            sd.noise <- sigma(calibration)
-        }else{
-            sd.noise <- NULL
-        }
         regression.MI <- apply(M.impute, 1, function(iCoef){
-            refit(iCoef, sd.noise = sd.noise)
+            refit(iCoef)
         })
         names(regression.MI) <- paste0("M",1:length(regression.MI))
         pool.MI <- mice::pool(mice::as.mira(regression.MI))

@@ -88,7 +88,7 @@ pres2 <- partialResiduals(m, var = c("X1","X2"))
 fit2 <- coef(m)["(Intercept)"] + d$Id * coef(m)["Id"]
 range((d$Y - fit2) - pres2$pResiduals)
 
-## partial residauls binary variable
+## partial residuals binary variable
 pres3 <- partialResiduals(m, var = "Id")
 
 if(require(ggplot2)){

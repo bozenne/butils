@@ -64,7 +64,7 @@
 ##' fit2 <- coef(m)["(Intercept)"] + d$Id * coef(m)["Id"]
 ##' range((d$Y - fit2) - pres2$pResiduals)
 ##'
-##' ## partial residauls binary variable
+##' ## partial residuals binary variable
 ##' pres3 <- partialResiduals(m, var = "Id")
 ##' 
 ##' if(require(ggplot2)){
@@ -100,12 +100,14 @@ partialResiduals <- function(model,var,
                              FUN.df,
                              ...) {
 
+    
     test.lm <- inherits(model,"lm")
     test.gls <- inherits(model,"gls")
+    test.gam <- inherits(model,"gam")
     test.lme <- inherits(model,"lme")
     test.lmer <- inherits(model,"lmerMod")
-    if(test.lm==FALSE && test.gls==FALSE && test.lme==FALSE && test.lmer==FALSE){
-        stop("partialResiduals can only deal with lm, gls, lme, and lmerMod objects \n")
+    if(test.lm==FALSE && test.gls==FALSE && test.gam==FALSE && test.lme==FALSE && test.lmer==FALSE){
+        stop("partialResiduals can only deal with lm, gls, gam, lme, and lmerMod objects \n")
     }
     
     out <- list()
@@ -114,7 +116,7 @@ partialResiduals <- function(model,var,
         FUN.coef <- function(object, ...){
             fixef(object, ...)
         }
-    }else if(test.lm || test.gls){
+    }else if(test.lm || test.gam || test.gls){
         FUN.coef <- function(object, ...){
             coef(object, ...)
         }
@@ -129,7 +131,7 @@ partialResiduals <- function(model,var,
             FUN.ranef <- function(object, ...){
                 predict(model) - predict(model, level = 0)
             }
-        }else if(test.lm || test.gls){
+        }else if(test.lm || test.gam || test.gls){
             stop("Argument \'conditional=TRUE\' not applicable to lm or gls objects. \n")
         }
     }
@@ -139,7 +141,7 @@ partialResiduals <- function(model,var,
         FUN.vcov <- function(object, ...){
             as.matrix(stats::vcov(object, ...))  
         }
-    }else if(test.lm || test.gls || test.lme){
+    }else if(test.lm || test.gls || test.gam || test.lme){
         FUN.vcov <- function(object, ...){
             stats::vcov(object, ...)
         }
@@ -149,16 +151,55 @@ partialResiduals <- function(model,var,
         summary(object, ...)$sigma^2
     }
 
-    FUN.model.matrix <- function(model, data){
-        model.matrix(model, data = data, fixed.only = FALSE)
+    if(test.gam){
+        FUN.model.matrix <- function(model, formula, data){
+            model.matrix(model, newdata = data, fixed.only = FALSE)
+        }
+    }else if(test.lmer){
+        FUN.model.matrix <- function(model, formula, data){
+            X <- model.matrix(formula, data = data, fixed.only = FALSE)
+
+            ## remove extra column for random effect
+            ff.random <- lme4::findbars(formula)
+            query <- paste(paste0("^",unlist(lapply(ff.random, deparse))),collapse = "|")
+            position.query <- grep(query, colnames(X))
+            
+            XX <- X[,-position.query,drop=FALSE]
+            attr(XX,"assign") <- attr(X,"assign") ## possible bug here
+            return(XX)
+            
+        }
+    }else if(test.lme || test.gls){
+        FUN.model.matrix <- function(model, formula, data){
+            model.matrix(formula, data = data, fixed.only = FALSE)
+        }
+    }else if(test.lm){
+        FUN.model.matrix <- function(model, formula, data){
+            model.matrix(model, data = data, fixed.only = FALSE)
+        }
     }
 
+    FUN.formula <- function(model){
+        ff <- try(formula(model), silent = TRUE)
+        if("try-error" %in% class(ff)){
+            ff <- lavaSearch2_evalInParentEnv(model$call[[2]])
+        }
+        if("formula" %in% class(ff) == FALSE){
+            stop("Unable to extract the formula from the model \n")
+        }
+        return(ff)
+    }
+    
     if(missing(FUN.df)){
-        if(test.lmer || test.lme || test.gls){
+        if(test.lmer || test.gls){
             FUN.df <- function(model, level){
                 NULL
             }
-        }else if(test.lm){
+        }else if(test.lme){
+            FUN.df <- function(model, level){
+                min(model$fixDF$X)
+            }
+        }else if(test.lm || test.gam){
             FUN.df <- function(model, level){
                 model$df.residual
             }
@@ -166,21 +207,10 @@ partialResiduals <- function(model,var,
         }
     }
     
-    FUN.formula <- function(model){
-      ff <- try(formula(terms(model)), silent = TRUE)
-      if("try-error" %in% class(ff)){
-        ff <- lavaSearch2_evalInParentEnv(model$call[[2]])
-      }
-      
-      if("formula" %in% class(ff) == FALSE){
-       stop("Unable to extract the formula from the model \n")
-      }
-      return(ff)
-    }
-
     ## ** normalize input
+    formula.model <- FUN.formula(model)
     interval <- match.arg(interval, c("confidence","prediction"))
-    design.df <- as.data.table(lavaSearch2::extractData(model, design.matrix = FALSE))
+    design.df <- as.data.table(lavaSearch2::extractData(model, design.matrix = FALSE))[,.SD,.SDcols=all.vars(formula.model)]
     
     design.numeric <- sapply(design.df, is.numeric)
     design.factor <- sapply(design.df, is.factor)
@@ -191,9 +221,10 @@ partialResiduals <- function(model,var,
             list(levels(as.factor(design.df[[x]])))
         })
     }
-    
-    name.Y <- all.vars(formula(model))[1]
-    name.X.df <- setdiff(colnames(design.df),name.Y)
+
+    all.vars.model <- all.vars(formula.model)
+    name.Y <- all.vars.model[1]
+    name.X.df <- all.vars.model[-1]
     if (any(var %in% name.X.df == FALSE) ) {
         stop("Unknown variable(s): \"",paste(var[var %in% name.X.df == FALSE], collapse = "\" \""),"\" \n",
              "argument \'var\' should be in \"",paste(name.X.df,collapse = "\" \""),"\" \n")
@@ -215,16 +246,14 @@ partialResiduals <- function(model,var,
             
         }
     }
-
-    ## ** intercept
-    model.formula <- FUN.formula(model)
-    beta <- FUN.coef(model)
-    test.intercept <- as.logical(attr(terms(model.formula),"intercept"))
     
+    ## ** intercept
+    beta <- FUN.coef(model)
+    design.mat <- FUN.model.matrix(model, formula = formula.model, data = newdata.fit)    
+    test.intercept <- as.logical(attr(terms(formula.model),"intercept"))
     if(test.intercept){
         name.intercept <- "(Intercept)"
     }else if(any(design.factor)){ # find reference level
-        design.mat <- FUN.model.matrix(model.formula, data = design.df[1,,drop=FALSE])
         attr.assign <- attr(design.mat, "assign")
         indexRef <- which(tapply(attr.assign, attr.assign, function(x){any(duplicated(x))}))
         name.intercept <- names(beta)[match(indexRef, attr.assign)]
@@ -233,13 +262,10 @@ partialResiduals <- function(model,var,
     }
 
     ## ** partial fit
-    design.mat <- model.matrix(model.formula, data = newdata.fit)    
     if(!is.null(name.intercept) && keep.intercept){
         ## add the residual due to the intercept
-        ## since it is among the variable of interest
         design.mat[,name.intercept] <- 0
     }
-
 
     newdata.index <- try(as.numeric(rownames(design.mat)),silent=FALSE)
     if(!is.null(newdata.index) && !inherits(newdata.index,"try-error")){
@@ -289,7 +315,7 @@ partialResiduals <- function(model,var,
         }
     }
     ## convert to design matrix
-    design.grid.predict <- model.matrix(model.formula, grid.predict)
+    design.grid.predict <- FUN.model.matrix(model, formula = formula.model, grid.predict)
     ## remove intercept
     if(!is.null(name.intercept) && keep.intercept == FALSE){
                                         # remive the intercept from the prediction

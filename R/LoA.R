@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: apr  5 2019 (09:46) 
 ## Version: 
-## Last-Updated: mar 27 2020 (13:54) 
+## Last-Updated: nov  6 2020 (10:04) 
 ##           By: Brice Ozenne
-##     Update #: 95
+##     Update #: 101
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -76,8 +76,8 @@ LoA <- function(x, y, conf.level.CI = 0.95, conf.level.LoA = 0.95){
                        difference = y - x,
                        average = (y+x)/2)
 
-    data.LoA <- data.frame(matrix(NA, nrow = 3, ncol = 5,
-                                  dimnames = list(c("bias","lowerLoA","upperLoA"),
+    data.LoA <- data.frame(matrix(NA, nrow = 4, ncol = 5,
+                                  dimnames = list(c("bias","lowerLoA","upperLoA","halfWidthLoA"),
                                                   c("estimate","se","lower","upper","p.value"))))
     
     ## ** compute quantities of interest
@@ -109,10 +109,15 @@ LoA <- function(x, y, conf.level.CI = 0.95, conf.level.LoA = 0.95){
     data.LoA["upperLoA","estimate"] <- mean.diff + LoA.multiplier * sd.diff
     data.LoA["upperLoA","se"] <- se.LoA
 
+    ## half width
+    data.LoA["halfWidthLoA","estimate"] <- LoA.multiplier * sd.diff
+    data.LoA["halfWidthLoA","se"] <- LoA.multiplier * sqrt(var.sd.diff)
+
     ## p-value and CI
     data.LoA[,"lower"] <- data.LoA[,"estimate"] - critical.quantile * data.LoA[,"se"]
     data.LoA[,"upper"] <- data.LoA[,"estimate"] + critical.quantile * data.LoA[,"se"]
     data.LoA[,"p.value"] <- 2*(1-pt(abs(data.LoA[,"estimate"]/data.LoA[,"se"]), df = df))
+    data.LoA["halfWidthLoA","p.value"] <- NA
 
     ## ** export
     out <- list(data = data,
@@ -177,13 +182,17 @@ autoplot.LoA <- function(object, display.ci = TRUE, plot = TRUE,
     ## display
     gg <- ggplot2::ggplot()
     if(display.ci){
+        LoA <- object$LoA[c("bias","lowerLoA","upperLoA"),]
         x.range <- range(object$data$average)
-        gg <- gg + ggplot2::geom_rect(data = object$LoA, aes_string(ymin = "lower", ymax = "upper", fill = "type"), alpha = alpha, xmin = x.range[1], xmax = x.range[2])
+        gg <- gg + ggplot2::geom_rect(data = LoA, aes_string(ymin = "lower", ymax = "upper", fill = "type"), alpha = alpha, xmin = x.range[1], xmax = x.range[2])
+    }else{
+        LoA <- object$LoA[c("bias"),]
     }
+        
 
     gg <- gg + ggplot2::geom_point(data = object$data, mapping = ggplot2::aes_string(x = "average", y = "difference"))
 
-    gg <- gg + ggplot2::geom_hline(data = data.frame(type = object$LoA$type, estimate = object$LoA$estimate),
+    gg <- gg + ggplot2::geom_hline(data = data.frame(type = LoA$type, estimate = LoA$estimate),
                           ggplot2::aes_string(yintercept = "estimate", linetype = "type", color = "type"), size = line.size)
 
     gg <- gg + ggplot2::scale_colour_manual(name = name.legend,
