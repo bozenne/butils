@@ -16,7 +16,7 @@ packages <- c(
 "optimx","oro.dicom", "oro.nifti",
 "pbapply","pec","penalized","pbkrtest","pipeR","pracma","pROC","prodlim","publish",
 "qqtest","quantreg",
-"ranger","RANN","Rcpp","RcppArmadillo","RcppEigen","ReporteRs","rgl","riskRegression","ROCR","roxygen2",
+"R.rsp","ranger","RANN","Rcpp","RcppArmadillo","RcppEigen","ReporteRs","rgl","riskRegression","ROCR","roxygen2",
 "shiny","snowfall","sp","spam","spelling","stringi",
 "testthat", "tmvtnorm",
 "ranger","randomForest",
