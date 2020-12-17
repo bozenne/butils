@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  3 2020 (18:30) 
 ## Version: 
-## Last-Updated: dec 17 2020 (21:18) 
+## Last-Updated: dec 17 2020 (21:32) 
 ##           By: Brice Ozenne
-##     Update #: 208
+##     Update #: 219
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -38,9 +38,11 @@
 ##' difference in means between paired measurements (\code{type="paired"}),
 ##' equivalence in means between paired measurements (\code{type="equivalence"}),
 ##' @param n.large [integer, >0] sample size used to indentify the correlation coefficient or assess the error made when identifying the parameters. Should be large.
+##' @param trace [logical] Should a progress bar be displayed when estimating the power for various combinaisons of parameters?
+##' @param ncpus [integer, >0] Number of cores to be used, i.e., how many processes can be run simultaneously.
 ##'
 ##' @references
-##' Shein-Chung Chow , Jun Shao & Hansheng Wang (2002) A NOTE ONSAMPLE SIZE CALCULATION FOR MEAN COMPARISONS BASED ON NONCENTRAL t-STATISTICS, Journal of Biopharmaceutical Statistics, 12:4, 441-456, DOI: 10.1081/BIP-120016229
+##' Shein-Chung Chow , Jun Shao & Hansheng Wang (2002). A note on sample size calculation for mean comparisons based on noncentral t-statistics, Journal of Biopharmaceutical Statistics, 12:4, 441-456, DOI: 10.1081/BIP-120016229
 
 
 ## * logPower_ttest - examples
@@ -169,9 +171,7 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
                            sig.level = 0.05, power = 0.8,
                            type = "two.sample", equivalence = FALSE, 
                            method.meanvar = "lognorm", method.cor = "uniroot",
-                           n.large = 1e5){
-
-    require(mvtnorm)
+                           n.large = 1e5, trace = TRUE, ncpus = NULL){
 
     ## ** deal with vector case
     ll <- list(mu.original = mu.original,
@@ -185,9 +185,9 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     if(n.grid>1){
         name.grid <- names(grid)
         attr(n.large,"diagnostic") <- FALSE
-        
-        ls.power <- lapply(1:n.grid, function(iG){
-            iOut <- logPower_ttest(mu.original = grid[iG,"mu.original"],
+
+        warper <- function(iG){
+              iOut <- logPower_ttest(mu.original = grid[iG,"mu.original"],
                                    sigma2.original = grid[iG,"sigma2.original"],
                                    gamma = grid[iG,"gamma"], 
                                    rho = if("rho" %in% name.grid){grid[iG,"rho"]}else{NULL},
@@ -203,7 +203,17 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
                          power = iOut$power,
                          n1 = iOut$n[1],
                          n2 = iOut$n[2]))
-        })
+        }
+
+        if(trace){
+            require(pbapply)
+            ls.power <- pbapply::pblapply(1:n.grid, warper, cl = ncpus)
+        }else if(!is.null(ncpus)){
+            require(parallel)
+            ls.power <- parallel::mclapply(1:n.grid, warper, mc.cores = ncpus)
+        }else{
+            ls.power <- lapply(1:n.grid, warper)
+        }
         df.out <- do.call(rbind,ls.power)
         return(df.out)
        
@@ -256,14 +266,18 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
                 rho - (x+1.5*x^2*s0+(1/12)*s0^2*(2*x^3+3*x))/(1+(3/2)*s0+(7/6)*s0^2+(11/24)*s0^3+(21/320)*s0^4)
             },interval = c(0,0.9999))$root
         }else if(method.cor=="uniroot"){
+            require(mvtnorm)
+
             rho.log <- uniroot(f = function(x){
                 Sigma.log <- matrix(c(s0,x*s0,x*s0,s0),2,2)
                 return(cor(exp(mvtnorm::rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log)))[1,2]-rho)
             }, lower = 0, upper = 0.999)$root ## make sure that Sigma.log is positive definite
         }else if(method.cor=="optim"){
+            require(mvtnorm)
+
             rho.log <- optim(fn = function(x){
                 Sigma.log <- matrix(c(s0,x*s0,x*s0,s0),2,2)
-                diff <- cor(exp(rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log)))[1,2]-rho
+                diff <- cor(exp(mvtnorm::rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log)))[1,2]-rho
                 return(diff^2)
             }, par = rho, lower = 0, upper = 0.999, method = "L-BFGS-B")$par ## make sure that Sigma.log is positive definite
         }
@@ -276,8 +290,10 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
 
     ## ** diagnostic
     if(!identical(attr(n.large,"diagnostic"),FALSE)){
+        require(mvtnorm)
+
         Sigma.log <- matrix(c(s0,rho.log*s0,rho.log*s0,s0),2,2)
-        Z <- exp(rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log))
+        Z <- exp(mvtnorm::rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log))
 
         df.diagnostic <- rbind(requested = data.frame(mu=mu.original,sigma2=sigma2.original,gamma=gamma,rho=rho),
                                error = data.frame(mu=mu.original-mean(Z[,1]),sigma2=sigma2.original-var(Z[,1]),gamma=gamma-(mean(Z[,2])/mean(Z[,1])-1),rho=rho-cor(Z[,1],Z[,2]))
@@ -318,6 +334,8 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
         tt$power <- power
         tt$d <- log(1+gamma)/sqrt(s.pool)
         tt$method <- "Equivalence t test power calculation"
+        tt$alternative <- "two.sided"
+        
     }else{
         require(MESS)
         tt <- MESS::power_t_test(n = n,
@@ -327,15 +345,19 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
                                  sig.level = sig.level,
                                  type = type,
                                  ratio = ratio.n)
+
+        if(type == "paired"){
+            tt$note <- "n is the number of *pairs"
+        }
     }
 
     ## ** export
-    tt$param.log.normal <- c("a0"=a0,
-                             "a1"=a1,
-                             "s0"=s0,
-                             "s1"=s1,
-                             "rho.log"=rho.log)
-    tt$diagnostic <- df.diagnostic
+    attr(tt,"param.log.normal") <- c("a0"=a0,
+                                     "a1"=a1,
+                                     "s0"=s0,
+                                     "s1"=s0,
+                                     "rho.log"=rho.log)
+    attr(tt,"diagnostic") <- df.diagnostic
     class(tt) <- append("logPower.htest",class(tt))
     return(tt)    
 }
@@ -343,10 +365,8 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
 ## * print.logPower.htest
 print.logPower.htest <- function(x,...){
 
-    param.log.normal <- x$param.log.normal
-    x$param.log.normal <- NULL
-    diagnostic <- x$diagnostic
-    x$diagnostic <- NULL
+    param.log.normal <- attr(x,"param.log.normal")
+    diagnostic <- attr(x,"diagnostic")
 
     class(x) <- setdiff(class(x), "logPower.htest")
 
