@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  3 2020 (18:30) 
 ## Version: 
-## Last-Updated: dec 17 2020 (21:32) 
+## Last-Updated: dec 17 2020 (21:41) 
 ##           By: Brice Ozenne
-##     Update #: 219
+##     Update #: 221
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -46,7 +46,6 @@
 
 
 ## * logPower_ttest - examples
-##' @rdname logPower_ttest
 ##' @examples
 ##' if(require(MESS) && require(mvtnorm)){
 ##'
@@ -125,7 +124,6 @@
 ##' t.test(XY[,2]-XY[,1])$p.value
 ##' }
 ##' mean(unlist(lapply(1:1e3,warper, n = 38))<=0.05)
-##' }
 ##' 
 ##' #### one sample equivalence: 10% difference ####
 ##' mu <- rep(0,2)
@@ -164,7 +162,6 @@
 ##' }
 
 ## * logPower_ttest - code
-##' @rdname logPower_ttest
 ##' @export
 logPower_ttest <- function(mu.original, sigma2.original, gamma, 
                            rho = NULL, n = NULL, ratio.n = 1,

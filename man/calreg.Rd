@@ -44,10 +44,8 @@ The formula of this model should be given to the argument \code{formula} and the
 The exposure \(X\) in the second sample is computed:
 \itemize{
 \item based on the conditional expectation of the exposure given the proxy from the first model (\code{method="delta"}).
-\item based on multiple sampling of the coefficients from the first model (\code{method="CMI"}).
+\item based on multiple sampling of the coefficients from the first model (\code{method="MI"}).
 For each sample an exposure is computed, a linear model is then estimated based on this exposure. The results are then pooled using \code{mice::pool}.
-\item based on multiple sampling of the coefficients from the first model with noise (\code{method="MI"}).
-Same as \code{method="CMI"} except that gaussian noise is added to the exposure, according to the residual standard error of the calibration model.
 }
 
 When using the delta method, the uncertainty is decomposed into two parts:

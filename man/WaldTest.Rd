@@ -40,7 +40,7 @@ and \eqn{t()} the transpose operator, this function computes:
 and compute the p.value using the Gaussian distribution (\code{df=NULL}) or a student's t-distribution.
 In such a case the degrees of freedom are computed using:
 \deqn{Cdf = C * df}
-This formula is probably a very crude approximation to the appropriate degrees of freedom of \eqn{diage(CSC)} (assuming they exists).
+This formula is probably a very crude approximation to the appropriate degrees of freedom of \eqn{diag(CSC)} (assuming they exists).
 }
 \examples{
 library(nlme)
