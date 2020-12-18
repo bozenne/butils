@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  3 2020 (18:30) 
 ## Version: 
-## Last-Updated: dec 17 2020 (21:41) 
+## Last-Updated: dec 18 2020 (09:26) 
 ##           By: Brice Ozenne
-##     Update #: 221
+##     Update #: 223
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -223,8 +223,8 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     if(type %in% c("paired") && ratio.n!=1){
         stop("Argument \'ratio.n\' must be 1 when argument \'type\' is \"paired\". \n")
     }
-    if(is.null(n) && ratio.n!=1){
-        stop("Argument \'ratio.n\' must be 1 when argument \'n\' not specified. \n")
+    if(equivalence && ratio.n!=1){
+        stop("Argument \'ratio.n\' must be 1 when argument \'equivalence\' is TRUE. \n")
     }
     if(type %in% c("paired","equivalence") && is.null(rho)){
         stop("Argument \'rho\' must be specified when argument \'type\' is \"paired\". \n")
@@ -253,8 +253,12 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
             interval = c(1e-12,sigma2.original))$root
         a0 <- log(mu.original) - log(1+s0/2+s0^2/8+s0^3/48)
     }
-    a1 <- a0 + log(1+gamma)
-
+    if(equivalence){
+        a1 <- a0
+    }else{
+        a1 <- a0 + log(1+gamma)
+    }
+    
     ## ** identify correlation and pooled variance
     if(type %in% "paired"){
         
