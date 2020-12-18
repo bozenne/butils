@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  3 2020 (18:30) 
 ## Version: 
-## Last-Updated: dec 18 2020 (09:26) 
+## Last-Updated: dec 18 2020 (12:26) 
 ##           By: Brice Ozenne
-##     Update #: 223
+##     Update #: 266
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -20,13 +20,15 @@
 ##' @description Power calculation for t-tests on log-transformed data.
 ##' @name logPower_ttest
 ##' 
-##' @param mu.original [numeric] expected value of the outcome on the original scale for the control group or baseline.
-##' @param sigma2.original [numeric] variance of the outcome on the original scale. Assumed to be the same over groups or over time.
-##' @param gamma [numeric] relative change for the expected value in the treatment group or follow-up value.
+##' @param gamma [numeric] When considering two groups: relative difference in expected values between the two groups.
+##' When considering paired observations: expected value of the individual relative differences.
+##' @param sigma2 [numeric] When the argument \code{mu} is unspecified: coefficient of variation (i.e. standard error divided by expectation) of the outcome on the original scale.
+##' When the argument \code{mu} is specified: variance of the outcome on the original scale.
 ##' @param rho [numeric 0-1] correlation coefficient between the paired values on the original scale. Only used when \code{type="paired"} or \code{type="equivalence"}.
+##' @param mu [numeric] expected value of the outcome on the original scale for the control group or at baseline.
 ##' @param n [integer >1] Sample size.
 ##' @param ratio.n [numeric >1] ratio between the sample size in larger and the smaller group. By default 1.
-##' Note that the larger group is the reference group (with expectation \code{mu.original}) and the smaller group the active group (with expectation \code{gamma*mu.original}).
+##' Note that the larger group is the reference group (with expectation \code{mu}) and the smaller group the active group (with expectation \code{gamma*mu}).
 ##' @param method.meanvar [character] method used to identify the expected mean and variance on the log scale.
 ##' Either assumes that the outcome is log-normally distributed on the original scale (\code{method.meanvar = "lognorm"}),
 ##' or that it is normally distributed on the log-scale (\code{method.meanvar = "lognorm2"}).
@@ -41,8 +43,11 @@
 ##' @param trace [logical] Should a progress bar be displayed when estimating the power for various combinaisons of parameters?
 ##' @param ncpus [integer, >0] Number of cores to be used, i.e., how many processes can be run simultaneously.
 ##'
+##' @details The power calculation is performed under the assumption that on the log-scale, the variance of the outcome is the same between the two groups or over time.
+##' 
 ##' @references
 ##' Shein-Chung Chow , Jun Shao & Hansheng Wang (2002). A note on sample size calculation for mean comparisons based on noncentral t-statistics, Journal of Biopharmaceutical Statistics, 12:4, 441-456, DOI: 10.1081/BIP-120016229
+##' Gerald Van Belle and Donald C. Martin. Sample size as a function of coefficient of variation and ratio of means (1993). The American Statistician 47(3) 165-167.
 
 
 ## * logPower_ttest - examples
@@ -54,8 +59,11 @@
 ##' Y <- rlnorm(1e5, meanlog = 0.275, sdlog = 0.5)
 ##'
 ##' ## proposed solution
-##' logPower_ttest(mu.original = mean(X),
-##'                sigma2.original = var(X),
+##' logPower_ttest(mu = mean(X),
+##'                sigma2 = var(X),
+##'                gamma = 0.3, type = "two.sample")
+##' 
+##' logPower_ttest(sigma2 = sd(X)/mean(X),
 ##'                gamma = 0.3, type = "two.sample")
 ##' 
 ##' ## no log-transform
@@ -77,8 +85,8 @@
 ##' mean(unlist(lapply(1:1e3,warper, n = 53))<=0.05)
 ##'
 ##' ## graphical display
-##' df.power <- logPower_ttest(mu.original = mean(X),
-##'                sigma2.original = var(X),
+##' df.power <- logPower_ttest(mu = mean(X),
+##'                sigma2 = var(X),
 ##'                gamma = seq(0.1,0.4, length.out = 30),
 ##'                n = seq(20, 75, length.out = 30),
 ##'                type = "two.sample")
@@ -103,8 +111,8 @@
 ##' ## apply(XY,2,sd)-c(sd(X),sd(Y))
 ##'
 ##' ## proposed solution
-##' logPower_ttest(mu.original = mean(X),
-##'                sigma2.original = var(X),
+##' logPower_ttest(mu = mean(X),
+##'                sigma2 = var(X),
 ##'                gamma = 0.3, rho = cor(XY[,1],XY[,2]),
 ##'                type = "paired")
 ##' 
@@ -134,8 +142,8 @@
 ##' X <- XY[,1]
 ##'
 ##' ## proposed solution
-##' logPower_ttest(mu.original = mean(X),
-##'                sigma2.original = var(X),
+##' logPower_ttest(mu = mean(X),
+##'                sigma2 = var(X),
 ##'                gamma = gamma, rho = cor(XY[,1],XY[,2]), n = 100, 
 ##'                type = "paired", equivalence = TRUE)
 ##' 
@@ -163,7 +171,7 @@
 
 ## * logPower_ttest - code
 ##' @export
-logPower_ttest <- function(mu.original, sigma2.original, gamma, 
+logPower_ttest <- function(gamma, sigma2, mu = NULL, 
                            rho = NULL, n = NULL, ratio.n = 1,
                            sig.level = 0.05, power = 0.8,
                            type = "two.sample", equivalence = FALSE, 
@@ -171,8 +179,8 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
                            n.large = 1e5, trace = TRUE, ncpus = NULL){
 
     ## ** deal with vector case
-    ll <- list(mu.original = mu.original,
-               sigma2.original = sigma2.original,
+    ll <- list(mu = mu,
+               sigma2 = sigma2,
                gamma = gamma,
                rho = rho,
                n = n,
@@ -182,15 +190,13 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     if(n.grid>1){
         name.grid <- names(grid)
         attr(n.large,"diagnostic") <- FALSE
-
         warper <- function(iG){
-              iOut <- logPower_ttest(mu.original = grid[iG,"mu.original"],
-                                   sigma2.original = grid[iG,"sigma2.original"],
+            iOut <- logPower_ttest(sigma2 = sqrt(grid[iG,"sigma2"])/grid[iG,"mu"],
                                    gamma = grid[iG,"gamma"], 
                                    rho = if("rho" %in% name.grid){grid[iG,"rho"]}else{NULL},
                                    n = if("n" %in% name.grid){grid[iG,"n"]}else{NULL},
                                    ratio.n = grid[iG,"ratio.n"],
-                                   method.meanvar = method.meanvar,
+                                   method.meanvar = "lognorm",
                                    sig.level = sig.level,
                                    power = if("power" %in% name.grid){grid[iG,"power"]}else{NULL},
                                    type = type,
@@ -218,6 +224,9 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     
     ## ** check and normalize arguments
     method.meanvar <- match.arg(method.meanvar, c("lognorm","lognorm2"))
+    if(is.null(mu) && method.meanvar=="lognorm2"){
+        stop("Argument \'method.meanvar\' must be \"lognorm2\" when argument \'mu\' is NULL. \n")
+    }
     type <- match.arg(type, c("two.sample","paired"))
     method.cor <- match.arg(method.cor, c("taylor","uniroot","optim"))
     if(type %in% c("paired") && ratio.n!=1){
@@ -242,23 +251,32 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     }
 
     ## ** identify mean and variance on the log-scale
-    if(method.meanvar=="lognorm"){
-        s0 <- log(1+sigma2.original/mu.original^2)
-        a0 <- log(mu.original) - s0/2
-        ## s1 <- log(1+sigma2.original/(mu.original*(1+gamma))^2)
-        ## a1 <- log(mu.original*(1+gamma)) - s1/2
-    }else if(method.meanvar=="lognorm2"){
-        s0 <- uniroot(function(x){
-            mu.original^2/sigma2.original - (1+x/2+x^2/8+x^3/48)^2/(x+(3/2)*x^2+(7/6)*x^3+(11/24)*x^4+(21/320)*x^5)},
-            interval = c(1e-12,sigma2.original))$root
-        a0 <- log(mu.original) - log(1+s0/2+s0^2/8+s0^3/48)
-    }
-    if(equivalence){
-        a1 <- a0
-    }else{
-        a1 <- a0 + log(1+gamma)
+    if(!is.null(mu)){ 
+        if(method.meanvar=="lognorm"){
+            s0 <- log(1+sigma2/mu^2)
+            m0 <- log(mu) - s0/2
+        }else if(method.meanvar=="lognorm2"){
+            s0 <- uniroot(function(x){
+                mu^2/sigma2 - (1+x/2+x^2/8+x^3/48)^2/(x+(3/2)*x^2+(7/6)*x^3+(11/24)*x^4+(21/320)*x^5)},
+                interval = c(1e-12,sigma2))$root
+            m0 <- log(mu) - log(1+s0/2+s0^2/8+s0^3/48)
+        }
+    }else{ 
+        if(method.meanvar=="lognorm"){
+            ## mu = exp(m0+s0/2)
+            ## sigma2 = exp(2*m0+s0)(exp(s0-1))
+            ## sigma2/mu^2 = exp(s0-1)
+            s0 = log(1 + sigma2^2)
+        }
+        m0 <- 0 ## should not matter
     }
     
+    if(equivalence){
+        m1 <- m0
+    }else{
+        m1 <- m0 + log(1+gamma)
+    }
+
     ## ** identify correlation and pooled variance
     if(type %in% "paired"){
         
@@ -271,14 +289,14 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
 
             rho.log <- uniroot(f = function(x){
                 Sigma.log <- matrix(c(s0,x*s0,x*s0,s0),2,2)
-                return(cor(exp(mvtnorm::rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log)))[1,2]-rho)
+                return(cor(exp(mvtnorm::rmvnorm(n.large,mean = c(m0,m1), sigma = Sigma.log)))[1,2]-rho)
             }, lower = 0, upper = 0.999)$root ## make sure that Sigma.log is positive definite
         }else if(method.cor=="optim"){
             require(mvtnorm)
 
             rho.log <- optim(fn = function(x){
                 Sigma.log <- matrix(c(s0,x*s0,x*s0,s0),2,2)
-                diff <- cor(exp(mvtnorm::rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log)))[1,2]-rho
+                diff <- cor(exp(mvtnorm::rmvnorm(n.large,mean = c(m0,m1), sigma = Sigma.log)))[1,2]-rho
                 return(diff^2)
             }, par = rho, lower = 0, upper = 0.999, method = "L-BFGS-B")$par ## make sure that Sigma.log is positive definite
         }
@@ -290,15 +308,21 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     }
 
     ## ** diagnostic
-    if(!identical(attr(n.large,"diagnostic"),FALSE)){
+    if(!identical(attr(n.large,"diagnostic"), FALSE)){
         require(mvtnorm)
 
         Sigma.log <- matrix(c(s0,rho.log*s0,rho.log*s0,s0),2,2)
-        Z <- exp(mvtnorm::rmvnorm(n.large,mean = c(a0,a1), sigma = Sigma.log))
+        Z <- exp(mvtnorm::rmvnorm(n.large,mean = c(m0,m1), sigma = Sigma.log))
 
-        df.diagnostic <- rbind(requested = data.frame(mu=mu.original,sigma2=sigma2.original,gamma=gamma,rho=rho),
-                               error = data.frame(mu=mu.original-mean(Z[,1]),sigma2=sigma2.original-var(Z[,1]),gamma=gamma-(mean(Z[,2])/mean(Z[,1])-1),rho=rho-cor(Z[,1],Z[,2]))
-                               )
+        if(!is.null(mu)){
+            df.diagnostic <- rbind(requested = data.frame(mu=mu,sigma2=sigma2,gamma=gamma,rho=rho),
+                                   error = data.frame(mu=mu-mean(Z[,1]),sigma2=sigma2-var(Z[,1]),gamma=gamma-(mean(Z[,2])/mean(Z[,1])-1),rho=rho-cor(Z[,1],Z[,2]))
+                                   )
+        }else{
+            df.diagnostic <- rbind(requested = data.frame(sigma2=sigma2,gamma=gamma,rho=rho),
+                                   error = data.frame(sigma2=sigma2-sd(Z[,1])/mean(Z[,1]),gamma=gamma-(mean(Z[,2])/mean(Z[,1])-1),rho=rho-cor(Z[,1],Z[,2]))
+                                   )
+        }
     }else{
         df.diagnostic <- NULL
     }
@@ -340,7 +364,7 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     }else{
         require(MESS)
         tt <- MESS::power_t_test(n = n,
-                                 delta = a1-a0,
+                                 delta = log(1+gamma), ## same for all parametrisations
                                  sd = sqrt(s.pool),
                                  power = power,
                                  sig.level = sig.level,
@@ -353,8 +377,8 @@ logPower_ttest <- function(mu.original, sigma2.original, gamma,
     }
 
     ## ** export
-    attr(tt,"param.log.normal") <- c("a0"=a0,
-                                     "a1"=a1,
+    attr(tt,"param.log.normal") <- c("m0"=m0,
+                                     "m1"=m1,
                                      "s0"=s0,
                                      "s1"=s0,
                                      "rho.log"=rho.log)
