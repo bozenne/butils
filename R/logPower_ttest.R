@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  3 2020 (18:30) 
 ## Version: 
-## Last-Updated: jan  4 2021 (15:30) 
+## Last-Updated: jan  6 2021 (17:29) 
 ##           By: Brice Ozenne
-##     Update #: 292
+##     Update #: 293
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -259,8 +259,8 @@ logPower_ttest <- function(type, equivalence = FALSE,
     type2 <- trimws(gsub("paired","",type, fixed = TRUE), which = "both")
 
     method.cor <- match.arg(method.cor, c("taylor","uniroot","optim"))
-    if(paired && ratio.n!=1){
-        stop("Argument \'ratio.n\' must be 1 when considering paired observations. \n")
+    if(type == "paired one.sample" && ratio.n!=1){
+        stop("Argument \'ratio.n\' must be 1 when considering one sample paired observations. \n")
     }
     if(equivalence && ratio.n!=1){
         stop("Argument \'ratio.n\' must be 1 when argument \'equivalence\' is TRUE. \n")
