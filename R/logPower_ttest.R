@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  3 2020 (18:30) 
 ## Version: 
-## Last-Updated: jan  6 2021 (17:29) 
+## Last-Updated: jan  6 2021 (17:32) 
 ##           By: Brice Ozenne
-##     Update #: 293
+##     Update #: 294
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -178,6 +178,10 @@
 ##'                gamma = 0.3, rho = cor(X[,1],X[,2]),
 ##'                type = "paired two.sample")
 ##' 
+##' logPower_ttest(sigma2 = sd(X[,1])/mean(X[,1]),
+##'                gamma = 0.3, rho = cor(X[,1],X[,2]),
+##'                type = "paired two.sample", ratio.n = 2)
+##'
 ##' ## no log-transform
 ##' beta <- mean(X[,1])*0.3
 ##' sigma <- sd(X[,1])

@@ -1,8 +1,8 @@
 Package: butils
 Type: Package
 Title: Various useful functions
-Version: 1.4.6
-Date: 2020-12-17
+Version: 1.4.7
+Date: 2021-03-18
 Authors@R: c(
     person("Brice", "Ozenne", role = c("aut", "cre"), email = "brice.mh.ozenne@gmail.com", comment = c(ORCID = "0000-0001-9694-2956")))
 Description: Miscellaneous functions for working in R.
@@ -22,7 +22,7 @@ Imports:
     MASS,
     Matrix,
     methods,
-	mice,
+    mice,
     nlme,
     grDevices,
     snow,
@@ -31,17 +31,17 @@ Imports:
     utils
 Suggests:
     AICcmodavg,
-	blandr,
+    blandr,
     corrplot,
     gridExtra,
-	gstat,
+    gstat,
     heplots,
     lme4,
     merTools,
     mgcv,
-	multcomp,
+    multcomp,
     numDeriv,
-	optimx,
+    noptimx,
     pbapply,
     qqtest,
     Publish,

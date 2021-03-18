@@ -5,16 +5,16 @@
 \title{Power Calculation For t-tests on Log-Transformed Data}
 \usage{
 logPower_ttest(
-  mu.original,
-  sigma2.original,
+  type,
+  equivalence = FALSE,
   gamma,
+  sigma2,
+  mu = NULL,
   rho = NULL,
   n = NULL,
   ratio.n = 1,
   sig.level = 0.05,
   power = 0.8,
-  type = "two.sample",
-  equivalence = FALSE,
   method.meanvar = "lognorm",
   method.cor = "uniroot",
   n.large = 1e+05,
@@ -23,27 +23,31 @@ logPower_ttest(
 )
 }
 \arguments{
-\item{mu.original}{[numeric] expected value of the outcome on the original scale for the control group or baseline.}
+\item{type}{[character] type of study (parameter of interest):
+\code{type="paired one.sample"} (mean change within the group), or
+\code{type="two.sample"} (difference in mean between two independent groups), or
+\code{type="paired two.sample"} (difference in mean change between two independent groups)}
 
-\item{sigma2.original}{[numeric] variance of the outcome on the original scale. Assumed to be the same over groups or over time.}
+\item{equivalence}{If TRUE, the alternative hypothesis is no change/difference. If FALSE, the null hypothesis is no change/difference.}
 
-\item{gamma}{[numeric] relative change for the expected value in the treatment group or follow-up value.}
+\item{gamma}{[numeric] When considering two groups: relative difference in expected values between the two groups on the original scale.
+When considering a single group: expected value of the individual relative differences on the original scale.}
 
-\item{rho}{[numeric 0-1] correlation coefficient between the paired values on the original scale. Only used when \code{type="paired"} or \code{type="equivalence"}.}
+\item{sigma2}{[numeric] When the argument \code{mu} is unspecified: coefficient of variation (i.e. standard error divided by expectation) of the outcome on the original scale.
+When the argument \code{mu} is specified: variance of the outcome on the original scale.}
+
+\item{mu}{[numeric] expected value of the outcome on the original scale for the control group or at baseline.}
+
+\item{rho}{[numeric 0-1] correlation coefficient between the paired values on the original scale.}
 
 \item{n}{[integer >1] Sample size.}
 
 \item{ratio.n}{[numeric >1] ratio between the sample size in larger and the smaller group. By default 1.
-Note that the larger group is the reference group (with expectation \code{mu.original}) and the smaller group the active group (with expectation \code{gamma*mu.original}).}
+Note that the larger group is the reference group (with expectation \code{mu}) and the smaller group the active group (with expectation \code{gamma*mu}).}
 
 \item{sig.level}{[numeric 0-1] type 1 error}
 
 \item{power}{[numeric 0-1] statistical power (i.e. complement to 1 of the type 2 error)}
-
-\item{type}{[character] type of study:
-difference in means between two independent groups (\code{type="two.sample"}),
-difference in means between paired measurements (\code{type="paired"}),
-equivalence in means between paired measurements (\code{type="equivalence"}),}
 
 \item{method.meanvar}{[character] method used to identify the expected mean and variance on the log scale.
 Either assumes that the outcome is log-normally distributed on the original scale (\code{method.meanvar = "lognorm"}),
@@ -60,6 +64,159 @@ or that it is normally distributed on the log-scale (\code{method.meanvar = "log
 \description{
 Power calculation for t-tests on log-transformed data.
 }
+\details{
+The power calculation is performed under the assumption that on the log-scale, the variance of the outcome is the same between the two groups or over time.
+}
+\examples{
+if(require(MESS) && require(mvtnorm)){
+
+rho <- 0.6
+mu <- c(0,0.275)
+Sigma <- matrix(c(0.5^2,0.5^2*rho,0.5^2*rho,0.5^2),2,2)
+
+#### 1- one sample with paired data ####
+X <- exp(rmvnorm(1e5, mean = mu, sigma = Sigma))
+
+## 1a) H0: no difference
+# proposed solution
+logPower_ttest(mu = mean(X[,1]),
+               sigma2 = var(X[,1]),
+               gamma = 0.3, rho = cor(X[,1],X[,2]),
+               type = "paired one.sample")
+
+logPower_ttest(sigma2 = sd(X[,1]) / mean(X[,1]),
+               gamma = 0.3, rho = cor(X[,1],X[,2]),
+               type = "paired one.sample")
+
+# no log-transform
+beta <- mean(X[,1])*0.3
+sigma <- sd(X[,2]-X[,1])
+power_t_test(delta = beta/sigma, power = 0.80, type = "one.sample")
+
+# using log-transform
+beta <- mean(log(X[,2])-log(X[,1]))
+sigma <- sd(log(X[,2])-log(X[,1]))
+power_t_test(delta = beta/sigma, power = 0.80, type = "one.sample")
+
+# using simulation
+warper <- function(i, n){
+X <- rmvnorm(n, mean = mu, sigma = Sigma)
+t.test(X[,2]-X[,1])$p.value
+}
+mean(unlist(lapply(1:1e3,warper, n = 39))<=0.05)
+
+## 1b) H0: >10\% difference
+# proposed solution
+logPower_ttest(mu = mean(X[,1]),
+               sigma2 = var(X[,1]),
+               gamma = 0.1, rho = cor(X[,1],X[,2]),
+               type = "paired one.sample", equivalence = TRUE)
+
+## using log-transform
+power_t_test(delta = log(1 + 0.1)/sd(log(X[,2]/X[,1])), power = 1 - (1-0.80)/2,
+             type = "one.sample", alternative = "one.sided")
+power_t_test(delta = -log(1 - 0.1)/sd(log(X[,2]/X[,1])), power = 1 - (1-0.80)/2,
+             type = "one.sample", alternative = "one.sided")
+
+## using simulation
+warper <- function(i, n){
+X <- exp(rmvnorm(n, mean = c(0,0), sigma = Sigma))
+Z <- log(X[,2]/X[,1])
+tt1 <- t.test(Z, mu = log(0.9), alternative = "greater")$p.value
+tt2 <- t.test(Z, mu = log(1.1), alternative = "less")$p.value
+return(c(colMeans(X),mean(Z),max(tt1,tt2)))
+}
+ls.res <- do.call(rbind,lapply(1:1e3,warper, n = 305))
+mean(ls.res[,4]<=0.05)
+
+#### 2- two independent samples ####
+X <- rlnorm(1e5, meanlog = mu[1], sdlog = 0.5)
+Y <- rlnorm(1e5, meanlog = mu[2], sdlog = 0.5)
+
+## 2a) H0: no difference
+# proposed solution
+logPower_ttest(mu = mean(X),
+               sigma2 = var(X),
+               gamma = 0.3, type = "two.sample")
+
+logPower_ttest(sigma2 = sd(X)/mean(X),
+               gamma = 0.3, type = "two.sample")
+
+## no log-transform
+beta <- mean(X)*0.3
+sigma <- sd(X)
+power_t_test(delta = beta/sigma, power = 0.80, type = "two.sample")
+
+## using log-transform
+beta <- mean(log(Y))-mean(log(X))
+sigma <- sqrt(var(log(Y))/2+var(log(X))/2)
+power_t_test(delta = beta/sigma, power = 0.80, type = "two.sample")
+
+## using simulation
+warper <- function(i, n){
+X <- rlnorm(n, meanlog = mu[1], sdlog = 0.5)
+Y <- rlnorm(n, meanlog = mu[2], sdlog = 0.5)
+t.test(log(X),log(Y))$p.value
+}
+mean(unlist(lapply(1:1e3,warper, n = 53))<=0.05)
+
+## graphical display
+df.power <- logPower_ttest(mu = mean(X),
+               sigma2 = var(X),
+               gamma = seq(0.1,0.4, length.out = 30),
+               n = seq(20, 75, length.out = 30),
+               type = "two.sample")
+
+if(require(ggplot2) && require(metR)){
+gg <- ggplot(df.power, aes(x = n1, y = gamma))
+gg <- gg + geom_tile(aes(fill = power))
+gg <- gg + geom_contour(aes(z = power))
+gg <- gg + scale_fill_gradientn(colours = terrain.colors(10), limits = c(0,1))
+gg <- gg + geom_label_contour(aes(z = power), skip = 0)
+gg <- gg +  scale_y_continuous(labels = scales::percent)
+gg <- gg + xlab("sample size in each group") + ylab("mean difference between the groups")
+gg
+}
+
+#### 3- two independent samples with paired data ####
+X <- exp(rmvnorm(1e5, mean = rep(mu[1],2), sigma = Sigma))
+Y <- exp(rmvnorm(1e5, mean = mu, sigma = Sigma))
+
+## 3a) H0: no difference
+# proposed solution
+logPower_ttest(mu = mean(X[,1]),
+               sigma2 = var(X[,1]),
+               gamma = 0.3, rho = cor(X[,1],X[,2]),
+               type = "paired two.sample")
+
+logPower_ttest(sigma2 = sd(X[,1])/mean(X[,1]),
+               gamma = 0.3, rho = cor(X[,1],X[,2]),
+               type = "paired two.sample")
+
+logPower_ttest(sigma2 = sd(X[,1])/mean(X[,1]),
+               gamma = 0.3, rho = cor(X[,1],X[,2]),
+               type = "paired two.sample", ratio.n = 2)
+
+## no log-transform
+beta <- mean(X[,1])*0.3
+sigma <- sd(X[,1])
+power_t_test(delta = beta/sigma, power = 0.80, type = "two.sample")
+
+## using log-transform
+beta <- mean(log(Y[,2])-log(Y[,1]))-mean(log(X[,2])-log(X[,1]))
+sigma <- sqrt(var(log(Y[,2])-log(Y[,1]))/2+var(log(X[,2])-log(X[,1]))/2)
+power_t_test(delta = beta/sigma, power = 0.80, type = "two.sample")
+
+## using simulation
+warper <- function(i, n){
+X <- exp(rmvnorm(n, mean = rep(mu[1],2), sigma = Sigma))
+Y <- exp(rmvnorm(n, mean = mu, sigma = Sigma))
+t.test(log(X[,2])-log(X[,1]),log(Y[,2])-log(Y[,1]))$p.value
+}
+mean(unlist(lapply(1:1e3,warper, n = 73))<=0.05)
+}
+}
 \references{
 Shein-Chung Chow , Jun Shao & Hansheng Wang (2002). A note on sample size calculation for mean comparisons based on noncentral t-statistics, Journal of Biopharmaceutical Statistics, 12:4, 441-456, DOI: 10.1081/BIP-120016229
+Gerald Van Belle and Donald C. Martin. Sample size as a function of coefficient of variation and ratio of means (1993). The American Statistician 47(3) 165-167.
 }
