@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 17 2021 (20:28) 
 ## Version: 
-## Last-Updated: mar 18 2021 (13:38) 
+## Last-Updated: mar 29 2021 (15:41) 
 ##           By: Brice Ozenne
-##     Update #: 55
+##     Update #: 59
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -24,6 +24,8 @@
 ##' @param var1 the name of a latent or endogenous variable.
 ##' @param var2 the name of another latent or endogenous variable.
 ##' @param level the confidence level used for the confidence interval.
+##' @param cluster the grouping variable relative to which the observations are iid.
+##' @param ssc should the standard errors of the coefficients be corrected for small sample bias?
 ##' @param FUN the function used to compute the correlation. Alternative to the arguments var1 and var2.
 ##' @param FUN.args names of the coefficients used in FUN.
 ##'
@@ -121,11 +123,17 @@
 ## * lvmCov2Cor (code)
 ##' @rdname lvm2cor
 ##' @export
-lvmCov2Cor <- function(object, var1, var2, null = 0, level = 0.95, FUN = NULL, FUN.args = NULL){
+lvmCov2Cor <- function(object, var1, var2, null = 0, level = 0.95, FUN = NULL, FUN.args = NULL, ssc = FALSE, cluster = NULL){
     require(numDeriv)
     beta <- coef(object)
-    phi <- iid(object)
 
+    if(ssc){
+        requireNamespace(lavaSearch2)
+        phi <- lavaSearch2::iid2(object, cluster = cluster)
+    }else{
+        requireNamespace(lava)
+        phi <- lava::iid(object, id = cluster)
+    }
     ## ** check arguments
     alpha <- 1-level
     if(is.null(FUN)){
