@@ -1,6 +1,6 @@
 packages <- c(
 "abind","archivist","AUC",
-"boot",
+"boot", "BuyseTest",
 "car","caret", "clubSandwich", "coda", "corrplot",
 "data.table","devtools", "doSNOW",
 "fields","foreach",
@@ -13,10 +13,10 @@ packages <- c(
 "maps","maptools","markdown","mets","mritc","multcomp","mvtnorm",
 "nlme","nnet",
 "parallel","pracma", "proftools", "profvis",
-"optimx","oro.dicom", "oro.nifti",
-"pbapply","pec","penalized","pbkrtest","pipeR","pracma","pROC","prodlim","publish",
+"optimx", "officer","oro.dicom", "oro.nifti",
+"pbapply","pec","penalized","pbkrtest","pipeR","pracma","pROC","prodlim","Publish",
 "qqtest","quantreg",
-"R.rsp","ranger","RANN","Rcpp","RcppArmadillo","RcppEigen","ReporteRs","rgl","riskRegression","ROCR","roxygen2",
+"R.rsp","ranger","RANN","Rcpp","RcppArmadillo","RcppEigen","rgl","riskRegression","ROCR","roxygen2",
 "shiny","snowfall","sp","spam","spelling","stringi",
 "testthat", "tmvtnorm",
 "ranger","randomForest",
@@ -25,9 +25,6 @@ packages <- c(
 )
 toInstall <- setdiff(packages, rownames(installed.packages()))
 install.packages(toInstall)
-
-Imports: graphics, grDevices ROCR, spam, stats, stats4, utils
-Suggests: coda, fields, mritc, nnet, parallel, pracma, rgl, snowfall
 
 
 http://askubuntu.com/questions/614530/how-to-install-latest-version-of-r-on-ubuntu-12-04-lts
