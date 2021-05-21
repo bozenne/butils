@@ -12,7 +12,9 @@ lvmCov2Cor(
   null = 0,
   level = 0.95,
   FUN = NULL,
-  FUN.args = NULL
+  FUN.args = NULL,
+  ssc = FALSE,
+  cluster = NULL
 )
 }
 \arguments{
@@ -27,6 +29,10 @@ lvmCov2Cor(
 \item{FUN}{the function used to compute the correlation. Alternative to the arguments var1 and var2.}
 
 \item{FUN.args}{names of the coefficients used in FUN.}
+
+\item{ssc}{should the standard errors of the coefficients be corrected for small sample bias?}
+
+\item{cluster}{the grouping variable relative to which the observations are iid.}
 }
 \value{
 A data.frame containing in the fourth row the estimated correlation coefficient, standard error, confidence intervals, and p.value.
