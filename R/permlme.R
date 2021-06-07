@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 28 2021 (13:19) 
 ## Version: 
-## Last-Updated: maj 28 2021 (13:19) 
+## Last-Updated: Jun  7 2021 (16:39) 
 ##           By: Brice Ozenne
-##     Update #: 1
+##     Update #: 14
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -20,6 +20,7 @@
 ##' @description Permutation test for a single fixed effects of a linear mixed model.
 ##' This is essentially a re-implementation of the function \code{predictmeans::perlmer} limited to fixed effects and random intercept models.
 ##' Should be faster than the original function and output the test statistic relative to each permutation.
+##' @name permlme
 ##' 
 ##' @param lme0 [lme] model under the null.
 ##' @param lme1 [lme] model under the alternative.
@@ -42,6 +43,7 @@
 ##' }
 
 ## * permlme (examples)
+##' @rdname permlme
 ##' @examples
 ##' n.perm <- 1000
 ##' 
@@ -66,7 +68,7 @@
 ##' e.lmeH0 <- nlme::lme(value ~ variable, random =~1|Id, data = dtL)
 ##' e.lmeH1 <- nlme::lme(value ~ variable + conc, random=~1|Id, data = dtL)
 ##' e.permlme <- permlme(e.lmeH0, e.lmeH1, perm.X = TRUE, nperm = n.perm, seed = 10, statistic = "LRT")
-##' e.permlme
+##' e.permlme ## p=0.2197802
 ##'
 ##' ## ** permutation test via the function permlmer
 ##' library(lme4)
@@ -134,9 +136,20 @@
 ##' e.obsMax <- pmax(e.permlme$LRT[["L.Ratio"]][2],e.permlme2$LRT[["L.Ratio"]][2])
 ##' (sum(e.permMax > e.obsMax)+1)/(n.perm+1)/min(p.value ,p.value2) ## should be between 1 and 2
 ##' 
+##' ## ** "homemade" permutation test in presence of missing values
+##' set.seed(10)
+##' dtL$valueMiss <- dtL$value
+##' dtL$valueMiss[rbinom(NROW(dtL), size = 1, prob = 0.1)==1] <- NA
+##' 
+##' e.lmeH0 <- nlme::lme(valueMiss ~ variable, random =~1|Id, data = dtL, na.action = na.omit)
+##' e.lmeH1 <- nlme::lme(valueMiss ~ variable + conc, random=~1|Id, data = dtL, na.action = na.omit)
+##' e.permlme <- permlme(e.lmeH0, e.lmeH1, perm.X = TRUE, nperm = n.perm, seed = 10, statistic = "LRT")
+##' e.permlme
 
 
 ## * permlme (code)
+##' @rdname permlme 
+##' @export
 permlme <- function(lme0, lme1, data = NULL, seed = NULL, 
                     statistic = "Wald", perm.X = FALSE, return.index.perm = FALSE,
                     nperm = 1000, cpus = 1, trace = TRUE){ 
@@ -160,12 +173,17 @@ permlme <- function(lme0, lme1, data = NULL, seed = NULL,
     
     ## ** 1- extract key quantities from input
     n.obs <- NROW(data) ## number of observations
+
     cluster <- getGroups(lme0) ## to which cluster (patient) each observation belongs
-    index.cluster <- unlist(tapply(1:NROW(data), cluster, function(iRes){iRes})) ## used to restaure proper ordering after tapply
+    U.cluster <- levels(cluster)
+    n.cluster <- length(U.cluster)
+    index.cluster <- lapply(U.cluster, function(iCluster){which(cluster==iCluster)}) ## used to restaure proper ordering after tapply
+
     Y <- getResponse(lme1) ## response
     name.Y <- all.vars(formula(lme1))[[1]] ## name of the response variable
     X0 <- model.matrix(formula(lme0),data) ## design matrix
-    Omega0 <- getVarCov(lme0, type = "marginal")[[1]] ## residual variance-covariance matrix
+
+    Omega0 <- getVarCov(lme0, type = "marginal", individuals = levels(cluster)) ## residual variance-covariance matrix
     beta0 <- fixef(lme0) ## regression coefficients
 
     ## ** 2- compute residuals
@@ -173,18 +191,27 @@ permlme <- function(lme0, lme1, data = NULL, seed = NULL,
     residuals0 <- as.double(Y - X0 %*% beta0)
 
     ## ** 3- compute normalized residuals
-    sqrtOmega0 <- t(chol(Omega0))
-    sqrtOmega0M1 <- solve(sqrtOmega0)
+    sqrtOmega0 <- lapply(Omega0,function(iOmega0){t(chol(iOmega0))})
+    sqrtOmega0M1 <- lapply(sqrtOmega0,solve)
 
     residuals0N <- vector(length=n.obs, mode = "numeric")
-    residuals0N[index.cluster] <- unlist(tapply(residuals0, cluster, function(iRes){sqrtOmega0M1 %*% iRes}))
+    for(iCluster in 1:n.cluster){ ## iCluster <- 1
+        residuals0N[index.cluster[[iCluster]]] <- sqrtOmega0M1[[iCluster]] %*% residuals0[index.cluster[[iCluster]]]
+    }
 
     ## ** 4- estimate the distribution of the test statistics under the null
     warper <- function(iPerm){
         data.perm <- data
+
+        ## permute residuals and fixed effects
         index.perm <- sample(1:n.obs)
-        
-        data.perm[[name.Y]][index.cluster] <- unlist(tapply(residuals0N[index.perm], cluster, function(iRes){sqrtOmega0 %*% iRes}))
+        residuals0N.perm <- residuals0N[index.perm]
+
+        ## rescale residuals
+        for(iCluster in 1:n.cluster){ ## iCluster <- 1
+            data.perm[[name.Y]][index.cluster[[iCluster]]] <- sqrtOmega0[[iCluster]] %*% residuals0N.perm[index.cluster[[iCluster]]]
+        }
+        ## add permuted fixed effects
         if(perm.X){
             data.perm[[name.Y]] <- data.perm[[name.Y]] + Xbeta0[index.perm,,drop=FALSE]
         }
