@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 17 2021 (20:28) 
 ## Version: 
-## Last-Updated: Jun 16 2021 (15:00) 
+## Last-Updated: Jun 16 2021 (15:21) 
 ##           By: Brice Ozenne
-##     Update #: 117
+##     Update #: 123
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -202,10 +202,11 @@ lvmCov2Cor <- function(object, var1, var2, null = 0, level = 0.95, robust = FALS
     
     FUN.cor <- function(p){ ## p <- coef(object)
         iMoment <- lava::moments(object, p = p)
+        iIndex <- lava::index(object)
 
         ## residual variance for latent and endogenous variables
         Sigma.nu <- iMoment$P
-        
+        Sigma.nu[iIndex$exo.idx, iIndex$exo.idx] <- 0  ## condition on exogenous variables
         ## link function with parents
         M.c <- iMoment$A 
         M.1mcM1 <- solve(diag(1, nrow = NROW(M.c), ncol = NCOL(M.c))-t(M.c)) ## inverse link function
