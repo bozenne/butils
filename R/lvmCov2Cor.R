@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 17 2021 (20:28) 
 ## Version: 
-## Last-Updated: mar 29 2021 (15:41) 
+## Last-Updated: Jun 16 2021 (15:00) 
 ##           By: Brice Ozenne
-##     Update #: 59
+##     Update #: 117
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -26,16 +26,12 @@
 ##' @param level the confidence level used for the confidence interval.
 ##' @param cluster the grouping variable relative to which the observations are iid.
 ##' @param ssc should the standard errors of the coefficients be corrected for small sample bias?
-##' @param FUN the function used to compute the correlation. Alternative to the arguments var1 and var2.
-##' @param FUN.args names of the coefficients used in FUN.
 ##'
-##' @details WARNING by default, this function will "just" convert a covariance coefficient into a correlation coefficient,
-##' i.e. divide it by the standard deviation of the corresponding variables.
-##' It will **not** output the "global" correlation when the covariance is modeled through several parameters in the LVM (e.g. through a Latent Variable plus a specific covariance parameter).
-##' 
 ##' @return A data.frame containing in the fourth row the estimated correlation coefficient, standard error, confidence intervals, and p.value.
+##' 
 ##' @examples
-##' #### Simulate some data ####
+##' 
+##' #### 0 - Simulate some data ####
 ##' library(lava)
 ##' mSim <-lvm(c(PEQ_poslife,PEQ_posself,PEQ_posmood,PEQ_possoc,PEQ_posbehav)~lv.peq,
 ##'            c(MEQ_mystical,MEQ_mood) ~ 1*lv.meq,
@@ -51,60 +47,46 @@
 ##' set.seed(10)
 ##' d <- sim(mSim, 1e3, latent = FALSE) ##  observed
 ##'
-##' #### Fit the lvm ####
-##' m1 <-lvm(c(PEQ_poslife,PEQ_posself,PEQ_posmood,PEQ_possoc,PEQ_posbehav)~lv.peq,
+##' #### Example 1: Fit a LVM with a single latent variable ####
+##' m1 <-lvm(c(PEQ_poslife,PEQ_posself,PEQ_posmood,PEQ_possoc,PEQ_posbehav)~lv.peq)
+##' latent(m1) <- ~lv.peq
+##' e1 <- estimate(m1, d)
+##' 
+##' ### 1.1 Correlation between endogenous
+##' ## lava output
+##' keep.col <- c("PEQ_poslife","PEQ_posself")
+##' attr(predict(e1),"cond.var")[keep.col,keep.col]
+##' cov2cor(attr(predict(e1),"cond.var")[keep.col,keep.col])
+##' 
+##' ## proposed method
+##' lvmCov2Cor(e1, var1 = "PEQ_poslife", var2 = "PEQ_posself")
+##'
+##' #### Example 2: Fit a LVM with two latent variables ####
+##' m2 <- lvm(c(PEQ_poslife,PEQ_posself,PEQ_posmood,PEQ_possoc,PEQ_posbehav)~lv.peq,
 ##'          c(MEQ_mystical,MEQ_mood) ~ 1*lv.meq,
 ##'          c(MEQ_timespace,MEQ_ineffability) ~ lv.meq)
-##' covariance(m1) <- lv.peq ~ lv.meq
-##' covariance(m1) <- MEQ_timespace~MEQ_ineffability
-##' latent(m1) <- ~lv.peq + lv.meq
-##' e <- estimate(m1, d)
+##' covariance(m2) <- lv.peq ~ lv.meq
+##' covariance(m2) <- MEQ_timespace~MEQ_ineffability
+##' latent(m2) <- ~lv.peq + lv.meq
+##' e2 <- estimate(m2, d)
 ##'
-##' #### Delta method for the correlation between the LVs ####
-##' ## approximated true value
-##' c("var.meq" = var(GS$lv.meq), "var.peq" = var(GS$lv.peq),
-##'   "cov" = cov(GS$lv.meq,GS$lv.peq), "cor" = cor(GS$lv.meq,GS$lv.peq))
-##' 
-##' ## using lava
-##' estimate(e, function(x){
-##' a <- x["lv.meq~~lv.meq"]
-##' b <- x["lv.peq~~lv.peq"]
-##' c <- x["lv.peq~~lv.meq"]
-##'   c(var.meq = a,
-##'    var.peq = b,
-##'    cov = c,
-##'    cor = c/sqrt(a*b))
-##' })
-##'
-##' ## Delta method via lvmCov2Cor
-##' lvmCov2Cor(e, var1 = "lv.meq", var2 = "lv.peq")
-##' lvmCov2Cor(e, FUN = function(x){x["lv.peq~~lv.meq"]/sqrt(x["lv.peq~~lv.peq"]*x["lv.meq~~lv.meq"])})
-##' 
-##' #### Delta method for the correlation between endogenous ####
+##' ### 2.1: Correlation between endogenous
 ##' ## approximated true value
 ##' c("var.meq" = var(GS$MEQ_timespace), "var.peq" = var(GS$MEQ_ineffability),
 ##'   "cov" = cov(GS$MEQ_timespace,GS$MEQ_ineffability),
 ##'   "cor" = cor(GS$MEQ_timespace,GS$MEQ_ineffability))
-##' 
-##' ## using lava (partial correlation)
-##' estimate(e, function(x){
-##' a <- x["MEQ_timespace~~MEQ_timespace"]
-##' b <- x["MEQ_ineffability~~MEQ_ineffability"]
-##' c <- x["MEQ_timespace~~MEQ_ineffability"]
-##'   c(var.meq = a,
-##'    var.peq = b,
-##'    cov = c,
-##'    cor = c/sqrt(a*b))
-##' })
 ##'
-##' ## Delta method via lvmCov2Cor (partial correlation)
-##' lvmCov2Cor(e, var1 = "MEQ_timespace", var2 = "MEQ_ineffability")
+##' ## estimate value
+##' coef(e2, type = 9)["MEQ_timespace~~MEQ_ineffability",]
 ##' 
-##' ## ERROR as no (direct) covariance parameter
-##' ## lvmCov2Cor(e, var1 = "PEQ_poslife", var2 = "PEQ_posself")
+##' ## proposed method
+##' lvmCov2Cor(e2, var1 = "MEQ_timespace", var2 = "MEQ_ineffability")
+##' lvmCov2Cor(e2, var1 = "MEQ_timespace", var2 = "MEQ_ineffability",
+##'            robust = TRUE)
 ##' 
-##' ## Delta method via lvmCov2Cor (full correlation)
-##' lvmCov2Cor(e, FUN = function(x){
+##' ## using lava 
+##' estimate(e2, f = function(x){
+##' 
 ##' sigma1 <- x["MEQ_timespace~~MEQ_timespace"]
 ##' sigma2 <- x["MEQ_ineffability~~MEQ_ineffability"]
 ##' sigma12 <- x["MEQ_timespace~~MEQ_ineffability"]
@@ -114,106 +96,174 @@
 ##' 
 ##' Sigma1 <- sigma1 + lambda1^2*tau
 ##' Sigma2  <- sigma2 + lambda2^2*tau
-##'
-##' return((sigma12+lambda1*lambda2*tau)/sqrt(Sigma1*Sigma2))
+##' 
+##' return(c(sigma12/sqrt(Sigma1*Sigma2),
+##'          (sigma12+lambda1*lambda2*tau)/sqrt(Sigma1*Sigma2)))
 ##' })
+##' 
+##' ### 2.1: Correlation between latent variables
+##' ## approximated true value
+##' c("var.meq" = var(GS$lv.meq), "var.peq" = var(GS$lv.peq),
+##'   "cov" = cov(GS$lv.meq,GS$lv.peq), "cor" = cor(GS$lv.meq,GS$lv.peq))
+##' 
+##' ## estimate value
+##' coef(e2, type = 9)["lv.peq~~lv.meq",]
+##' 
+##' ## Delta method via lvmCov2Cor
+##' lvmCov2Cor(e2, var1 = "lv.meq", var2 = "lv.peq")
+##' lvmCov2Cor(e2, var1 = "lv.meq", var2 = "lv.peq", robust = TRUE)
+##' 
+##' ## using lava
+##' estimate(e2, function(x){
+##' a <- x["lv.meq~~lv.meq"]
+##' b <- x["lv.peq~~lv.peq"]
+##' c <- x["lv.peq~~lv.meq"]
+##'   c(var.meq = a,
+##'    var.peq = b,
+##'    cov = c,
+##'    cor = c/sqrt(a*b))
+##' })
+##'
+##' ## not sure what is
+##' keep.col <- c("lv.meq","lv.meq")
+##' attr(predict(e2, x = manifest(e2), y = latent(e2)),"cond.var")
+##' cov2cor(attr(predict(e2, x = manifest(e2), y = latent(e2)),"cond.var"))
+##' 
 ##' 
 
 
 ## * lvmCov2Cor (code)
 ##' @rdname lvm2cor
 ##' @export
-lvmCov2Cor <- function(object, var1, var2, null = 0, level = 0.95, FUN = NULL, FUN.args = NULL, ssc = FALSE, cluster = NULL){
+lvmCov2Cor <- function(object, var1, var2, null = 0, level = 0.95, robust = FALSE, ssc = FALSE, cluster = NULL){
     require(numDeriv)
-    beta <- coef(object)
 
-    if(ssc){
-        requireNamespace(lavaSearch2)
-        phi <- lavaSearch2::iid2(object, cluster = cluster)
+    ## ** extract parameters and their variance-covariance structure from objects
+    object.param <- stats::coef(object)
+    name.param <- names(object.param)
+    
+    if(robust){
+        if(ssc){
+            requireNamespace("lavaSearch2")
+            if(!is.null(cluster)){
+                object.iid <- lavaSearch2::iid2(object, cluster = cluster)
+            }else{
+                object.iid <- lavaSearch2::iid2(object)
+            }
+        }else{
+            requireNamespace("lava")
+            if(!is.null(cluster)){
+                object.iid <- lava::iid(object, id = cluster)
+            }else{
+                object.iid <- lava::iid(object)
+            }
+        }
+        object.vcov <- crossprod(object.iid)
     }else{
-        requireNamespace(lava)
-        phi <- lava::iid(object, id = cluster)
+        if(!is.null(cluster)){
+            stop("Arugment \'robust\' must be true when argument \'cluster\' is not NULL. \n")
+        }
+        if(ssc){
+            object.vcov <- lavaSearch2::vcov2(object)
+        }else{
+            object.vcov <- stats::vcov(object)
+        }
     }
+
     ## ** check arguments
     alpha <- 1-level
-    if(is.null(FUN)){
+    if(any("cor" %in% name.param)){
+        stop("No coefficient should be called \"cor\". This name is used internally. \n")
+    }
+    if(any("cov" %in% name.param)){
+        stop("No coefficient should be called \"cov\". This name is used internally. \n")
+    }
+    if(any("var1" %in% name.param)){
+        stop("No coefficient should be called \"var1\". This name is used internally. \n")
+    }
+    if(any("var2" %in% name.param)){
+        stop("No coefficient should be called \"var2\". This name is used internally. \n")
+    }
+    if(var1 %in% lava::vars(object) == FALSE){
+        stop("Argument \'var1\' does not correspond to a variable of the LVM. \n")
+    }
+    if(var2 %in% lava::vars(object) == FALSE){
+        stop("Argument \'var2\' does not correspond to a variable of the LVM. \n")
+    }
+    if(var1 == var2){
+        stop("Argument \'var2\' incorrect: should not be the same name as argument \'var1\'. \n")
+    }
+
+    ## ** prepare function that outputs correlation
+    ## measurement model: Y = \alpha + \Gamma X + \Lambda \eta + \varepsilon
+    ## structural model: \eta = \nu + K X + B \eta + \xi
+    ## overall model: Z = a + b X + c Z + \nu
+    ## so Z = (1-c)^{-1}(a+b) + (1-c)^{-1} \nu
     
-        name.var1 <- paste0(var1,lava.options()$symbols[2],var1)
-        name.var2 <- paste0(var2,lava.options()$symbols[2],var2)
-        name.cov <- c(paste0(var1,lava.options()$symbols[2],var2),
-                      paste0(var2,lava.options()$symbols[2],var1))
-        name.cov <- name.cov[name.cov %in% names(beta)]
-        test <- c(name.var1,name.var2,name.cov) %in% names(beta)
-        if(name.var1 %in% names(beta) == FALSE){
-            stop("Argument \'var1\' incorrect: no coefficient \"",var1,"\" could be find. \n")
-        }
-        if(name.var2 %in% names(beta) == FALSE){
-            stop("Argument \'var2\' incorrect: no coefficient \"",var2,"\" could be find. \n")
-        }
-        if(name.var2 == name.var1){
-            stop("Argument \'var2\' incorrect: should not be the same name as argument \'var1\'. \n")
-        }
-        if("cor" %in% c(name.var1,name.var2)){
-            stop("No coefficient should be called \"cor\". This name is used internally. \n")
-        }
-        if(length(name.cov)==0){
-            stop("Could not find a covariance parameter. \n")
-        }
+    FUN.cor <- function(p){ ## p <- coef(object)
+        iMoment <- lava::moments(object, p = p)
 
-        FUN <- function(x){
-            return(as.double(x[name.cov]/sqrt(prod(x[c(name.var1,name.var2)]))))
-        }
-        FUN.args <- c(name.var1,name.var2,name.cov)
-    }else{
-        if(!is.null(FUN.args)){
-            if(any(FUN.args %in% beta == FALSE)){
-                stop("Incorrect argument \'FUN.args\': should indicate coefficients from the argument \'object\'. \n",
-                     "Coefficient(s) not found: \"",paste0(FUN.args[FUN.args %in% beta == FALSE], collapse ="\" \""),"\"\n")
-            }
-            if(any(duplicated(FUN.args))){
-                stop("Incorrect argument \'FUN.args\': should not contain duplicated values. \n")
-            }
-        }
-    }
+        ## residual variance for latent and endogenous variables
+        Sigma.nu <- iMoment$P
         
+        ## link function with parents
+        M.c <- iMoment$A 
+        M.1mcM1 <- solve(diag(1, nrow = NROW(M.c), ncol = NCOL(M.c))-t(M.c)) ## inverse link function
 
-    ## ** extract elements from object
-    if(!is.null(FUN.args)){
-        beta <- beta[FUN.args]
-        phi <- phi[,FUN.args,drop=FALSE]
+        if(any(abs(M.1mcM1 - iMoment$IAi)>1e-10)){
+            warning("Something went wrong when inverting the link matrix. \n",
+                     "Do not match lava results")
+        }
+
+        ## variance conditional on X = (1-c)^{-1} \nu t((1-c)^{-1} )
+        Sigma.conditional <- M.1mcM1 %*% Sigma.nu %*% t(M.1mcM1)
+        sigma.var1 <- Sigma.conditional[var1,var1]
+        sigma.var2 <- Sigma.conditional[var2,var2]
+
+        ## direct covariance
+        sigma.var12_direct <- Sigma.nu[var1,var2]
+
+        ## total covariance
+        sigma.var12_total <- Sigma.conditional[var1,var2]
+        
+        ## result
+        out <- c(var1 = sigma.var1,
+                 var2 = sigma.var2,
+                 cov12_direct = sigma.var12_direct,
+                 cov12_total = sigma.var12_total,
+                 cor12_direct = sigma.var12_direct/sqrt(sigma.var1*sigma.var2),
+                 cor12_total = sigma.var12_total/sqrt(sigma.var1*sigma.var2)
+                 )
+        return(out)
     }
-    ## if(robust==FALSE){
-    ##     vec.se <- sqrt(diag(crossprod(phi))/diag(vcov(object)))
-    ##     k <- diag(1/vec.se)
-    ##     phi <- phi %*% k
-    ##     ## does not keep the correlations the same
-    ##     ## crossprod(phi)-vcov(object)
-    ## }
+
     ## ** compute correlation and its iid
-    rho <- as.double(FUN(beta))
-    if(is.na(rho)){
-        stop("Could not compute the correlation coefficient using FUN. \n")
+    e.cor <- FUN.cor(object.param)
+    nabla <- numDeriv::jacobian(FUN.cor, object.param)
+    colnames(nabla) <- name.param
+    rownames(nabla) <- names(e.cor)
+    
+    if(robust){
+        iid.cor <- object.iid %*% t(nabla)
+    }else{
+        iid.cor <- NULL
     }
-    nabla <- numDeriv::jacobian(FUN, beta)
-    phi.rho <- phi %*% t(nabla)
-    colnames(phi.rho) <- "rho"
-    if(is.null(FUN.args)){
-        FUN.args <- names(beta)[abs(nabla)>1e-10 ]
-        beta <- beta[FUN.args]
-        phi <- phi[,FUN.args,drop=FALSE]
-    }
-    out <- as.data.frame(matrix(NA, nrow = length(FUN.args)+1, ncol=6, 
-                                dimnames = list(c(FUN.args,"cor"),
-                                                c("estimate","se","lower","upper","null","p.value")                                  
-                                                )))
-    attr(out,"iid") <- cbind(phi, phi.rho)
+    vcov.cor <- nabla %*% object.vcov %*% t(nabla)
 
     ## ** assemble
-    out$estimate <- c(beta, rho = rho)
-    out$se <- sqrt(diag(crossprod(attr(out,"iid"))))
+    out <- as.data.frame(matrix(NA, nrow = 6, ncol = 7, 
+                                dimnames = list(c("variance 1","variance 2","direct covariance","total covariance","direct correlation","total correlation"),
+                                                c("variable","estimate","se","lower","upper","null","p.value")                                  
+                                                )))
+    attr(out,"iid") <- iid.cor
+    attr(out,"vcov") <- vcov.cor
+
+    out$variable <- c(var1,var2,rep(paste0("(",var1,",",var2,")"),4))
+    out$estimate <- e.cor
+    out$se <- sqrt(diag(vcov.cor))
     out$lower <- out$estimate + qnorm(alpha/2) * out$se
     out$upper <- out$estimate + qnorm(1-alpha/2) * out$se
-    out$null <- c(rep(NA,length(beta)),null)
+    out$null <- c(NA,NA,rep(null,4))
     out$p.value <- 2*(1-pnorm(abs(out$estimate-out$null)/out$se))
 
     ## ** export
