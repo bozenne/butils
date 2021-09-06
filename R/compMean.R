@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 10 2020 (10:27) 
 ## Version: 
-## Last-Updated: nov 10 2020 (10:27) 
+## Last-Updated: sep  6 2021 (17:12) 
 ##           By: Brice Ozenne
-##     Update #: 1
+##     Update #: 6
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -16,8 +16,8 @@
 ### Code:
 
 ## * compMean (documentation)
-##' @title Permutation Test for Testing Mean Differences
-##' @description Permutation Test for Testing Mean Differences with efficient adjustment for multiple comparisons
+##' @title Permutation Test for the Mean
+##' @description Permutation test for comparing mean between groups with efficient adjustment for multiple comparisons
 ##' @param Y [matrix] Matrix where each column correspond to a difference outcome.
 ##' @param group [character vector] Group variable.
 ##' @param time [character vector] Optional time variable.
