@@ -1,7 +1,6 @@
 ## * documentation - partialResiduals
 ##' @title Compute partial residuals for linear and linear mixed models.
 ##' @description Compute partial residuals for linear and linear mixed models.
-##'
 ##' @name partialResiduals
 ##' 
 ##' @param model Model object (e.g. \code{lm})
@@ -360,8 +359,8 @@ partialResiduals <- function(model,var,
 
 ## * predict functions
 #' @title prediction function for partialResiduals
-#' @rdname FUN.predict
 #' @description Suggestion of functions to obtain confidence intervals with mixed models
+#' @name FUN.predict
 #'
 #' @param object a model
 #' @param newdata the dataset used to make the predictions
@@ -413,18 +412,5 @@ predict_AICcmodavg <- function(object, newdata, level, conditional, interval, ..
 
     }
     return(list(fit = M.res))
-}
-
-## * calcPartialResiduals
-##' @title Deprecated Function Computing Partial Residuals
-##' @description Deprecated function computing partial residuals,
-##' use \code{\link{partialResiduals}} instead.
-##'
-##' @param ... not used.
-##' 
-##'
-##' @export
-calcPartialResiduals <- function(...) {
-    .Deprecated("partialResiduals")
 }
 

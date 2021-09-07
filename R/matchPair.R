@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 13 2019 (10:56) 
 ## Version: 
-## Last-Updated: jun 14 2019 (16:22) 
+## Last-Updated: sep  7 2021 (11:35) 
 ##           By: Brice Ozenne
-##     Update #: 84
+##     Update #: 85
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -35,7 +35,6 @@
 ##' @author Brice Ozenne
 
 ## * matchPair (examples)
-##' @rdname matchPair
 ##' @examples
 ##' n <- 100
 ##' 

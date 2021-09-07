@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 29 2018 (09:33) 
 ## Version: 
-## Last-Updated: dec  6 2018 (17:29) 
+## Last-Updated: sep  7 2021 (11:35) 
 ##           By: Brice Ozenne
-##     Update #: 57
+##     Update #: 58
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -46,7 +46,6 @@
 ##' }
 
 ## * massTtestCI (examples)
-##' @rdname massTtestCI
 ##' @examples
 ##'
 ##' if(require(sp) & require(gstat)){

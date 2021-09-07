@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 10 2020 (10:27) 
 ## Version: 
-## Last-Updated: sep  6 2021 (17:12) 
+## Last-Updated: sep  7 2021 (11:46) 
 ##           By: Brice Ozenne
-##     Update #: 6
+##     Update #: 8
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -167,8 +167,8 @@ compMean <- function(Y,
                      cl = NULL,
                      trace = TRUE){ 
     ## require(gtools)
-    require(data.table)
-    require(pbapply)
+    requireNamespace(data.table)
+    requireNamespace(pbapply)
     n <- NROW(Y)
     p <- NCOL(Y)
     G <- length(unique(group))

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb 18 2019 (09:35) 
 ## Version: 
-## Last-Updated: jan 27 2020 (15:20) 
+## Last-Updated: sep  7 2021 (11:35) 
 ##           By: Brice Ozenne
-##     Update #: 52
+##     Update #: 53
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -36,7 +36,6 @@
 ##' 
 
 ## * multcomp2table - examples
-##' @rdname multcomp2table
 ##' @examples
 ##' if(require(multcomp)){
 ##'

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep 26 2020 (18:00) 
 ## Version: 
-## Last-Updated: sep 28 2020 (18:23) 
+## Last-Updated: sep  7 2021 (11:47) 
 ##           By: Brice Ozenne
-##     Update #: 37
+##     Update #: 38
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -64,7 +64,7 @@
 #' @export
 glmEff <- function(outcome, treatment, covariates, data, family.outcome,
                    method = "explicit"){
-    require(data.table)
+    requireNamespace(data.table)
     
     ## ** check arguments
     data <- as.data.frame(data)

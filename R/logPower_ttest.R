@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: dec  3 2020 (18:30) 
 ## Version: 
-## Last-Updated: jan  6 2021 (17:32) 
+## Last-Updated: sep  7 2021 (11:44) 
 ##           By: Brice Ozenne
-##     Update #: 294
+##     Update #: 295
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -396,7 +396,7 @@ logPower_ttest <- function(type, equivalence = FALSE,
         tt$alternative <- "two.sided"
         
     }else{
-        require(MESS)
+        requireNamespace(MESS)
         tt <- MESS::power_t_test(n = n,
                                  delta = log(1+gamma), ## same for all parametrisations
                                  sd = sqrt(s.pool),

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: apr  5 2019 (09:46) 
 ## Version: 
-## Last-Updated: nov  6 2020 (10:04) 
+## Last-Updated: sep  7 2021 (11:35) 
 ##           By: Brice Ozenne
-##     Update #: 101
+##     Update #: 102
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -36,7 +36,6 @@
 ##' 
     
 ## * LoA - example
-##' @rdname LoA
 ##' @examples
 ##'
 ##' set.seed(10)

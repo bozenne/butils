@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr  4 2017 (15:45) 
 ## Version: 
-## last-updated: mar  8 2021 (15:25) 
+## last-updated: sep  7 2021 (11:34) 
 ##           By: Brice Ozenne
-##     Update #: 192
+##     Update #: 193
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -18,8 +18,7 @@
 ## * documentation - autoplot.partialResiduals
 #' @title Display an first order interaction for categorical variables
 #' @description Display an first order interaction for categorical variables
-#'
-#' @rdname autoplot.partialResiduals
+#' @name autoplot.partialResiduals
 #' 
 #' @param x a linear model
 #' @param alpha.ggplot transparency parameter for the points or the bands

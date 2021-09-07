@@ -2,7 +2,7 @@
 % Please edit documentation in R/compMean.R
 \name{compMean}
 \alias{compMean}
-\title{Permutation Test for Testing Mean Differences}
+\title{Permutation Test for the Mean}
 \usage{
 compMean(
   Y,
@@ -32,7 +32,7 @@ In the latter case, exactly two outcomes should be specified and the function wi
 \item{trace}{[logical] Should a progress bar be displayed to follow the permutations.}
 }
 \description{
-Permutation Test for Testing Mean Differences with efficient adjustment for multiple comparisons
+Permutation test for comparing mean between groups with efficient adjustment for multiple comparisons
 }
 \details{
 Several adjustment for multiple comparisons are available via the print function \itemize{

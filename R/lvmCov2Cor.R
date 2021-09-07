@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 17 2021 (20:28) 
 ## Version: 
-## Last-Updated: Jun 16 2021 (15:21) 
+## Last-Updated: sep  7 2021 (11:47) 
 ##           By: Brice Ozenne
-##     Update #: 123
+##     Update #: 124
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -136,7 +136,7 @@
 ##' @rdname lvm2cor
 ##' @export
 lvmCov2Cor <- function(object, var1, var2, null = 0, level = 0.95, robust = FALSE, ssc = FALSE, cluster = NULL){
-    require(numDeriv)
+    requireNamespace(numDeriv)
 
     ## ** extract parameters and their variance-covariance structure from objects
     object.param <- stats::coef(object)
