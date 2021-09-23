@@ -29,7 +29,7 @@ Imports:
     mvtnorm,
     nlme,
     parallel,
-    pblapply,
+    pbapply,
     pwr,
     rootSolve,
     snow,

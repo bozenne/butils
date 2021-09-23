@@ -3,9 +3,9 @@
 ## author: Brice Ozenne
 ## created: apr  4 2017 (15:45) 
 ## Version: 
-## last-updated: sep  7 2021 (11:34) 
+## last-updated: sep 23 2021 (16:24) 
 ##           By: Brice Ozenne
-##     Update #: 193
+##     Update #: 209
 #----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,9 +21,13 @@
 #' @name autoplot.partialResiduals
 #' 
 #' @param x a linear model
-#' @param alpha.ggplot transparency parameter for the points or the bands
-#' @param plot should the plot be displayed?
-#' @param ... additional argument to be passed to \code{partialModel}
+#' @param size.point [numeric, >0] size of the dots representing the observed data.
+#' @param shape.fit [integer, >0] Symbol used to represent the fitted value.
+#' @param size.fit [numeric, >0] thickness of the regression line.
+#' @param size.ci [numeric, >0] thickness of the line representing to the confidence interval.
+#' @param alpha.ggplot [numeric, 0-1] transparency parameter for the confidence interval.
+#' @param plot [logical]should the plot be displayed?
+#' @param ... ignored.
 #'
 #' @examples
 #' library(lava)
@@ -80,7 +84,9 @@
 #' @rdname autoplot.partialResiduals
 #' @method autoplot partialResiduals
 #' @export
-autoplot.partialResiduals <- function(object, alpha.ggplot = 0.25, plot = TRUE, ...){    
+autoplot.partialResiduals <- function(object,
+                                      size.point = 2, size.fit = NULL, shape.fit = NULL, col.fit = "blue", size.ci = 0.25, alpha.ggplot = 0.25,
+                                      plot = TRUE, ...){    
         
     name.Y <- attr(object,"name.Y")
     object.var <- attr(object,"var")
@@ -108,27 +114,30 @@ autoplot.partialResiduals <- function(object, alpha.ggplot = 0.25, plot = TRUE, 
     ## ** display
     gg <- ggplot2::ggplot()
     if(is.null(var2) && !is.numeric(partialFit[[var1]])){
+        if(is.null(size.fit)){size.fit <- 4}
+        if(is.null(shape.fit)){shape.fit <- 4}
         gg <- gg + ggplot2::geom_point(data = data,
                                        aes_string(x = var1, y = "pResiduals", color = var2),
-                                       alpha = alpha.ggplot)
+                                       alpha = alpha.ggplot, size = size.point)
         gg <- gg + ggplot2::geom_point(data = partialFit,
                                        aes_string(x = var1, y = "fit"),
-                                       shape = 4,
-                                       size = 4,
-                                       color = "blue") 
+                                       shape = shape.fit,
+                                       color = "blue", size = size.fit) 
         gg <- gg + ggplot2::geom_errorbar(data = partialFit,
                                           aes_string(x = var1, linetype = "type",  ymin = "fit.lower", ymax = "fit.upper"),
-                                          color = "blue")
+                                          color = "blue", size = size.ci)
         gg <- gg + ggplot2::scale_linetype_manual("", values = 1)
         
     }else{
+        if(is.null(size.fit)){size.fit <- 1.25}
+        if(is.null(shape.fit)){shape.fit <- 1}
         gg <- gg + ggplot2::geom_point(data = data,
-                                       aes_string(x = var1, y = "pResiduals", color = var2))
+                                       aes_string(x = var1, y = "pResiduals", color = var2), size = size.point)
         gg <- gg + ggplot2::geom_line(data = partialFit,
-                                      aes_string(x = var1, y = "fit", group = var2, color = var2))
+                                      aes_string(x = var1, y = "fit", group = var2, color = var2), size = size.fit, linetype = shape.fit)
         gg <- gg + ggplot2::geom_ribbon(data = partialFit,
                                         aes_string(x = var1, fill = "type", ymin = "fit.lower", ymax = "fit.upper", group = var2, color = var2),
-                                        alpha = alpha.ggplot)
+                                        alpha = alpha.ggplot, size = size.ci)
         gg <- gg + ggplot2::scale_fill_manual("",values = "grey")
     }
     gg <- gg + ggplot2::ylab(paste0("Partial residuals \n",name.Y," | ",paste0(object.var,collapse = ", ")))
