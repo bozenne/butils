@@ -4,3 +4,54 @@
 #+END_HTML
 
 * butils
+
+*butils* is an R package containing functions used during my consulting activity (it is not a very well organized nor tidy package).
+
+* Installation
+
+To install the package, you will need:
+- 1. :: A fairly recent R version (>=4.0.0). You can check that using:
+#+BEGIN_SRC R :exports both :results output :session *R* :cache no
+paste0(R.Version()[c("major","minor")], collapse = ".")
+#+END_SRC
+
+#+RESULTS:
+: [1] "4.1.1"
+
+- 2. :: The library =remotes= that you can install running:
+#+BEGIN_SRC R :exports both :results output :session *R* :cache no
+install.packages("remotes")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Installing package into 'C:/Users/hpl802/Documents/R/win-library/4.1'
+(as 'lib' is unspecified)
+trying URL 'https://cloud.r-project.org/bin/windows/contrib/4.1/remotes_2.4.0.zip'
+Content type 'application/zip' length 395672 bytes (386 KB)
+downloaded 386 KB
+
+package 'remotes' successfully unpacked and MD5 sums checked
+
+The downloaded binary packages are in
+	C:\Users\hpl802\AppData\Local\Temp\Rtmp44ARJ0\downloaded_packages
+#+end_example
+
+
+- 3. :: To run the following line of code which download and install the package:
+#+BEGIN_SRC R :exports both :eval never
+remotes::install_github("bozenne/butils")
+#+END_SRC
+
+Note: you can check that the package has been correctly installed by running
+the following lines of code:
+#+BEGIN_SRC R :exports both :results output :session *R* :cache no
+library(butils)
+args(partialResiduals)
+#+END_SRC
+
+#+RESULTS:
+: function (model, var, keep.intercept = FALSE, conditional = FALSE, 
+:     interval = "confidence", level = 0.95, npoints = 100, quantile.range = c(0, 
+:         1), FUN.df, ...) 
+: NULL
