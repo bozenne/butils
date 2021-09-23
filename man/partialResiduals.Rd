@@ -22,7 +22,8 @@ partialResiduals(
 
 \item{var}{[character] Independent variable(s) whose effect should be kept in the partial residuals.}
 
-\item{keep.intercept}{[logical] should the partial residual be computed keeping the contribution of the reference level?}
+\item{keep.intercept}{[logical] should the partial residual be computed keeping the contribution of the reference level?
+Can also a vector of lenght 2, the second element indicating whether the uncertainty calculation should account for the estimation of the intercept.}
 
 \item{conditional}{[logical] should the partial residuals be computed without the random effects? (if any)}
 
@@ -66,27 +67,42 @@ ignore the uncertainty of the covariance parameters/random effects.
 \examples{
 library(lava)
 set.seed(10)
-m.lvm <- lvm(Y~X1+X2+Id+Id2)
-categorical(m.lvm, K = 5) <- ~Id+Id2
+m.lvm <- lvm(Y~X1+X2+Id)
+categorical(m.lvm, K = 5) <- ~Id
 d <- lava::sim(n = 1e2, m.lvm)
- 
+d$Id <- as.factor(d$Id)
 m <- lm(Y~X1+X2+Id, data = d)
 
-## partial residuals relative to no variable matches the residuals
+#### 1- partial residuals relative to no variable matches the residuals
 pres0 <- partialResiduals(m, var = NULL)
 range(residuals(m) - pres0$pResiduals)
 
-## partial residuals regarding the variable X1
+#### 2- partial residuals regarding the variable X1
 pres1 <- partialResiduals(m, var = "X1")
 fit1 <- coef(m)["(Intercept)"] + coef(m)["X2"] * d$X2 +  coef(m)["Id"] * d$Id
 range((d$Y - fit1) - pres1$pResiduals)
 cor(d$X1, pres1$pResiduals)
 lava::partialcor(~X2+Id,d[,c("Y","X1","X2","Id")])
 
-##  partial residuals regarding both X1 and X2
+\dontrun{
+## graphical display
+autoplot(partialResiduals(m, var = "X1", keep.intercept = TRUE))
+autoplot(partialResiduals(m, var = "X1", keep.intercept = FALSE))
+autoplot(partialResiduals(m, var = "X1", keep.intercept = c(TRUE,FALSE)))
+autoplot(partialResiduals(m, var = "Id", keep.intercept = TRUE))
+}
+
+#### 3-  partial residuals regarding both X1 and X2
 pres2 <- partialResiduals(m, var = c("X1","X2"))
 fit2 <- coef(m)["(Intercept)"] + d$Id * coef(m)["Id"]
 range((d$Y - fit2) - pres2$pResiduals)
+
+\dontrun{
+## graphical display
+autoplot(partialResiduals(m, var = c("X1","Id"), keep.intercept = TRUE))
+autoplot(partialResiduals(m, var = c("X1","Id"), keep.intercept = FALSE))
+autoplot(partialResiduals(m, var = c("X1","Id"), keep.intercept = c(TRUE,FALSE)))
+}
 
 ## partial residuals binary variable
 pres3 <- partialResiduals(m, var = "Id")

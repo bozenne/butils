@@ -4,14 +4,32 @@
 \alias{autoplot.partialResiduals}
 \title{Display an first order interaction for categorical variables}
 \usage{
-\method{autoplot}{partialResiduals}(object, alpha.ggplot = 0.25, plot = TRUE, ...)
+\method{autoplot}{partialResiduals}(
+  object,
+  size.point = 2,
+  size.fit = NULL,
+  shape.fit = NULL,
+  col.fit = "blue",
+  size.ci = 0.25,
+  alpha.ggplot = 0.25,
+  plot = TRUE,
+  ...
+)
 }
 \arguments{
-\item{alpha.ggplot}{transparency parameter for the points or the bands}
+\item{size.point}{[numeric, >0] size of the dots representing the observed data.}
 
-\item{plot}{should the plot be displayed?}
+\item{size.fit}{[numeric, >0] thickness of the regression line.}
 
-\item{...}{additional argument to be passed to \code{partialModel}}
+\item{shape.fit}{[integer, >0] Symbol used to represent the fitted value.}
+
+\item{size.ci}{[numeric, >0] thickness of the line representing to the confidence interval.}
+
+\item{alpha.ggplot}{[numeric, 0-1] transparency parameter for the confidence interval.}
+
+\item{plot}{[logical]should the plot be displayed?}
+
+\item{...}{ignored.}
 
 \item{x}{a linear model}
 }
