@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 26 2018 (09:13) 
 ## Version: 
-## Last-Updated: mar  1 2019 (17:18) 
+## Last-Updated: sep  7 2021 (11:35) 
 ##           By: Brice Ozenne
-##     Update #: 282
+##     Update #: 283
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -43,7 +43,6 @@
 #' Statistics in medicine 2003; 22:3055-3071. 
 
 ## * breakpoint (example)
-#' @rdname breakpoint
 #' @examples
 #' library(lava)
 #' library(data.table)

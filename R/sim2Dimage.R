@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 29 2018 (09:39) 
 ## Version: 
-## Last-Updated: jun 27 2019 (09:40) 
+## Last-Updated: sep  7 2021 (11:36) 
 ##           By: Brice Ozenne
-##     Update #: 35
+##     Update #: 36
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -35,7 +35,6 @@
 
 
 ## * sim2Dimage (examples)
-##' @rdname sim2Dimage
 ##' @examples
 ##'
 ##' if(require(sp) & require(gstat)){

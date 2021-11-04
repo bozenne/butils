@@ -1,12 +1,12 @@
 ## * documentation - partialResiduals
 ##' @title Compute partial residuals for linear and linear mixed models.
 ##' @description Compute partial residuals for linear and linear mixed models.
-##'
 ##' @name partialResiduals
 ##' 
 ##' @param model Model object (e.g. \code{lm})
 ##' @param var [character] Independent variable(s) whose effect should be kept in the partial residuals.
 ##' @param keep.intercept [logical] should the partial residual be computed keeping the contribution of the reference level?
+##' Can also a vector of lenght 2, the second element indicating whether the uncertainty calculation should account for the estimation of the intercept.
 ##' @param conditional [logical] should the partial residuals be computed without the random effects? (if any)
 ##' @param interval [character] Type of interval calculation ("confidence" or "prediction").
 ##' @param level [numeric, 0-1] Level of confidence limits (default 95\%)
@@ -42,27 +42,42 @@
 ##' @examples
 ##' library(lava)
 ##' set.seed(10)
-##' m.lvm <- lvm(Y~X1+X2+Id+Id2)
-##' categorical(m.lvm, K = 5) <- ~Id+Id2
+##' m.lvm <- lvm(Y~X1+X2+Id)
+##' categorical(m.lvm, K = 5) <- ~Id
 ##' d <- lava::sim(n = 1e2, m.lvm)
-##'  
+##' d$Id <- as.factor(d$Id)
 ##' m <- lm(Y~X1+X2+Id, data = d)
 ##'
-##' ## partial residuals relative to no variable matches the residuals
+##' #### 1- partial residuals relative to no variable matches the residuals
 ##' pres0 <- partialResiduals(m, var = NULL)
 ##' range(residuals(m) - pres0$pResiduals)
 ##'
-##' ## partial residuals regarding the variable X1
+##' #### 2- partial residuals regarding the variable X1
 ##' pres1 <- partialResiduals(m, var = "X1")
 ##' fit1 <- coef(m)["(Intercept)"] + coef(m)["X2"] * d$X2 +  coef(m)["Id"] * d$Id
 ##' range((d$Y - fit1) - pres1$pResiduals)
 ##' cor(d$X1, pres1$pResiduals)
 ##' lava::partialcor(~X2+Id,d[,c("Y","X1","X2","Id")])
 ##' 
-##' ##  partial residuals regarding both X1 and X2
+##' \dontrun{
+##' ## graphical display
+##' autoplot(partialResiduals(m, var = "X1", keep.intercept = TRUE))
+##' autoplot(partialResiduals(m, var = "X1", keep.intercept = FALSE))
+##' autoplot(partialResiduals(m, var = "X1", keep.intercept = c(TRUE,FALSE)))
+##' autoplot(partialResiduals(m, var = "Id", keep.intercept = TRUE))
+##' }
+##' 
+##' #### 3-  partial residuals regarding both X1 and X2
 ##' pres2 <- partialResiduals(m, var = c("X1","X2"))
 ##' fit2 <- coef(m)["(Intercept)"] + d$Id * coef(m)["Id"]
 ##' range((d$Y - fit2) - pres2$pResiduals)
+##'
+##' \dontrun{
+##' ## graphical display
+##' autoplot(partialResiduals(m, var = c("X1","Id"), keep.intercept = TRUE))
+##' autoplot(partialResiduals(m, var = c("X1","Id"), keep.intercept = FALSE))
+##' autoplot(partialResiduals(m, var = c("X1","Id"), keep.intercept = c(TRUE,FALSE)))
+##' }
 ##'
 ##' ## partial residuals binary variable
 ##' pres3 <- partialResiduals(m, var = "Id")
@@ -229,6 +244,9 @@ partialResiduals <- function(model,var,
         stop("Unknown variable(s): \"",paste(var[var %in% name.X.df == FALSE], collapse = "\" \""),"\" \n",
              "argument \'var\' should be in \"",paste(name.X.df,collapse = "\" \""),"\" \n")
     }
+    if(length(keep.intercept)==1){
+        keep.intercept <- rep(keep.intercept,2)
+    }
  
     ## ** Reference level
     n <- NROW(design.df)
@@ -262,7 +280,7 @@ partialResiduals <- function(model,var,
     }
 
     ## ** partial fit
-    if(!is.null(name.intercept) && keep.intercept){
+    if(!is.null(name.intercept) && keep.intercept[1]){
         ## add the residual due to the intercept
         design.mat[,name.intercept] <- 0
     }
@@ -317,9 +335,9 @@ partialResiduals <- function(model,var,
     ## convert to design matrix
     design.grid.predict <- FUN.model.matrix(model, formula = formula.model, grid.predict)
     ## remove intercept
-    if(!is.null(name.intercept) && keep.intercept == FALSE){
-                                        # remive the intercept from the prediction
-                                        # when it is not among the variable of interest
+    if(!is.null(name.intercept) && keep.intercept[1] == FALSE){
+        ## remove the intercept from the prediction
+        ## when it is not among the variable of interest
         design.grid.predict[,name.intercept] <- 0
     }
     grid.predict$fit <- as.numeric(design.grid.predict %*% beta)
@@ -338,7 +356,13 @@ partialResiduals <- function(model,var,
         model.sigma2 <- 0
     }
 
-    se.tempo <- apply(design.grid.predict, 1, function(x){
+    design.grid.predict2 <- design.grid.predict
+    if(!is.null(name.intercept) && keep.intercept[2] == FALSE){
+        ## remove the intercept from the prediction
+        ## when it is not among the variable of interest
+        design.grid.predict2[,name.intercept] <- 0
+    }
+    se.tempo <- apply(design.grid.predict2, 1, function(x){
         sqrt(rbind(x) %*% model.vcov %*% cbind(x) + model.sigma2)
     })
     ## sqrt(diag(model.vcov)[2])
@@ -360,8 +384,8 @@ partialResiduals <- function(model,var,
 
 ## * predict functions
 #' @title prediction function for partialResiduals
-#' @rdname FUN.predict
 #' @description Suggestion of functions to obtain confidence intervals with mixed models
+#' @name FUN.predict
 #'
 #' @param object a model
 #' @param newdata the dataset used to make the predictions
@@ -413,18 +437,5 @@ predict_AICcmodavg <- function(object, newdata, level, conditional, interval, ..
 
     }
     return(list(fit = M.res))
-}
-
-## * calcPartialResiduals
-##' @title Deprecated Function Computing Partial Residuals
-##' @description Deprecated function computing partial residuals,
-##' use \code{\link{partialResiduals}} instead.
-##'
-##' @param ... not used.
-##' 
-##'
-##' @export
-calcPartialResiduals <- function(...) {
-    .Deprecated("partialResiduals")
 }
 

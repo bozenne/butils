@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 10 2020 (10:27) 
 ## Version: 
-## Last-Updated: nov 10 2020 (10:27) 
+## Last-Updated: sep  7 2021 (11:46) 
 ##           By: Brice Ozenne
-##     Update #: 1
+##     Update #: 8
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -16,8 +16,8 @@
 ### Code:
 
 ## * compMean (documentation)
-##' @title Permutation Test for Testing Mean Differences
-##' @description Permutation Test for Testing Mean Differences with efficient adjustment for multiple comparisons
+##' @title Permutation Test for the Mean
+##' @description Permutation test for comparing mean between groups with efficient adjustment for multiple comparisons
 ##' @param Y [matrix] Matrix where each column correspond to a difference outcome.
 ##' @param group [character vector] Group variable.
 ##' @param time [character vector] Optional time variable.
@@ -167,8 +167,8 @@ compMean <- function(Y,
                      cl = NULL,
                      trace = TRUE){ 
     ## require(gtools)
-    require(data.table)
-    require(pbapply)
+    requireNamespace(data.table)
+    requireNamespace(pbapply)
     n <- NROW(Y)
     p <- NCOL(Y)
     G <- length(unique(group))
