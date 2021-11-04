@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 15 2017 (09:16) 
 ## Version: 
-## Last-Updated: dec  4 2018 (11:10) 
+## Last-Updated: Nov  4 2021 (22:39) 
 ##           By: Brice Ozenne
-##     Update #: 115
+##     Update #: 118
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -112,9 +112,20 @@ extractRchunk <- function(file, newfile = NULL,
     index.end.chunk <- grep(paste0("^",file.end.SRC),
                             x = file.line, value = FALSE)
     n.chunk <- length(index.start.chunk)
-
     if(length(index.end.chunk) != n.chunk){
-        stop("Number of file.start.SRC does not match the number of file.end.SRC \n")
+        if(length(index.start.chunk)>length(index.end.chunk)){
+            ## when the next chunk start before the end of the previous one
+            index.pb <- which(index.start.chunk[-1]<c(index.end.chunk,rep(0,length(index.start.chunk)-length(index.end.chunk)-1)))
+            if(length(index.pb)>0){
+                stop("Number of file.start.SRC exceed the number of file.end.SRC. \n",
+                     "Possible issue between line: ",index.start.chunk[-1][index.pb[1]]," and ",index.end.chunk[index.pb[1]],"\n")
+            }else{
+                stop("Number of file.start.SRC exceed the number of file.end.SRC. \n")
+            }
+        }else{
+            stop("Number of file.end.SRC exceed the number of file.start.SRC. \n")
+        }
+        
     }
     if(length(index.end.chunk) == 0){
         stop("No R code to extract \n")
