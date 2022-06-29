@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep  6 2021 (16:56) 
 ## Version: 
-## Last-Updated: jun 29 2022 (15:06) 
+## Last-Updated: jun 29 2022 (15:24) 
 ##           By: Brice Ozenne
-##     Update #: 105
+##     Update #: 110
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -146,17 +146,20 @@ pairedCompMean <- function(data, col.treatment, col.strata, col.value, col.clust
             ##                                b = as.character(factor(iData[ls.indexID[[iId]],col.treatment], levels = Utreatment, labels = sample(Utreatment))))
         }
         iLS.indexTreatment <- tapply(1:NROW(data),iTreatment,function(iVec){iVec})
+        iLS.valueRef <- stats::setNames(lapply(Ufactor, function(iFactor){
+            value[intersect(iLS.indexTreatment[[Utreatment[1]]],ls.indexFactor[[iFactor]])]
+        }), Ufactor)
         
+
         ## ttest
         iLS.ttest <- lapply(1:n.grid, function(iG){ ## iG <- 1
             .pairedttest(value[intersect(iLS.indexTreatment[[grid[iG,col.treatment]]],ls.indexFactor[[grid[iG,col.strata]]])],
-                         value[intersect(iLS.indexTreatment[[Utreatment[1]]],ls.indexFactor[[grid[iG,col.strata]]])])
+                         iLS.valueRef[[grid[iG,col.strata]]])
         })
-        iDF.ttest <- data.frame(grid, ref = Utreatment[1], do.call(rbind,iLS.ttest))
+        ls.permttest[[iPerm]] <- data.frame(grid, perm = iPerm, ref = Utreatment[1], do.call(rbind,iLS.ttest))
         if(trace){
             utils::setTxtProgressBar(pb, iPerm)
         }
-        ls.permttest[[iPerm]] <- cbind(perm = iPerm,iDF.ttest)
     }
     if(trace){
         close(pb)
@@ -173,6 +176,7 @@ pairedCompMean <- function(data, col.treatment, col.strata, col.value, col.clust
     }
     df.ttest$adj.p.value <- NA
     for(iTreatment in 2:n.treatment){ ## iTreatment <- 2
+
         iIndex.treatment <- which(df.ttest[[col.treatment]]==Utreatment[iTreatment])
         iIndex.treatment2 <- iIndex.treatment[order(abs(df.ttest[iIndex.treatment,"statistic"]), decreasing = TRUE)]
         
@@ -182,11 +186,12 @@ pairedCompMean <- function(data, col.treatment, col.strata, col.value, col.clust
             vec.H0 <- tapply(abs(iM.permttest$statistic),iM.permttest$perm, max)
         }
         
-        for(iI in 1:length(iIndex.treatment2)){ ## iI <- 3
+        for(iI in 1:length(iIndex.treatment2)){ ## iI <- 1
             iII <- iIndex.treatment2[iI]
             if(method.adj=="step-down"){
                 iM.permttest.remain <- iM.permttest[iM.permttest[[col.strata]] %in% df.ttest[iIndex.treatment2[iI:length(iIndex.treatment2)],col.strata],,drop=FALSE]
                 vec.H0 <- tapply(abs(iM.permttest.remain$statistic),iM.permttest.remain$perm, max)
+                ## vec.H0 - tapply(abs(iM.permttest.remain$statistic),iM.permttest.remain$perm, max)
             }
             df.ttest[iII,"adj.p.value"] <- max((sum(vec.H0>abs(df.ttest[iII,"statistic"]))+1)/(n.perm+1),
                                                df.ttest[iIndex.treatment2,"adj.p.value"], na.rm = TRUE)
