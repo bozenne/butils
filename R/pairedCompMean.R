@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: sep  6 2021 (16:56) 
 ## Version: 
-## Last-Updated: sep  7 2021 (11:33) 
+## Last-Updated: jun 29 2022 (15:06) 
 ##           By: Brice Ozenne
-##     Update #: 91
+##     Update #: 105
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -21,14 +21,14 @@
 ##' @name pairedCompMean
 ##' @param data [data.frame] dataset with in row the samples.
 ##' @param col.treatment [character] column in the dataset indicating the treatment variable, that should be permuted within-individuals.
-##' @param col.factor [character] column in the dataset indicating the factor variable, to stratify the comparison on.
+##' @param col.strata [character] column in the dataset indicating the factor variable, to stratify the comparison on.
 ##' @param col.value [character] column in the dataset indicating the value of the measurement.
-##' @param col.id [character] column in the dataset indicating the patient identity.
-##' @param n.perm [numeric] number of permutation to be performed.
+##' @param col.cluster [character] column in the dataset indicating the cluster level (e.g. patient identity).
+##' @param n.perm [numeric] number of permutation to be performed. 
+##' @param method.adj [character] either \code{"single-step"} or \code{"step-down"} max adjustment.
+##' Both order the hypothesis to test based on the evidence shown by the data but the latter provides extra statistical power for rejecting the 2nd to last hypotheses.
 ##' @param seed [integer,>0] set initial state of the random number generation (passed to \code{set.seed}).
 ##' @param trace [logical] should a progress bar be display displaying the execution of the permutations.
-##'
-##' @details Single step max test adjustment is performed to adjust for multiple comparisons. It account for correlation between test statistics.
 ##' 
 ##' @examples
 ##' library(mvtnorm)
@@ -66,7 +66,7 @@
 ##' }
 ##' 
 ##' resPerm <- pairedCompMean(dfL[dfL$treatment %in% c("P","B"),], n.perm = 1e3,
-##'                col.treatment = "treatment", col.factor = "score", col.value = "value", col.cluster = "id",
+##'                col.treatment = "treatment", col.strata = "score", col.value = "value", col.cluster = "id",
 ##'                seed = NULL)
 ##' resPerm
 ##'
@@ -76,35 +76,54 @@
 ## * pairedCompMean (code)
 ##' @rdname pairedCompMean
 ##' @export
-pairedCompMean <- function(data, col.treatment, col.factor, col.value, col.cluster,
-                           n.perm = 1e3, method.adj = "step-down", seed = NULL, trace = TRUE){
+pairedCompMean <- function(data, col.treatment, col.strata, col.value, col.cluster,
+                           n.perm = 1e4, method.adj = "single-step", seed = NULL, trace = TRUE){
 
+
+    ## ** normalize user input
     if(!is.null(seed)){set.seed(seed)}
+    if(!inherits(data,"data.frame")){
+        stop("Argument \'data\' must be or inherit from data.frame.")
+    }
+    if(col.treatment %in% names(data) == FALSE){
+        stop("Argument \'col.treatment\' must correspond to a column in argument \'data\'.")
+    }
+    if(col.strata %in% names(data) == FALSE){
+        stop("Argument \'col.strata\' must correspond to a column in argument \'data\'.")
+    }
+    if(col.value %in% names(data) == FALSE){
+        stop("Argument \'col.value\' must correspond to a column in argument \'data\'.")
+    }
+    if(col.cluster %in% names(data) == FALSE){
+        stop("Argument \'col.cluster\' must correspond to a column in argument \'data\'.")
+    }
+
+    ## ** prepare
     Utreatment <- unique(data[[col.treatment]])
     n.treatment <- length(Utreatment)
-    Ufactor <- unique(data[[col.factor]])
+    Ufactor <- unique(data[[col.strata]])
     data <- as.data.frame(data)
-    data <- data[order(data[[col.cluster]],data[[col.factor]]),,drop=FALSE]
-    
+    data <- data[order(data[[col.cluster]],data[[col.strata]]),,drop=FALSE]
+
     grid <- expand.grid(Utreatment[-1],
                         Ufactor,
                         stringsAsFactors = FALSE)
-    colnames(grid) <- c(col.treatment,col.factor)
+    colnames(grid) <- c(col.treatment,col.strata)
     n.grid <- NROW(grid)
 
     method.adj <- match.arg(method.adj, c("step-down","single-step"))
     
     ## ** point estimate
     ls.ttest <- lapply(1:n.grid, function(iG){ ## iG <- 1
-        .pairedttest(x = data[data[[col.treatment]]==grid[iG,col.treatment] & data[[col.factor]] == grid[iG,col.factor],col.value],
-                     y = data[data[[col.treatment]]==Utreatment[1] & data[[col.factor]] == grid[iG,col.factor],col.value])
+        .pairedttest(x = data[data[[col.treatment]]==grid[iG,col.treatment] & data[[col.strata]] == grid[iG,col.strata],col.value],
+                     y = data[data[[col.treatment]]==Utreatment[1] & data[[col.strata]] == grid[iG,col.strata],col.value])
     })
     df.ttest <- data.frame(grid, ref = Utreatment[1], do.call(rbind,ls.ttest))
 
     ## ** permutation
     ls.indexID <- tapply(1:NROW(data),data[[col.cluster]],function(iVec){iVec})
     n.id <- length(ls.indexID)
-    ls.indexFactor <- tapply(1:NROW(data),data[[col.factor]],function(iVec){iVec})
+    ls.indexFactor <- tapply(1:NROW(data),data[[col.strata]],function(iVec){iVec})
 
     allPerm <- .allPermutation(Utreatment)
     colnames(allPerm) <- Utreatment
@@ -130,8 +149,8 @@ pairedCompMean <- function(data, col.treatment, col.factor, col.value, col.clust
         
         ## ttest
         iLS.ttest <- lapply(1:n.grid, function(iG){ ## iG <- 1
-            .pairedttest(value[intersect(iLS.indexTreatment[[grid[iG,col.treatment]]],ls.indexFactor[[grid[iG,col.factor]]])],
-                         value[intersect(iLS.indexTreatment[[Utreatment[1]]],ls.indexFactor[[grid[iG,col.factor]]])])
+            .pairedttest(value[intersect(iLS.indexTreatment[[grid[iG,col.treatment]]],ls.indexFactor[[grid[iG,col.strata]]])],
+                         value[intersect(iLS.indexTreatment[[Utreatment[1]]],ls.indexFactor[[grid[iG,col.strata]]])])
         })
         iDF.ttest <- data.frame(grid, ref = Utreatment[1], do.call(rbind,iLS.ttest))
         if(trace){
@@ -148,7 +167,7 @@ pairedCompMean <- function(data, col.treatment, col.factor, col.value, col.clust
 
     df.ttest$perm.p.value <- NA
     for(iGrid in 1:n.grid){ ## iGrid <- 1
-        vec.H0 <- abs(M.permttest[M.permttest[[col.treatment]] == grid[iGrid,col.treatment] & M.permttest[[col.factor]] == grid[iGrid,col.factor],"statistic"])
+        vec.H0 <- abs(M.permttest[M.permttest[[col.treatment]] == grid[iGrid,col.treatment] & M.permttest[[col.strata]] == grid[iGrid,col.strata],"statistic"])
         vec.H1 <- abs(df.ttest[iGrid,"statistic"])
         df.ttest[iGrid,"perm.p.value"] <- (sum(vec.H0>vec.H1)+1)/(n.perm+1)
     }
@@ -166,7 +185,7 @@ pairedCompMean <- function(data, col.treatment, col.factor, col.value, col.clust
         for(iI in 1:length(iIndex.treatment2)){ ## iI <- 3
             iII <- iIndex.treatment2[iI]
             if(method.adj=="step-down"){
-                iM.permttest.remain <- iM.permttest[iM.permttest$score %in% df.ttest[iIndex.treatment2[iI:length(iIndex.treatment2)],col.factor],,drop=FALSE]
+                iM.permttest.remain <- iM.permttest[iM.permttest[[col.strata]] %in% df.ttest[iIndex.treatment2[iI:length(iIndex.treatment2)],col.strata],,drop=FALSE]
                 vec.H0 <- tapply(abs(iM.permttest.remain$statistic),iM.permttest.remain$perm, max)
             }
             df.ttest[iII,"adj.p.value"] <- max((sum(vec.H0>abs(df.ttest[iII,"statistic"]))+1)/(n.perm+1),
