@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 28 2021 (13:19) 
 ## Version: 
-## Last-Updated: sep  7 2021 (11:47) 
+## Last-Updated: nov  7 2022 (18:26) 
 ##           By: Brice Ozenne
-##     Update #: 16
+##     Update #: 22
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -249,7 +249,7 @@ permlme <- function(lme0, lme1, data = NULL, seed = NULL,
         if(!is.null(seed)){set.seed(seed)}
 
         if(trace){
-            requireNamespace(pbapply)
+            requireNamespace("pbapply")
             ls.perm <- pbapply::pblapply(1:nperm, function(i){warper(i)})
         }else{
             ls.perm <- lapply(1:nperm, function(i){warper(i)})

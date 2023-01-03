@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 10 2020 (10:27) 
 ## Version: 
-## Last-Updated: sep  7 2021 (11:46) 
+## Last-Updated: jan  3 2023 (10:30) 
 ##           By: Brice Ozenne
-##     Update #: 8
+##     Update #: 22
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -167,8 +167,8 @@ compMean <- function(Y,
                      cl = NULL,
                      trace = TRUE){ 
     ## require(gtools)
-    requireNamespace(data.table)
-    requireNamespace(pbapply)
+    requireNamespace("data.table")
+    requireNamespace("pbapply")
     n <- NROW(Y)
     p <- NCOL(Y)
     G <- length(unique(group))
@@ -192,6 +192,9 @@ compMean <- function(Y,
         if(length(unique(time))!=2){
             stop("Argument \'time\' must take exactly two different values \n")
         }
+    }
+    if(is.data.frame(Y)){
+        Y <- as.matrix(Y)
     }
     if(!is.numeric(Y)){
         stop("Argument \'Y\' must be numeric \n")
@@ -234,7 +237,7 @@ compMean <- function(Y,
 
         calcDiff <- function(Y, group, time, type){
             
-            ls.Y <- lapply(1:NROW(UgroupTime), function(iRow){
+            ls.Y <- lapply(1:NROW(UgroupTime), function(iRow){ ## iRow <- 1
                 if(permutation.type == "group"){
                     return(Y[(group==UgroupTime[iRow,1])*(time==UgroupTime[iRow,2])==1,,drop=FALSE])
                 }else if(permutation.type == "Y"){
@@ -332,7 +335,7 @@ compMean <- function(Y,
             if(!is.null(time)){
                 newgroup <- rep(NA, length = n)
                 newgroup[index.time1] <- group[time==Utime[1]][sample.int(n.time1)]
-                newgroup[n.time1+index.time2] <- group[time==Utime[2]][sample.int(n.time2)]
+                newgroup[-index.time1] <- group[time==Utime[2]][sample.int(n.time2)]
             }else{
                 newgroup <- group[sample.int(n)]
             }
