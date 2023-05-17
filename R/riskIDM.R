@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 17 2023 (11:24) 
 ## Version: 
-## Last-Updated: maj 17 2023 (11:47) 
+## Last-Updated: maj 17 2023 (17:05) 
 ##           By: Brice Ozenne
-##     Update #: 11
+##     Update #: 23
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -120,7 +120,8 @@
 ## * riskIDM (code)
 ##' @name riskIDM
 riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
-                    var.id, var.time, var.type, var.cov = NULL, start.type = NULL){
+                    var.id, var.time, var.type, var.cov = NULL, start.type = NULL,
+                    trace = TRUE){
 
     require(riskRegression)
     require(data.table)
@@ -159,9 +160,11 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
     n.switch <- length(states$switch)
     start.type <- states$censoring
     if(is.character(states$all)){
-        states$name <- c(states$censoring, states$switch, states$outcome)
+        states$name <- c(states$censoring, states$switch, states$outcome)        
+        states$name.switch <- states$switch
     }else{
-        states$name <- c("survival",paste0("risk.",states$switch), paste0("risk.",states$outcome))
+        states$name <- c("survival",paste0("risk.",states$switch), paste0("risk.",states$outcome))        
+        states$name.switch <- paste0("state ", states$switch)
     }
 
     ## PH
@@ -194,10 +197,9 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
     if(length(jump.timeR)==0){
         stop("All requested timepoints are before the first event. \n")
     }
-
-    scenarioNoSwitch <- paste0("no ",paste(states$switch, collapse = ", "))
+    scenarioNoSwitch <- paste0("no ",paste(states$name.switch, collapse = ", "))
     if(n.switch>1){
-        scenarioSwitch <- sapply(states$switch, function(iS){paste0(iS," instead of ",paste(setdiff(states$switch,iS), collapse = ", "))})
+        scenarioSwitch <- sapply(states$name.switch, function(iS){paste0(iS," instead of ",paste(setdiff(states$name.switch,iS), collapse = ", "))})
     }else{
         scenarioSwitch <- NULL
     }
@@ -330,8 +332,12 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
     model <- attr(out,"model")
 
     if(n.boot>0){
-        require(pbapply)
-        ls.out <- pbapply::pblapply(1:n.boot, warper)
+        if(trace){
+            require(pbapply)
+            ls.out <- pbapply::pblapply(1:n.boot, warper)
+        }else{
+            ls.out <- lapply(1:n.boot, warper)
+        }
         dt.out <- data.table::as.data.table(do.call(rbind,ls.out))
         se.out <- dt.out[,lapply(.SD, sd, na.rm = TRUE), by = c("time","index.time","scenario")]
         lower.out <- dt.out[,lapply(.SD, quantile, prob=0.025, na.rm = TRUE), by = c("time","index.time","scenario")]
@@ -622,21 +628,25 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
             if(identical(which,"all")){
                 which <- states$all
             }
-            label.state <- match.arg(as.character(which), as.character(states$all), several.ok = TRUE)            
+            label.state <- match.arg(as.character(which), as.character(states$all), several.ok = TRUE)
             state <- states$name[label.state == as.character(states$all)]
+            if(is.numeric(states$all)){
+                label.state2 <- paste0("state ", label.state)
+            }else{
+                label.state2 <- label.state
+            }
             if(length(state)==1){
                 label.y <- paste0("Occupancy probability for state \"",label.state,"\"") 
             }else{
                 label.y <- "Occupancy probability"
             }
         }
-
         ## reshape data to long format
         outL <- reshape2::melt(object[,c("index.time","time","scenario",state)],
                                id.vars = c("index.time","time","scenario"),
                                value.name = "estimate",
                                variable.name = "state")
-        outL$state <- factor(outL$state, levels = state, labels = label.state)
+        outL$state <- factor(outL$state, levels = state, labels = label.state2)
         if(ci){
             outL.ci <- cbind(reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".lower"))],
                                             id.vars = c("index.time","time","scenario"),
@@ -644,7 +654,7 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
                              upper = reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".upper"))],
                                                     id.vars = c("index.time","time","scenario"),
                                                     value.name = "upper", variable.name = "state")$upper)
-            outL.ci$state <- factor(outL.ci$state, levels = paste0(state,".lower"), labels = label.state)
+            outL.ci$state <- factor(outL.ci$state, levels = paste0(state,".lower"), labels = label.state2)
         }
         ## reshape2::dcast(object[object$time>11.9,c("time","survival","scenario")],
         ##                 formula = scenario ~ time, value.var = "survival")
@@ -686,13 +696,13 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
         out1L.after <- as.data.frame(out1L)
         out1L.after$time <- c(jump.time[-1]-tol,tail(jump.time,1)-tol)[out1L.after$index.time]
 
-            gg <- ggplot2::ggplot(rbind(out1L,out1L.after), ggplot2::aes(x = time, y = value, group = variable, fill = variable))
-            gg <- gg + ggplot2::geom_area() + ggplot2::labs(fill = "State", y = label.y)
-            gg <- gg + ggplot2::scale_y_continuous(breaks = breaks, labels=scales::percent)
-            if(length(scenario)>1){
-                gg <- gg + ggplot2::facet_wrap(~scenario)
-            }
-
+        gg <- ggplot2::ggplot(rbind(out1L,out1L.after), ggplot2::aes(x = time, y = value, group = variable, fill = variable))
+        gg <- gg + ggplot2::geom_area() + ggplot2::labs(fill = "State", y = label.y)
+        gg <- gg + ggplot2::scale_y_continuous(breaks = breaks, labels=scales::percent)
+        gg <- gg + ggplot2::coord_cartesian(ylim = c(0,1))
+        if(length(scenario)>1){
+            gg <- gg + ggplot2::facet_wrap(~scenario)
+        }
     }
 
     ## ** export
