@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun  4 2018 (15:25) 
 ## Version: 
-## Last-Updated: nov  2 2018 (17:17) 
+## Last-Updated: maj  4 2023 (13:09) 
 ##           By: Brice Ozenne
-##     Update #: 18
+##     Update #: 19
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -121,7 +121,7 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, ro
         }
     }
 
-    #### prepare
+    ## ** prepare
     if(!missing(add.text)){
     
       if(add.text %in% names(data) == FALSE){
@@ -129,19 +129,19 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, ro
                "add.text should be one of \"",paste(names(data), collapse = "\" \""),"\"\n")
       }
     
-      if(!is.null(round)){
-          if(is.numeric(round)){
-              data[, add.text := round(.SD[[1]], digit = round), .SDcols = add.text]
-          }else if(round == "p.value"){
-              type <- findInterval(data[["p.value"]], vec = c(0.001,0.01,0.05,0.1))
-              type <- factor(type, levels = 0:4, labels = c("***","**","*",".",""))
-              data[, add.text := type]
-          }else{
-              stop("ggHeatmap: non valid value for argument \'round\' \n")
-          }
-      }else{
-          data[, add.text := .SD[[1]], .SDcols = add.text]
-      }
+        if(!is.null(round)){
+            if(is.numeric(round)){
+                data[, add.text := round(.SD[[1]], digit = round), .SDcols = add.text]
+            }else if(round == "p.value"){
+                type <- findInterval(data[["p.value"]], vec = c(0.001,0.01,0.05,0.1))
+                type <- factor(type, levels = 0:4, labels = c("***","**","*",".",""))
+                data[, add.text := type]
+            }else{
+                stop("ggHeatmap: non valid value for argument \'round\' \n")
+            }
+        }else{
+            data[, add.text := .SD[[1]], .SDcols = add.text]
+        }
     
     }
 
@@ -156,7 +156,7 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, ro
       data[[name.fill]][data[[name.fill]]>limits[2]] <- limits[2]
   }
 
-#### plot
+  ## ** plot
   gg <- ggplot2::ggplot(data, aes_string(x = name.x, y = name.y)) 
   gg <- gg + ggplot2::geom_tile(aes_string(fill = name.fill))
   gg <- gg + ggplot2::ggtitle(title)
@@ -177,13 +177,13 @@ ggHeatmap <- function(data, name.x, name.y, name.fill, add.text, plot = TRUE, ro
       gg <- gg + ggplot2::geom_text(aes_string(x = name.x, y = name.y, label = "add.text"))  
   }
     
-    #### export
-    if(plot == TRUE){
-        print(gg)
-    }
+  ## ** export
+  if(plot == TRUE){
+      print(gg)
+  }
   
-    return(invisible(list(plot = gg,
-                          data = data)))
+  return(invisible(list(plot = gg,
+                        data = data)))
 }
 
 

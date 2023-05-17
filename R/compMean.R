@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 10 2020 (10:27) 
 ## Version: 
-## Last-Updated: jan  3 2023 (10:30) 
+## Last-Updated: jan  3 2023 (10:33) 
 ##           By: Brice Ozenne
-##     Update #: 22
+##     Update #: 23
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -335,7 +335,7 @@ compMean <- function(Y,
             if(!is.null(time)){
                 newgroup <- rep(NA, length = n)
                 newgroup[index.time1] <- group[time==Utime[1]][sample.int(n.time1)]
-                newgroup[-index.time1] <- group[time==Utime[2]][sample.int(n.time2)]
+                newgroup[index.time2] <- group[time==Utime[2]][sample.int(n.time2)]
             }else{
                 newgroup <- group[sample.int(n)]
             }
