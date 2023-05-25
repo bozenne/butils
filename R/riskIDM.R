@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 17 2023 (11:24) 
 ## Version: 
-## Last-Updated: maj 17 2023 (17:05) 
+## Last-Updated: maj 25 2023 (15:44) 
 ##           By: Brice Ozenne
-##     Update #: 23
+##     Update #: 115
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,7 +22,9 @@
 ##'
 ##' @param formula [formula] A formula indicating baseline covariates on the right-hand side.
 ##' @param data [data.frame] dataset
+##' @param PH [logical] should the ratio between the hazard with and without exposure be time independent?
 ##' @param time [numeric vector, >=0] times at which the occupancy probability should be estimated.
+##' @param intervention [list of matrix] list where each element is a matrix used to deduce the intervention hazards by premultiplying the estimated hazard.
 ##' @param n.boot [interger, >=0] When strictly positive a non-parametric bootstrap is performed to quantify the uncertainty of the estimates.
 ##' The value then indicates the number of bootstrap samples.
 ##' @param var.id [character] name of the column containing the subject id, i.e. unique identifier for each line.
@@ -30,8 +32,9 @@
 ##' If an intermediate event does not occur (e.g. no switch of treatment) then the time variable should be set to the end of follow-up time.
 ##' @param var.type [character vector of length 2] name of the columns containing event type indicator.
 ##' The first event type indicator can be categorical (multiple intermediate states) but the last one should be binary.
-##' @param var.cov [character vecotr] optional baseline covariate values to be considered.
 ##' @param start.type [character] starting state. Deduced from \code{var.type} if left unspecified.
+##' @param keep.indiv [logical] should covariate specific occupancy probabilities be output?
+##' @param trace [logical] should a progress bar be used to display the execution of the resampling procedure?
 ##' 
 ##' @rdname riskIDM
 ##' @examples
@@ -68,7 +71,7 @@
 ##'                        var.time = c("prtime", "rfstime"))
 ##' 
 ##' attr(eAdj.riskPH, "model")
-##' tail(eAdj.riskPH[e.riskPH$scenario=="observed",])
+##' tail(eAdj.riskPH[eAdj.riskPH$scenario=="observed",])
 ##' plot(eAdj.riskPH, type = "curve")
 ##' plot(eAdj.riskPH, type = "stackplot")
 ##'
@@ -79,7 +82,7 @@
 ##'                     var.time = c("prtime", "rfstime"))
 ##'
 ##' attr(e.riskNPH, "model")
-##' tail(e.riskNPH[e.riskPH$scenario=="observed",])
+##' tail(e.riskNPH[e.riskNPH$scenario=="observed",])
 ##' plot(e.riskNPH, type = "curve")
 ##' plot(e.riskNPH, type = "stackplot")
 ##'
@@ -115,13 +118,41 @@
 ##' tail(eAdj.riskNPH[e.riskPH$scenario=="observed",])
 ##' plot(eAdj.riskNPH, type = "curve")
 ##' plot(eAdj.riskNPH, type = "stackplot")
+##'
+##' #### multiple exposures ####
+##' set.seed(10)
+##' n <- 1000 ## sample size (half)
+##' tau <- 12 ## max follow-up time
+##' Tevent <- rexp(2*n, rate = 1/10)
+##' Tswitch <- c(runif(n, min = 1, max = 6), rep(Inf, n))
+##' Cswitch <- sample.int(2, size = 2*n, replace = 2)
+##' index.OC <- which(Tevent[1:n]>Tswitch[1:n])
+##' Tevent[index.OC] <- Tswitch[index.OC] + rexp(length(index.OC), rate = c(1/5,1/2.5)[Cswitch[index.OC]])
+##' 
+##' df.W <- data.frame(id = 1:(2*n),
+##'                    gender = 0:1,
+##'                    time.event = pmin(Tevent,tau),
+##'                    time.switch = pmin(Tevent,Tswitch,tau),
+##'                    switch = ifelse(Tswitch<pmin(Tevent,tau), Cswitch, 0), 
+##'                    event = as.numeric(Tevent <= tau))
+##'
+##' eME.riskPH <- riskIDM(~1, data = df.W, PH = FALSE,
+##'                     var.id = "id",
+##'                     var.type = c("switch","event"),
+##'                     var.time = c("time.switch","time.event"))
+##'
+##' plot(eME.riskPH, type = "curve")
+##' plot(eME.riskPH, type ="stackplot")
+
+
+
 
 
 ## * riskIDM (code)
 ##' @name riskIDM
-riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
-                    var.id, var.time, var.type, var.cov = NULL, start.type = NULL,
-                    trace = TRUE){
+riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL, n.boot = 0,
+                    var.id, var.time, var.type, start.type = NULL,
+                    keep.indiv = FALSE, trace = TRUE){
 
     require(riskRegression)
     require(data.table)
@@ -146,9 +177,27 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
     }
 
     ## var.cov
-    if(is.null(var.cov)){
-        var.cov <- union(all.vars(formula[[1]]),all.vars(formula[[2]]))
+    var.cov <- union(all.vars(formula[[1]]),all.vars(formula[[2]]))
+    if(!is.null(var.cov)){
+        if(keep.indiv && any(var.cov=="weight")){
+            stop("Inconstency between argument \'data\' and argument \'keep.indiv\'. \n",
+                 "\"weight\" is being used internally and should not be a column name. \n")
+        }
+        if(keep.indiv && any(var.cov=="signature")){
+            stop("Inconstency between argument \'data\' and argument \'keep.indiv\'. \n",
+                 "\"signature\" is being used internally and should not be a column name.")
+        }
+        if(is.character(keep.indiv)){
+            sep.cov <- keep.indiv
+        }else if(keep.indiv){
+            sep.cov  <- "."
+        }else{
+            sep.cov <- NULL
+        }
+    }else{
+        sep.cov <- NULL
     }
+
     ## data
     data <- as.data.frame(data)
     rownames(data) <- NULL
@@ -174,6 +223,73 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
         cov.state <- "strata(state.start.num)"
     }
 
+    ## intervention
+    name.lambda01 <- paste0("lambda.0",1:n.switch) ## healthy -> illness
+    name.lambda02 <- paste0("lambda.0",n.switch+1) ## healthy -> death
+    name.lambda12 <- paste0("lambda.",1:n.switch,n.switch+1) ## illness -> death
+    name.lambda <- c(name.lambda01,name.lambda02,name.lambda12)
+    n.lambda <- length(name.lambda)
+        
+    if(is.null(intervention)){
+        scenarioNoSwitch <- paste0("no ",paste(states$name.switch, collapse = ", "))
+        if(n.switch>1){
+            scenarioSwitch <- sapply(states$name.switch, function(iS){paste0(iS," instead of ",paste(setdiff(states$name.switch,iS), collapse = ", "))})
+        }else{
+            scenarioSwitch <- NULL
+        }
+        scenarioAll <- unname(c("observed",scenarioNoSwitch,scenarioSwitch))
+        n.intervention <- length(scenarioAll)
+
+        intervention <- stats::setNames(lapply(1:n.intervention, function(iSc){
+            matrix(0, nrow = n.lambda, ncol = n.lambda,
+                   dimnames = list(name.lambda, name.lambda)
+                   )
+        }), scenarioAll)
+
+        diag(intervention[["observed"]]) <- 1 ## no change (identity matrix)
+        diag(intervention[[scenarioNoSwitch]]) <- c(rep(0,n.switch),rep(1,1+n.switch)) ## set transition to exposure (i.e. illness states) to 0
+        if(!is.null(scenarioSwitch)){ ## transfer transition to other exposures to the one exposure (i.e. illness states 2,3,4 ---> illness state 1)
+            for(iSc in 1:length(scenarioSwitch)){ ## iSc <- scenarioSwitch[1]
+                diag(intervention[[scenarioSwitch[iSc]]]) <- c(rep(0,n.switch),rep(1,1+n.switch))
+                intervention[[scenarioSwitch[iSc]]][iSc,] <- c(rep(1,n.switch),rep(0,1+n.switch))
+            }
+        }        
+    }else{
+        if(is.matrix(intervention)){
+            intervention <- list("manual" = intervention)
+        }
+        if(!is.list(intervention)){
+            stop("Argument \'intervention' should be a list. \n")
+        }
+        if(is.null(names(intervention))){
+            stop("Argument \'intervention\' should be a named list. \n")
+        }
+        if(any(duplicated(names(intervention)))){
+            stop("Argument \'intervention\' should be a named list with non-duplicated names. \n")
+        }
+        scenarioAll <- names(intervention)
+        if(any(sapply(intervention,is.matrix)==FALSE)){
+            stop("Argument \'intervention\' should be a list of matrices. \n")
+        }
+        if(any(sapply(intervention,dim)!=n.lambda)){
+            stop("Argument \'intervention\' should be a list of matrices of size ",n.lambda," by ",n.lambda,". \n")
+        }
+        n.intervention <- length(scenarioAll)
+
+        for(iI in 1:n.intervention){
+            if(is.null(colnames(intervention[[iI]]))){
+                colnames(intervention[[iI]]) <- name.lambda
+            }else if(any(colnames(intervention[[iI]])!=name.lambda)){
+                stop("Argument \'intervention\' should be a list of matrices with column names \"",paste0(name.lambda, collapse = "\", \""),"\". \n")
+            }
+            if(is.null(rownames(intervention[[iI]]))){
+                rownames(intervention[[iI]]) <- name.lambda
+            }else if(any(colnames(intervention[[iI]])!=name.lambda)){
+                stop("Argument \'intervention\' should be a list of matrices with row names \"",paste0(name.lambda, collapse = "\", \""),"\". \n")
+            }
+        }
+    }
+    
     ## ** prepare
     ls.formula <- vector(mode = "list", length = n.switch+1)
     for(iSwitch in 1:n.switch){ ## iSwitch <- 1
@@ -187,7 +303,11 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
         ls.formula[[n.switch+1]] <- as.formula(paste0("Surv(time.start, time.stop, state.stop.num==",n.switch+2,") ~ ",cov.state," + ",strsplit(deparse(formula[[2]]), split = "~")[[1]][2]))
     }
     ## always keep 0, the last observed time for each type of event, and all event times that are not censoring
-    jump.time <- sort(unique(c(0,apply(data[,var.time],2,max),dataL$time.stop[dataL$state.stop!=0])))
+    
+
+    jump.time <- unique(sort(c(tapply(dataL$time.stop,dataL$state.stop,max), ## last timepoint
+                               dataL[dataL$state.start!=dataL$state.stop,"time.stop"]))) ## time point for each change of state
+
     if(!is.null(time)){
         jump.timeR <- jump.time[jump.time<=max(time)]
     }else{
@@ -197,16 +317,9 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
     if(length(jump.timeR)==0){
         stop("All requested timepoints are before the first event. \n")
     }
-    scenarioNoSwitch <- paste0("no ",paste(states$name.switch, collapse = ", "))
-    if(n.switch>1){
-        scenarioSwitch <- sapply(states$name.switch, function(iS){paste0(iS," instead of ",paste(setdiff(states$name.switch,iS), collapse = ", "))})
-    }else{
-        scenarioSwitch <- NULL
-    }
-    scenarioAll <- c("observed",scenarioNoSwitch,scenarioSwitch)
-
+    
     ## ** warper
-    warper <- function(sample){
+    warper <- function(sample, sep.cov){
         ## *** data
         if(sample==0){
             iData <- data
@@ -227,35 +340,33 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
         e.outcome <- eval(parse(text=paste0("coxph(",iFF.txt,", data = iDataL, y=TRUE, x=TRUE)")))
 
         ## *** extract hazards and evaluate risks
+        out <- NULL
         if(n.cov[1]==0 && n.cov[2]==0){
-            pred12 <- lapply(e.switch, function(iModel){predictCox(iModel, times = jump.timeR, type = "hazard")$hazard})
-            lambda12 <- do.call(cbind,pred12)
+            pred01 <- lapply(e.switch, function(iModel){predictCox(iModel, times = jump.timeR, type = "hazard")$hazard})
+            lambda01 <- do.call(cbind,pred01)
 
             newdata.switch <- data.frame(state.start = factor(c(states$censoring, states$switch), levels = states$all),
                                          state.start.num = as.numeric(factor(c(states$censoring, states$switch), levels = states$all)))
             predX3 <- predictCox(e.outcome, times = jump.timeR, newdata = newdata.switch, type = "hazard")
-            lambda13 <- predX3$hazard[1,]
-            lambda23 <- t(predX3$hazard[-1,,drop=FALSE])
-            out <- rbind(cbind(index.time = 1:length(jump.timeR),
-                               .hazard2risk(jump.timeR, hazard12 = lambda12, hazard13 = lambda13, hazard23 = lambda23, states = states),
-                               scenario = scenarioAll[1]),
-                         cbind(index.time = 1:length(jump.timeR),
-                               .hazard2risk(jump.timeR, hazard12 = 0*lambda12, hazard13 = lambda13, hazard23 = lambda23, states = states),
-                               scenario = scenarioNoSwitch)
-                         )
-            if(n.switch>1){
-                for(iS in 1:n.switch){
-                    iLambda12 <- matrix(0, nrow = length(jump.timeR), ncol = n.switch)
-                    iLambda12[,iS] <- rowSums(lambda12)
-                    out <- rbind(out,
-                                 cbind(index.time = 1:length(jump.timeR),
-                                       .hazard2risk(jump.timeR, hazard12 = iLambda12, hazard13 = lambda13, hazard23 = lambda23, states = states),
-                                       scenario = scenarioSwitch[iS])
-                                 )
-                }
-            }
+            lambda02 <- predX3$hazard[1,]
+            lambda12 <- t(predX3$hazard[-1,,drop=FALSE])
 
+            M.lambda <- cbind(lambda01,lambda02,lambda12)
+            
+            for(iSc in scenarioAll){ ## iSc <- scenarioAll[1]
+                iLambda01 <- M.lambda %*% base::t(intervention[[iSc]][name.lambda01,,drop=FALSE])
+                iLambda02 <- M.lambda %*% base::t(intervention[[iSc]][name.lambda02,,drop=FALSE])
+                iLambda12 <- M.lambda %*% base::t(intervention[[iSc]][name.lambda12,,drop=FALSE])
+
+                out <- rbind(out,
+                             cbind(index.time = 1:length(jump.timeR),
+                                   .hazard2risk(jump.timeR, hazard01 = iLambda01, hazard02 = iLambda02, hazard12 = iLambda12, states = states),
+                                   scenario = iSc)
+                             )
+            }
+            
         }else{
+            
             ## covariates categories
             iGrid.cov <- iData[,var.cov,drop=FALSE]
             iGridE.cov <- interaction(iGrid.cov, sep = "..X..")
@@ -263,14 +374,14 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
             iId.Ucov <- iData[[var.id]][iTest.Ucov]
             iWeight.Ucov <- sapply(iGridE.cov[iTest.Ucov], function(iiUcov){mean(iiUcov==iGridE.cov)})
             iN.id.Ucov <- length(iId.Ucov)
-
+                        
             ## extract hazards
             iDataL0.red <- iDataL0[match(iId.Ucov, iDataL0[[var.id]]),,drop=FALSE]            
-            pred12 <- do.call(rbind,
+            pred01 <- do.call(rbind,
                               lapply(e.switch, function(iModel){predictCox(iModel, newdata = iDataL0.red, times = jump.timeR, type = "hazard")$hazard})
                               )
-            ID.pred12 <- do.call(rbind,lapply(e.switch, function(iModel){iDataL0.red[var.id]}))
-            indexID.pred12 <- by(1:NROW(ID.pred12),ID.pred12,identity)
+            ID.pred01 <- do.call(rbind,lapply(e.switch, function(iModel){iDataL0.red[var.id]}))
+            indexID.pred01 <- by(1:NROW(ID.pred01),ID.pred01,identity)
 
             newdata.switch <- do.call(rbind,lapply(c(states$censoring, states$switch), function(iLevel){
                 data.frame(state.start = factor(iLevel, levels = states$all),
@@ -288,37 +399,44 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
             ls.out <- stats::setNames(lapply(scenarioAll, function(iSc){
                 cbind(iTemplate, scenario = iSc)
             }), scenarioAll)
+            if(!is.null(sep.cov)){
+                attr(ls.out,"indiv") <- cbind(iDataL0.red[,c(var.id,var.cov),drop=FALSE],
+                                              weight = iWeight.Ucov,
+                                              signature = as.character(interaction(iDataL0.red[,var.cov], sep = sep.cov)))
+            }
+                
 
             ## hazard to risk
             for(iID in 1:iN.id.Ucov){ ## iID <- 1
-                iLambda12 <- t(pred12[indexID.pred12[[iID]],,drop=FALSE])
-                iLambda13 <- predX3[indexID.predX3[[iID]][1],]
-                iLambda23 <- t(predX3[indexID.predX3[[iID]][-1],,drop=FALSE])
+                iLambda01 <- t(pred01[indexID.pred01[[iID]],,drop=FALSE])
+                iLambda02 <- predX3[indexID.predX3[[iID]][1],]
+                iLambda12 <- t(predX3[indexID.predX3[[iID]][-1],,drop=FALSE])
+                iM.lambda <- cbind(iLambda01, iLambda02, iLambda12)
                 iiWeight.Uvcov <- iWeight.Ucov[iID]
 
-                ## evaluate risks
-                iOut.observed <- .hazard2risk(jump.timeR, hazard12 = iLambda12, hazard13 = iLambda13, hazard23 = iLambda23, states = states)
-                iOut.censoring <- .hazard2risk(jump.timeR, hazard12 = 0*iLambda12, hazard13 = iLambda13, hazard23 = iLambda23, states = states)
+                for(iSc in scenarioAll){ ## iSc <- scenarioAll[1]
+                    iiLambda01 <- iM.lambda %*% base::t(intervention[[iSc]][name.lambda01,,drop=FALSE])
+                    iiLambda02 <- iM.lambda %*% base::t(intervention[[iSc]][name.lambda02,,drop=FALSE])
+                    iiLambda12 <- iM.lambda %*% base::t(intervention[[iSc]][name.lambda12,,drop=FALSE])
 
-                ## update average risk
-                ls.out[[scenarioAll[1]]][,states$name] <- ls.out[[scenarioAll[1]]][,states$name] + iOut.observed[,states$name] * iiWeight.Uvcov
-                ls.out[[scenarioNoSwitch]][,states$name] <- ls.out[[scenarioNoSwitch]][,states$name] + iOut.censoring[,states$name] * iiWeight.Uvcov
-                
-                if(n.switch>1){
-                    for(iS in 1:n.switch){
-                        iSwitch <- states$switch[[iS]]
-
-                        iiLambda12 <- matrix(0, nrow = length(jump.timeR), ncol = n.switch)
-                        iiLambda12[,iS] <- rowSums(iLambda12)
-                        
-                        iOut.state <- .hazard2risk(jump.timeR, hazard12 = iiLambda12, hazard13 = iLambda13, hazard23 = iLambda23, states = states)
-                        
-                        ls.out[[scenarioSwitch[iS]]][,states$name] <- ls.out[[scenarioSwitch[iS]]][,states$name] + iOut.state[,states$name] * iWeight.Ucov
+                    iOut <- .hazard2risk(jump.timeR, hazard01 = iiLambda01, hazard02 = iiLambda02, hazard12 = iiLambda12, states = states)
+                    ls.out[[iSc]][,states$name] <- ls.out[[iSc]][,states$name] + iOut[,states$name] * iiWeight.Uvcov
+                    if(!is.null(sep.cov)){
+                        iSignature <- attr(ls.out,"indiv")$signature[iID]
+                        attr(ls.out,iSignature) <- rbind(attr(ls.out,iSignature),
+                                                         cbind(iOut, scenario = iSc, signature = iSignature)
+                                                         )
                     }
-                }                         
+                }
             }
             out <- do.call(rbind,ls.out)
             rownames(out)<- NULL
+
+            if(!is.null(sep.cov)){
+                attr(out,"indiv") <- do.call(rbind,lapply(attr(ls.out,"indiv")$signature, function(iSignature){attr(ls.out,iSignature)}))
+                rownames(attr(out,"indiv")) <- NULL
+            }
+            
         }
 
         ## *** export
@@ -328,28 +446,35 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
     }
         
     ## ** evaluate risks
-    out <- warper(0)
+    out <- warper(0, sep.cov = sep.cov)
     model <- attr(out,"model")
+    indiv <- attr(out,"indiv")
 
     if(n.boot>0){
         if(trace){
             require(pbapply)
-            ls.out <- pbapply::pblapply(1:n.boot, warper)
+            ls.out <- pbapply::pblapply(1:n.boot, warper, sep.cov = NULL)
         }else{
-            ls.out <- lapply(1:n.boot, warper)
+            ls.out <- lapply(1:n.boot, warper, sep.cov = NULL)
         }
+        out.names <- names(out)
+        
         dt.out <- data.table::as.data.table(do.call(rbind,ls.out))
+        median.out <- dt.out[,lapply(.SD, quantile, prob=0.50, na.rm = TRUE), by = c("time","index.time","scenario")]
         se.out <- dt.out[,lapply(.SD, sd, na.rm = TRUE), by = c("time","index.time","scenario")]
         lower.out <- dt.out[,lapply(.SD, quantile, prob=0.025, na.rm = TRUE), by = c("time","index.time","scenario")]
         upper.out <- dt.out[,lapply(.SD, quantile, prob=0.975, na.rm = TRUE), by = c("time","index.time","scenario")]
 
+        names(median.out)[match(states$name,names(median.out))] <- paste0(states$name,".median")
         names(se.out)[match(states$name,names(se.out))] <- paste0(states$name,".se")
         names(lower.out)[match(states$name,names(lower.out))] <- paste0(states$name,".lower")
         names(upper.out)[match(states$name,names(upper.out))] <- paste0(states$name,".upper")
 
-        out <- merge(out,se.out, by = c("index.time","time","scenario"))
-        out <- merge(out,lower.out, by = c("index.time","time","scenario"))
-        out <- merge(out,upper.out, by = c("index.time","time","scenario"))
+        out <- merge(out,median.out, by = c("scenario","time","index.time"))
+        out <- merge(out,se.out, by = c("scenario","time","index.time"))
+        out <- merge(out,lower.out, by = c("scenario","time","index.time"))
+        out <- merge(out,upper.out, by = c("scenario","time","index.time"))
+        out <- out[,c(out.names, setdiff(names(out),out.names)),drop=FALSE] ## restaure original column order
     }
 
     if(!is.null(original.time)){
@@ -362,12 +487,16 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
     
 
     ## ** export
+    out$scenario <- factor(out$scenario, scenarioAll)
+    attr(out,"data") <- dataL
     attr(out,"model") <- model
+    attr(out,"indiv") <- indiv
     attr(out,"states") <- states
     attr(out,"jump.time") <- jump.time
     attr(out,"tol") <- tol
     attr(out,"n.boot") <- n.boot
     attr(out,"PH") <- PH
+    attr(out,"intervention") <- intervention
     class(out) <- append("riskIDM",class(out))
     return(out)
 }
@@ -394,7 +523,7 @@ riskIDM <- function(formula, data, PH, time = NULL, n.boot = 0,
 ##' #### generate data ####
 ##' set.seed(10)
 ##' n <- 1000 ## sample size (half)
-##' tau <- 12 ## max follow-up time
+##' tau <- 01 ## max follow-up time
 ##' Tevent <- rexp(2*n, rate = 1/10)
 ##' Tswitch <- c(runif(n, min = 1, max = 6), rep(Inf, n))
 ##' Cswitch <- sample.int(2, size = 2*n, replace = 2)
@@ -553,6 +682,7 @@ plot.riskIDM <- function(x, ...){
 ##' or state occupation probability stacked for a specific scenario (\code{"stackplot"}).
 ##' @param which the scenario (\code{type="stackplot"}) or state (\code{type="curve"}) for which the occupation probabilities are displayed.
 ##' Can also be \code{"all"} to display all possibilites using facets.
+##' Can have an optional argument \code{"indiv"} set to TRUE to display covariate specific risks.
 ##' @param ci [logical] should pointwise confidence intervals be displayed. Only available for \code{type="curve"}
 ##' when a non-parametric bootstrap has been performed when running  the \code{riskIDM} function.
 ##' @param linewidth [numeric, >0] thickness of the line used to display the occupation probabilities.
@@ -583,7 +713,7 @@ plot.riskIDM <- function(x, ...){
 ##'                     var.time = c("prtime", "rfstime"))
 ##'
 ##' e.riskPH2 <- riskIDM(~1, data = ebmt3, PH = FALSE, n.boot = 100,
-##'                     var.id = "id",  
+##'                     var.id = "id", 
 ##'                     var.type = c("prstat", "rfsstat"),
 ##'                     var.time = c("prtime", "rfstime"))
 ##' 
@@ -594,11 +724,22 @@ plot.riskIDM <- function(x, ...){
 ##' plot(e.riskPH, type = "curve")
 ##' plot(e.riskPH2, type = "curve", ci = TRUE)
 ##' plot(e.riskPH2, type = "curve", ci = TRUE, which = "all")
+##'
+##'
+##' #### fit IDM with covariates ####
+##' e.riskPH3 <- riskIDM(~age, data = ebmt3, PH = FALSE, 
+##'                      var.id = "id", keep.indiv = TRUE,
+##'                      var.type = c("prstat", "rfsstat"),
+##'                      var.time = c("prtime", "rfstime"))
+##' 
+##' plot(e.riskPH3, type = "curve", ci = TRUE, which = "all", indiv = TRUE)
+##' plot(e.riskPH3, type = "curve", ci = TRUE, which = "all", indiv = FALSE)
+
 
 
 ## * autoplot.riskIDM (code)
 ##' @name autoplot.riskIDM
-autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE,
+autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, indiv = FALSE, ci = TRUE,
                              linewidth = 2, ci.alpha = 0.2, breaks = seq(0,1,by=0.1), ...){
 
     ## ** normalize arguments
@@ -609,6 +750,14 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
         stop("Unknown argument(s) '", paste(names(dots), collapse = "' '"), "'. \n")
     }
 
+    if(!identical(indiv,FALSE) & is.null(attr(object,"indiv"))){
+        stop("Incorrect argument \'which\': cannot contain an attribute \"type\" when individual occupancy probabilities have not been stored. \n",
+             "Consider setting the argument \'keep.indiv\' to TRUE when calling riskIDM. \n")
+    }
+    if(!identical(indiv,FALSE) & type == "stackplot"){
+        warning("Argument \'which\' ignore when argument \'type\' equals to \"stackplot\". \n")
+    }
+            
     ## ** graphical display
     states <- attr(object, "states")
     jump.time <- attr(object, "jump.time")
@@ -619,11 +768,11 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
     }
     
     if(type == "curve"){
-        ## prepare
+        ## prepare        
         if(is.null(which)){
             state <- utils::tail(states$name,1)
-            label.state <- utils::tail(states$all,1)
-            label.y <- paste0("Occupancy probability for state \"",label.state,"\"") 
+            label.state2 <- label.state <- utils::tail(states$all,1)
+            label.y <- paste0("Occupancy probability for state \"",label.state,"\"")            
         }else{
             if(identical(which,"all")){
                 which <- states$all
@@ -642,29 +791,47 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
             }
         }
         ## reshape data to long format
-        outL <- reshape2::melt(object[,c("index.time","time","scenario",state)],
-                               id.vars = c("index.time","time","scenario"),
-                               value.name = "estimate",
-                               variable.name = "state")
-        outL$state <- factor(outL$state, levels = state, labels = label.state2)
-        if(ci){
-            outL.ci <- cbind(reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".lower"))],
-                                            id.vars = c("index.time","time","scenario"),
-                                            value.name = "lower", variable.name = "state"),
-                             upper = reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".upper"))],
-                                                    id.vars = c("index.time","time","scenario"),
-                                                    value.name = "upper", variable.name = "state")$upper)
-            outL.ci$state <- factor(outL.ci$state, levels = paste0(state,".lower"), labels = label.state2)
+        if(!identical(indiv,FALSE)){
+            outL <- reshape2::melt(attr(object,"indiv")[,c("signature","time","scenario",state)],
+                                   id.vars = c("signature","time","scenario"),
+                                   value.name = "estimate",
+                                   variable.name = "state")
+            outL$state <- factor(outL$state, levels = state, labels = label.state2)
+            if(is.character(indiv)){
+                outL$signature[outL$signature %in% indiv,]
+            }
+        }else{
+            outL <- reshape2::melt(object[,c("index.time","time","scenario",state)],
+                                   id.vars = c("index.time","time","scenario"),
+                                   value.name = "estimate",
+                                   variable.name = "state")
+            outL$state <- factor(outL$state, levels = state, labels = label.state2)
+            if(ci){
+                outL.ci <- cbind(reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".lower"))],
+                                                id.vars = c("index.time","time","scenario"),
+                                                value.name = "lower", variable.name = "state"),
+                                 upper = reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".upper"))],
+                                                        id.vars = c("index.time","time","scenario"),
+                                                        value.name = "upper", variable.name = "state")$upper)
+                outL.ci$state <- factor(outL.ci$state, levels = paste0(state,".lower"), labels = label.state2)
+            }
         }
         ## reshape2::dcast(object[object$time>11.9,c("time","survival","scenario")],
         ##                 formula = scenario ~ time, value.var = "survival")
-
+        
         ## graphical display
-        gg <- ggplot2::ggplot(outL, ggplot2::aes(x = time, group = scenario))
-        if(n.boot>0 & ci){
-            gg <- gg + ggplot2::geom_ribbon(data = outL.ci, ggplot2::aes(ymin = lower, ymax = upper, fill = scenario), alpha = ci.alpha)
+        if(!identical(indiv,FALSE)){
+            gg <- ggplot2::ggplot(outL, ggplot2::aes(x = time, linetype = signature, group = interaction(scenario,signature,drop=TRUE)))
+            indiv.levels <- unique(outL$signature)
+            indiv.linetype <- setNames(1 + 1:length(indiv.levels), indiv.levels)
+            gg <- gg + ggplot2::scale_linetype_manual(values = indiv.linetype, breaks = names(indiv.linetype))            
+        }else{
+            gg <- ggplot2::ggplot(outL, ggplot2::aes(x = time, group = scenario))
+            if(n.boot>0 & ci){
+                gg <- gg + ggplot2::geom_ribbon(data = outL.ci, ggplot2::aes(ymin = lower, ymax = upper, fill = scenario), alpha = ci.alpha)
+            }
         }
-        gg <- gg + ggplot2::geom_line(linewidth = linewidth, ggplot2::aes(y = estimate, color = scenario))
+        gg <- gg + ggplot2::geom_step(linewidth = linewidth, ggplot2::aes(y = estimate, color = scenario))
         gg <- gg + ggplot2::scale_y_continuous(breaks = breaks, labels=scales::percent)
         gg <- gg + ggplot2::labs(fill = "Scenario", color = "Scenario", y = label.y)
         if(length(label.state)>1){
@@ -672,7 +839,7 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
         }
 
     }else if(type == "stackplot"){
-        valid.scenario <- unique(object$scenario)
+        valid.scenario <- levels(object$scenario)
         if(is.null(which)){
             which <- "observed"
         }else if(identical(which, "all")){
@@ -706,65 +873,67 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
     }
 
     ## ** export
+    gg <- gg + ggplot2::theme(axis.ticks.length=unit(.25, "cm"),
+                              legend.key.width = unit(3,"line"))
     return(gg)
 }
 
 ## * .hazard2risk
-.hazard2risk <- function(time, hazard12, hazard13, hazard23, states, prodlim = TRUE){
+.hazard2risk <- function(time, hazard01, hazard02, hazard12, states, prodlim = TRUE){
 
     n.time <- length(time)
-    n.switch <- NCOL(hazard12)
+    n.switch <- NCOL(hazard01)
 
+    cumhazard01 <- colCumSum(hazard01)
+    cumhazard02 <- cumsum(hazard02)
     cumhazard12 <- colCumSum(hazard12)
-    cumhazard13 <- cumsum(hazard13)
-    cumhazard23 <- colCumSum(hazard23)
 
     ## ** pre-compute
     if(prodlim){
-        S11 <- cumprod(1-rowSums(hazard12)-hazard13)
+        S11 <- cumprod(1-rowSums(hazard01)-hazard02)
     }else{
-        S11 <- exp(- rowSums(cumhazard12) - cumhazard13)
+        S11 <- exp(- rowSums(cumhazard01) - cumhazard02)
     }
     S11m <- c(1,S11[-n.time])
-    S11m.hazard12 <- riskRegression::colMultiply_cpp(hazard12, S11m)
+    S11m.hazard01 <- riskRegression::colMultiply_cpp(hazard01, S11m)
 
     if(prodlim){
         ## ## fast implementation
-        C1.cumhazard23 <- apply(1-hazard23,2,cumprod)
-        S11m.hazard12.C1.cumhazard23.inv <- riskRegression::colCumSum(S11m.hazard12/C1.cumhazard23)
-        S12 <- S11m.hazard12.C1.cumhazard23.inv * C1.cumhazard23
+        C1.cumhazard12 <- apply(1-hazard12,2,cumprod)
+        S11m.hazard01.C1.cumhazard12.inv <- riskRegression::colCumSum(S11m.hazard01/C1.cumhazard12)
+        S01 <- S11m.hazard01.C1.cumhazard12.inv * C1.cumhazard12
 
         ## ## ## slow but explicit implementation
-        ## range(S12 - do.call(rbind,lapply(1:n.time, function(iTau){ ## iTau <- 10
+        ## range(S01 - do.call(rbind,lapply(1:n.time, function(iTau){ ## iTau <- 10
         ##     if(iTau==1){return(0)} ## both hazard cannot be simulataneously non-0 at time 1
-        ##     iScale <- matrix(apply(1-hazard23[1:iTau,,drop=FALSE],2,prod), nrow = iTau, ncol = n.switch, byrow = TRUE)
-        ##     iS22 <- iScale/apply(1-hazard23[1:iTau,,drop=FALSE],2,cumprod)            
+        ##     iScale <- matrix(apply(1-hazard12[1:iTau,,drop=FALSE],2,prod), nrow = iTau, ncol = n.switch, byrow = TRUE)
+        ##     iS22 <- iScale/apply(1-hazard12[1:iTau,,drop=FALSE],2,cumprod)            
         ##     iFactor <- matrix(S11m[1:iTau], nrow = iTau, ncol = n.switch, byrow = FALSE)
-        ##     return(colSums(iFactor * hazard12[1:iTau,,drop=FALSE] * iS22[1:iTau,,drop=FALSE]))
+        ##     return(colSums(iFactor * hazard01[1:iTau,,drop=FALSE] * iS22[1:iTau,,drop=FALSE]))
         ## })))
 
-    }else{ ## old slow version still necessary when prodlim == FALSE
+    }else{ 
         ## ## fast implementation
-        e.cumhazard23 <- exp(cumhazard23)
-        S11m.hazard12.e.cumhazard23 <-  riskRegression::colCumSum(S11m.hazard12 * e.cumhazard23)
-        S12 <- S11m.hazard12.e.cumhazard23 / e.cumhazard23
+        e.cumhazard12 <- exp(cumhazard12)
+        S11m.hazard01.e.cumhazard12 <-  riskRegression::colCumSum(S11m.hazard01 * e.cumhazard12)
+        S01 <- S11m.hazard01.e.cumhazard12 / e.cumhazard12
 
         ## ## slow but explicit implementation
-        ## range(S12 - do.call(rbind,lapply(1:n.time, function(iTau){ ## iTau <- 10
+        ## range(S01 - do.call(rbind,lapply(1:n.time, function(iTau){ ## iTau <- 10
         ##     if(iTau==1){return(0)} ## both hazard cannot be simulataneously non-0 at time 1
-        ##     iCenter <- matrix(cumhazard23[iTau,,drop=FALSE], nrow = iTau, ncol = n.switch, byrow = TRUE)
-        ##     iS22 <- exp(-iCenter+cumhazard23[1:iTau,,drop=FALSE])
+        ##     iCenter <- matrix(cumhazard12[iTau,,drop=FALSE], nrow = iTau, ncol = n.switch, byrow = TRUE)
+        ##     iS22 <- exp(-iCenter+cumhazard12[1:iTau,,drop=FALSE])
         ##     iFactor <- matrix(S11m[1:iTau], nrow = iTau, ncol = n.switch, byrow = FALSE)
-        ##     return(colSums(iFactor * hazard12[1:iTau,,drop=FALSE] * iS22[1:iTau,,drop=FALSE]))
+        ##     return(colSums(iFactor * hazard01[1:iTau,,drop=FALSE] * iS22[1:iTau,,drop=FALSE]))
         ## })))
     }
-    S12m <- rbind(rep(0,n.switch),S12[-n.time,,drop=FALSE])
+    S01m <- rbind(rep(0,n.switch),S01[-n.time,,drop=FALSE])
     
     ## ** scenario
     out <- data.frame(time,
                       S11,
-                      S12,
-                      cumsum(hazard13 * S11m) + rowSums(colCumSum(hazard23 * S12m))
+                      S01,
+                      cumsum(hazard02 * S11m) + rowSums(colCumSum(hazard12 * S01m))
                       )
     
     ## ** export
@@ -776,7 +945,7 @@ autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, ci = TRUE
 ## find the common consecutive part between two strings
 ## copied from https://stackoverflow.com/questions/35381180/identify-a-common-pattern
 ## .commonString("aaachang2","aaabbb")
-## .commonString("aaa235change2","aaachangebbb")
+## .commonString("aaa55change2","aaachangebbb")
 ## .commonString("abcdef","xyz")
 .commonString <- function(string1, string2){
 
