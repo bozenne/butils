@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 17 2023 (11:24) 
 ## Version: 
-## Last-Updated: maj 25 2023 (15:44) 
+## Last-Updated: jun 22 2023 (16:34) 
 ##           By: Brice Ozenne
-##     Update #: 115
+##     Update #: 512
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,10 +15,11 @@
 ## 
 ### Code:
 
-## * riskIDM (example)
+## * riskIDM (documentation)
 ##' @title Estimate an Illness Death Model
 ##' @description Use multiple Cox models to fit an Illness Death Model from data in the wide format.
 ##' Output the fitted models and occupancy probabilities under different scenario (observed data, no transition to intermediate states, transition to a single intermediate state).
+##' @rdname riskIDM
 ##'
 ##' @param formula [formula] A formula indicating baseline covariates on the right-hand side.
 ##' @param data [data.frame] dataset
@@ -27,6 +28,9 @@
 ##' @param intervention [list of matrix] list where each element is a matrix used to deduce the intervention hazards by premultiplying the estimated hazard.
 ##' @param n.boot [interger, >=0] When strictly positive a non-parametric bootstrap is performed to quantify the uncertainty of the estimates.
 ##' The value then indicates the number of bootstrap samples.
+##' @param level [numeric, 0.1] Confidence level for the confidence interval.
+##' @param cl [interger, >=0] A cluster object created by \code{makeCluster}, or an integer to indicate number of child-processes (integer values are ignored on Windows) for parallel evaluations
+##' Passed to \code{pblapply}. Ignored when \code{trace=FALSE}.
 ##' @param var.id [character] name of the column containing the subject id, i.e. unique identifier for each line.
 ##' @param var.time [character vector of length 2] name of the columns containing the time variables, i.e. time at which each type of event happen (intermediate or absorbing).
 ##' If an intermediate event does not occur (e.g. no switch of treatment) then the time variable should be set to the end of follow-up time.
@@ -35,7 +39,8 @@
 ##' @param start.type [character] starting state. Deduced from \code{var.type} if left unspecified.
 ##' @param keep.indiv [logical] should covariate specific occupancy probabilities be output?
 ##' @param trace [logical] should a progress bar be used to display the execution of the resampling procedure?
-##' 
+
+## * riskIDM (examples)
 ##' @rdname riskIDM
 ##' @examples
 ##'
@@ -56,13 +61,18 @@
 ##'                     var.id = "id", n.boot = 100,
 ##'                     var.type = c("prstat", "rfsstat"),
 ##'                     var.time = c("prtime", "rfstime"))
-##'
-##' attr(e.riskPH, "model")
-##' tail(e.riskPH[e.riskPH$scenario=="observed",])
-##' plot(e.riskPH, type = "curve")
-##' plot(e.riskPH, type = "curve", which = "all")
-##' plot(e.riskPH, type = "stackplot")
-##' plot(e.riskPH, type = "stackplot", which = "all")
+##' summary(e.riskPH)
+##' model.tables(e.riskPH)
+##' confint(e.riskPH, time = 1:10)
+##' coef(e.riskPH, time = 1:10)
+##' model.tables(e.riskPH, contrast = "all", time = c(1,2))
+##' confint(e.riskPH, contrast = "all", time = c(1,2))
+##' coef(e.riskPH, contrast = "all", time = c(1,2))
+##' plot(e.riskPH, by = "scenario")
+##' plot(e.riskPH, by = "scenario", scenario = "all")
+##' plot(e.riskPH, by = "state")
+##' plot(e.riskPH, by = "state", state = "all")
+##' plot(e.riskPH, by = "contrast")
 ##'
 ##' #### PH with covariates ####
 ##' eAdj.riskPH <- riskIDM(~age, data = ebmt3, PH = TRUE,
@@ -70,10 +80,9 @@
 ##'                        var.type = c("prstat", "rfsstat"),
 ##'                        var.time = c("prtime", "rfstime"))
 ##' 
-##' attr(eAdj.riskPH, "model")
-##' tail(eAdj.riskPH[eAdj.riskPH$scenario=="observed",])
-##' plot(eAdj.riskPH, type = "curve")
-##' plot(eAdj.riskPH, type = "stackplot")
+##' coef(eAdj.riskPH, time = 1:10)
+##' plot(eAdj.riskPH, by = "scenario")
+##' plot(eAdj.riskPH, by = "state")
 ##'
 ##' #### NPH without covariates ####
 ##' e.riskNPH <- riskIDM(~1, data = ebmt3, PH = FALSE,
@@ -81,10 +90,9 @@
 ##'                     var.type = c("prstat", "rfsstat"),
 ##'                     var.time = c("prtime", "rfstime"))
 ##'
-##' attr(e.riskNPH, "model")
-##' tail(e.riskNPH[e.riskNPH$scenario=="observed",])
-##' plot(e.riskNPH, type = "curve")
-##' plot(e.riskNPH, type = "stackplot")
+##' plot(e.riskNPH)
+##' plot(e.riskNPH, by = "state")
+##' plot(e.riskNPH, by = "contrast")
 ##'
 ##' ## comparison with mstate
 ##' newdata.L <- data.frame(trans = c(1,2,3), strata = c(1,2,3))
@@ -101,12 +109,13 @@
 ##' ebmt.probNPH <- probtrans(ebmt.msfitNPH, predt = 0)
 ##' plot(ebmt.probNPH, use.ggplot = TRUE)
 ##'
-##' e.riskNPH.obs <- e.riskNPH[e.riskNPH$scenario=="observed",]
+##' e.survNPH.obs <- confint(e.riskNPH, state = "survival")[scenario == "observed",]
 ##' plot(ebmt.probNPH[[1]]$time, ebmt.probNPH[[1]]$pstate1, type = "l")
-##' points(e.riskNPH.obs$time, e.riskNPH.obs$survival, type = "l", col = "red")
+##' points(e.survNPH.obs$time, e.survNPH.obs$estimate, type = "l", col = "red")
 ##' 
+##' e.riskNPH.obs <- confint(e.riskNPH, state = "risk.2")[scenario == "observed",]
 ##' plot(ebmt.probNPH[[1]]$time, ebmt.probNPH[[1]]$pstate3, type = "l")
-##' points(e.riskNPH.obs$time, e.riskNPH.obs$risk.2, type = "l", col = "red")
+##' points(e.riskNPH.obs$time, e.riskNPH.obs$estimate, type = "l", col = "red")
 ##' 
 ##' #### NPH with covariates ####
 ##' eAdj.riskNPH <- riskIDM(~age, data = ebmt3, PH = FALSE,
@@ -114,10 +123,10 @@
 ##'                        var.type = c("prstat", "rfsstat"),
 ##'                        var.time = c("prtime", "rfstime"))
 ##' 
-##' attr(eAdj.riskNPH, "model")
-##' tail(eAdj.riskNPH[e.riskPH$scenario=="observed",])
-##' plot(eAdj.riskNPH, type = "curve")
-##' plot(eAdj.riskNPH, type = "stackplot")
+##' summary(eAdj.riskNPH)
+##' coef(eAdj.riskNPH)
+##' plot(eAdj.riskNPH, by = "scenario")
+##' plot(eAdj.riskNPH, by = "state", state = "all")
 ##'
 ##' #### multiple exposures ####
 ##' set.seed(10)
@@ -135,23 +144,28 @@
 ##'                    time.switch = pmin(Tevent,Tswitch,tau),
 ##'                    switch = ifelse(Tswitch<pmin(Tevent,tau), Cswitch, 0), 
 ##'                    event = as.numeric(Tevent <= tau))
-##'
+##' df.W$switch <- factor(df.W$switch, levels = 0:2, c(0,"OC","IUD"))
+##' # df.W$switch <- factor(df.W$switch, levels = 0:2, c("H","OC","IUD"))
+##' # df.W$event <- factor(df.W$event, levels = 0:1, c("H","MDD"))
 ##' eME.riskPH <- riskIDM(~1, data = df.W, PH = FALSE,
 ##'                     var.id = "id",
 ##'                     var.type = c("switch","event"),
 ##'                     var.time = c("time.switch","time.event"))
 ##'
-##' plot(eME.riskPH, type = "curve")
-##' plot(eME.riskPH, type ="stackplot")
-
-
-
+##' summary(eME.riskPH)
+##' plot(eME.riskPH, by = "scenario")
+##' plot(eME.riskPH, by = "scenario", scenario = "all")
+##' plot(eME.riskPH, by = "state")
+##' plot(eME.riskPH, by = "state", state = "all")
+##' plot(eME.riskPH, by = "contrast", scenario = "all")
 
 
 ## * riskIDM (code)
-##' @name riskIDM
-riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL, n.boot = 0,
-                    var.id, var.time, var.type, start.type = NULL,
+##' @rdname riskIDM
+##' @export
+riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL,
+                    var.id, var.time, var.type, start.type = NULL, 
+                    n.boot = 0, level = 0.95, cl = NULL,
                     keep.indiv = FALSE, trace = TRUE){
 
     require(riskRegression)
@@ -304,9 +318,9 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL, n.boot 
     }
     ## always keep 0, the last observed time for each type of event, and all event times that are not censoring
     
-
-    jump.time <- unique(sort(c(tapply(dataL$time.stop,dataL$state.stop,max), ## last timepoint
-                               dataL[dataL$state.start!=dataL$state.stop,"time.stop"]))) ## time point for each change of state
+    jump.time <- unique(sort(c(0, ## first timepoint
+                               tapply(dataL$time.stop,dataL$state.stop,max), ## last timepoint
+                               dataL[as.character(dataL$state.start)!=as.character(dataL$state.stop),"time.stop"]))) ## time point for each change of state
 
     if(!is.null(time)){
         jump.timeR <- jump.time[jump.time<=max(time)]
@@ -446,57 +460,82 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL, n.boot 
     }
         
     ## ** evaluate risks
-    out <- warper(0, sep.cov = sep.cov)
-    model <- attr(out,"model")
-    indiv <- attr(out,"indiv")
-
+    ## point estimate
+    res <- warper(0, sep.cov = sep.cov)
+    ## store 
+    out <- list(args = list(PH = PH, time = time, intervention = intervention, n.boot = n.boot, level = level,
+                            var.id = var.id, var.time = var.time, var.type = var.type, start.type = start.type, indiv = keep.indiv),
+                call = match.call(),
+                data = dataL,
+                jump.estimate = as.data.table(res[,c("index.time","time","scenario",states$name)]),
+                jump.indiv = as.data.table(attr(res,"indiv")[,c("time","scenario","signature",states$name)]),
+                jump.time = jump.time,
+                model = attr(res,"model"),
+                scenario = scenarioAll,
+                states = states,
+                tol = tol
+                )
+    ## move to long fomat
+    out$jump.estimate <- data.table::melt(out$jump.estimate,
+                                          id.vars = c("index.time","time","scenario"),
+                                          measure.vars = states$name,
+                                          value.name = "estimate",
+                                          variable.name = "state")
+    if(keep.indiv){
+        out$jump.indiv <- data.table::melt(out$jump.indiv,
+                                           id.vars = c("time","scenario","signature"),
+                                           measure.vars = states$name,
+                                           value.name = "estimate",
+                                           variable.name = "state")
+    }
+    ## ** evaluate uncertainty
     if(n.boot>0){
+        alpha <- 1-level
         if(trace){
             require(pbapply)
-            ls.out <- pbapply::pblapply(1:n.boot, warper, sep.cov = NULL)
+            ls.out <- pbapply::pblapply(1:n.boot, function(iBoot){
+                iRes <- try(warper(iBoot, sep.cov = NULL))
+                if(inherits(iBoot,"try-error")){
+                    return(NULL)
+                }else{
+                    return(cbind(boot = iBoot, iRes))
+                }
+            }, cl = cl)
         }else{
-            ls.out <- lapply(1:n.boot, warper, sep.cov = NULL)
+            ls.out <- lapply(1:n.boot, function(iBoot){
+                iRes <- try(warper(iBoot, sep.cov = NULL))
+                if(inherits(iBoot,"try-error")){
+                    return(NULL)
+                }else{
+                    return(cbind(boot = iBoot, iRes))
+                }
+            } = NULL)
         }
-        out.names <- names(out)
-        
-        dt.out <- data.table::as.data.table(do.call(rbind,ls.out))
-        median.out <- dt.out[,lapply(.SD, quantile, prob=0.50, na.rm = TRUE), by = c("time","index.time","scenario")]
-        se.out <- dt.out[,lapply(.SD, sd, na.rm = TRUE), by = c("time","index.time","scenario")]
-        lower.out <- dt.out[,lapply(.SD, quantile, prob=0.025, na.rm = TRUE), by = c("time","index.time","scenario")]
-        upper.out <- dt.out[,lapply(.SD, quantile, prob=0.975, na.rm = TRUE), by = c("time","index.time","scenario")]
+        out$boot <- data.table::as.data.table(do.call(rbind,ls.out)[,c("boot","index.time","time","scenario",states$name)])
 
-        names(median.out)[match(states$name,names(median.out))] <- paste0(states$name,".median")
-        names(se.out)[match(states$name,names(se.out))] <- paste0(states$name,".se")
-        names(lower.out)[match(states$name,names(lower.out))] <- paste0(states$name,".lower")
-        names(upper.out)[match(states$name,names(upper.out))] <- paste0(states$name,".upper")
+        dt.bootmedian <- out$boot[,lapply(.SD, median, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
+        dt.bootlower <- out$boot[,lapply(.SD, quantile, 1-alpha/2, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
+        dt.bootupper <- out$boot[,lapply(.SD, quantile, alpha/2, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
 
-        out <- merge(out,median.out, by = c("scenario","time","index.time"))
-        out <- merge(out,se.out, by = c("scenario","time","index.time"))
-        out <- merge(out,lower.out, by = c("scenario","time","index.time"))
-        out <- merge(out,upper.out, by = c("scenario","time","index.time"))
-        out <- out[,c(out.names, setdiff(names(out),out.names)),drop=FALSE] ## restaure original column order
+        dt.boot <- data.table::melt(dt.bootmedian,
+                                    id.vars = c("time","scenario"),
+                                    measure.vars = states$name,
+                                    value.name = "median",
+                                    variable.name = "state")
+        dt.boot$lower <- data.table::melt(dt.bootlower,
+                                          id.vars = c("time","scenario"),
+                                          measure.vars = states$name,
+                                          value.name = "lower",
+                                          variable.name = "state")$lower
+        dt.boot$upper <- data.table::melt(dt.bootupper,
+                                          id.vars = c("time","scenario"),
+                                          measure.vars = states$name,
+                                          value.name = "upper",
+                                          variable.name = "state")$upper
+        out$jump.estimate <- merge(x = out$jump.estimate, y = dt.boot, by = c("time","scenario","state"))
     }
-
-    if(!is.null(original.time)){
-        out <- do.call(rbind,by(out,out$scenario, function(iOut){
-            iiOut <- iOut[prodlim::sindex(jump.time = iOut[,"time"], eval.time = time),,drop=FALSE]
-            iiOut$time <- time
-            return(iiOut)
-        }))
-    }
-    
 
     ## ** export
-    out$scenario <- factor(out$scenario, scenarioAll)
-    attr(out,"data") <- dataL
-    attr(out,"model") <- model
-    attr(out,"indiv") <- indiv
-    attr(out,"states") <- states
-    attr(out,"jump.time") <- jump.time
-    attr(out,"tol") <- tol
-    attr(out,"n.boot") <- n.boot
-    attr(out,"PH") <- PH
-    attr(out,"intervention") <- intervention
     class(out) <- append("riskIDM",class(out))
     return(out)
 }
@@ -554,7 +593,8 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL, n.boot 
 ##' }
 
 ## * reshapeIDM (code)
-##' @name reshapeIDM
+##' @rdname reshapeIDM
+##' @export
 reshapeIDM <- function(data, var.id, var.time, var.type, var.cov = NULL, start.type = NULL){
 
     ## ** normalize arguments
@@ -590,14 +630,25 @@ reshapeIDM <- function(data, var.id, var.time, var.type, var.cov = NULL, start.t
     if(length(unique(data[[var.type[2]]]))%in% 1:2 == FALSE){
         stop("Argument \'var.type[2]\' should take one or two unique values. \n")
     }
+    if(is.factor(data[[var.type[1]]]) && is.factor(data[[var.type[2]]])){
+        if(levels(data[[var.type[1]]])[1]!=levels(data[[var.type[2]]])[1]){
+            stop("Variables defined by \'var.type\' should have the same reference level. \n")
+        }
+        if(levels(data[[var.type[2]]])[2] %in% levels(data[[var.type[1]]])){
+            stop("The second level of the second variable of \'var.type\' not match any level of the first variable of \'var.type\'. \n")
+        }
+    }
+    if(!is.null(start.type) && is.factor(data[[var.type[1]]]) && start.type %in% levels(data[[var.type[1]]]) == FALSE){
+        stop("Argument \'start.type\' does not match any level of the first variable of \'var.type\'. \n")
+    }
     if(length(var.cov)==0){var.cov <- NULL}
 
     ## ** move to long format
-    if(is.factor(data[[var.type[1]]])){
+    if(is.factor(data[[var.type[1]]]) && is.factor(data[[var.type[2]]])){
         if(is.null(start.type)){
             if(length(levels(data[[var.type[2]]]))==2){
                 start.type <- levels(data[[var.type[2]]])[1]
-            }else if(length(levels(data[[var.type[1]]]))>1){
+            }else{
                 start.type <- levels(data[[var.type[1]]])[1]
             }
         }
@@ -605,6 +656,28 @@ reshapeIDM <- function(data, var.id, var.time, var.type, var.cov = NULL, start.t
         level.type2 <- setdiff(levels(data[[var.type[2]]]),start.type)
         level.all <- c(start.type, level.type1, level.type2)
 
+    }else if(is.factor(data[[var.type[1]]])){
+        if(is.null(start.type)){
+            start.type <- levels(data[[var.type[1]]])[1]
+        }
+        level.type1 <- setdiff(levels(data[[var.type[1]]]),start.type)
+        level.type2 <- length(level.type1)+1
+        level.all <- c(start.type, level.type1, level.type2)
+
+        data[[var.type[2]]] <- factor(data[[var.type[2]]], levels = 0:1, labels = c(start.type,length(level.type1)+1))
+    }else if(is.factor(data[[var.type[2]]])){
+        if(is.null(start.type)){
+            if(length(levels(data[[var.type[2]]]))==2){
+                start.type <- levels(data[[var.type[2]]])[1]
+            }else{
+                start.type <- 0
+            }
+        }
+        level.type1 <- 1:(length(unique(data[[var.type[1]]]))-1)
+        level.type2 <- setdiff(levels(data[[var.type[2]]]),start.type)
+        level.all <- c(start.type, level.type1, level.type2)
+
+        data[[var.type[1]]] <- factor(data[[var.type[1]]], levels = 0:length(level.type1), labels = c(start.type,level.type1))
     }else{
         if(!is.null(start.type)){
             if(start.type!=0){
@@ -617,18 +690,25 @@ reshapeIDM <- function(data, var.id, var.time, var.type, var.cov = NULL, start.t
         level.type2 <- length(level.type1)+1
         level.all <- c(start.type, level.type1, level.type2)
         data[[var.type[2]]][data[[var.type[2]]]==1] <- level.type2
-        
     }
+    index.noswitch <- which(data[[var.time[1]]]==data[[var.time[2]]])
+    if(any(data[index.noswitch,var.type[1]]!=start.type)){
+        stop("Some patients had both the terminal event and switched to an intermediate state with a single time to event (",var.time[1],"=",var.time[2],"). \n",
+             "Maybe something went wrong when identifying the reference state (here ",start.type,"). \n")
+    }
+
 
     data.0 <- data[data[[var.type[1]]]==start.type,]
     data.1 <- data[data[[var.type[1]]]!=start.type,]
-
-
-    out.1 <- data.frame(setNames(list(data.0[[var.id]]),var.id),
-                        time.start = 0,
-                        time.stop = data.0[[var.time[2]]],
-                        state.start = start.type,
-                        state.stop = data.0[[var.type[2]]])
+    if(NROW(data.0)>0){
+        out.1 <- data.frame(setNames(list(data.0[[var.id]]),var.id),
+                            time.start = 0,
+                            time.stop = data.0[[var.time[2]]],
+                            state.start = start.type,
+                            state.stop = data.0[[var.type[2]]])
+    }else{
+        out.1 <- NULL
+    }
     out.2 <- data.frame(setNames(list(data.1[[var.id]]),var.id),
                         time.start = 0,
                         time.stop = data.1[[var.time[1]]],
@@ -640,7 +720,9 @@ reshapeIDM <- function(data, var.id, var.time, var.type, var.cov = NULL, start.t
                         state.start = data.1[[var.type[1]]],
                         state.stop = data.1[[var.type[2]]])
     if(!is.null(var.cov)){
-        out.1 <- cbind(out.1,data.0[var.cov])
+        if(!is.null(out.1)){
+            out.1 <- cbind(out.1,data.0[var.cov])
+        }
         out.2 <- cbind(out.2,data.1[var.cov])
         out.3 <- cbind(out.3,data.1[var.cov])
     }
@@ -657,13 +739,288 @@ reshapeIDM <- function(data, var.id, var.time, var.type, var.cov = NULL, start.t
 
     ## ** export
     out$state.start.num <- as.numeric(factor(out$state.start, levels = level.all))
-    out$state.start <- as.factor(out$state.start)
+    out$state.start <- factor(out$state.start, levels = level.all[-length(level.all)])
     out$state.stop.num <- as.numeric(factor(out$state.stop, levels = level.all))
+    out$state.stop <- factor(out$state.stop, levels = level.all)
     class(out) <- append("dataIDM",class(out))
     return(out)
 }
 
+## * print.riskIDM
+print.riskIDM <- function(x, ...){
+    summary(x, short = TRUE)
+
+    return(invisible(NULL))
+}
+
+
+summary.riskIDM <- function(object, short = FALSE, time = NULL, digits = c(2,3)){
+
+    n.switch <- length(object$state$switch)
+    if(n.switch==1){
+        cat("     Illness Death Model with 1 intermediate state. \n")
+    }else{
+        cat("     Illness Death Model with ",n.switch," intermediate states \n\n",sep="")
+    }
+    cat(" - ",NROW(object$data)," observations from ",length(unique(object$data[[object$args$var.id]]))," individuals\n", sep = "")
+    stoptable <- table(object$data[["state.stop"]])
+    cat("   number of stops per state: ",paste(paste0(names(stoptable)," = ",stoptable), collapse =", "),"\n", sep = "")
+    
+    cat(" - ",length(object$jump.time)," timepoints: 0 to ",max(object$jump.time),"\n", sep = "")
+    cat(" - ",length(object$scenario)," scenarios: \"",paste(object$scenario, collapse = "\"\n                \""),"\"\n", sep = "")
+    if(length(unlist(lapply(object$model,coef)))==0){
+        cat(" - non-parametric hazard estimators \n", sep = "")
+    }else{
+        cat(" - semi-parametric hazard estimator \n", sep = "")
+        if(!short){
+            
+            ls.model <- stats::setNames(lapply(object$model,function(iModel){
+                summary(iModel)$coefficient
+            }), object$state$name[-1])
+            ls.model <- ls.model[!sapply(ls.model,is.null)]
+            print(ls.model)
+        }
+    }
+    if(short){
+        cat(" - estimated state occupancy (observed scenario)\n", sep = "")
+        print(object$jump.estimate[scenario=="observed",.(min = 100*min(estimate, na.rm = TRUE),
+                                                          median = 100*median(estimate, na.rm = TRUE),
+                                                          max = 100*max(estimate, na.rm = TRUE)),by="state"],
+              row.names = FALSE)
+    }else{
+        cat(" - estimated state occupancy under each scenario\n", sep = "")
+        if(length(digits)==1){
+            digits <- rep(digits,2)
+        }
+        if(is.null(time)){
+            time <- c(quantile(object$jump.time, probs = c(0,0.25,0.5,0.75)),
+                      object$jump.estimate[,.(NNA=sum(!is.na(estimate))), by = "time"][NNA>0,max(time)])
+        }
+        dt.state <- do.call(rbind,lapply(object$states$name, function(iState){
+            model.tables(object, time = time, state = iState)
+        }))
+        dt.state$time <- round(dt.state$time, digits = digits[2])
+        dt.state$index.time <- NULL
+        dt.state$estimate <- round(100*dt.state$estimate, digits = digits[1])
+        if(object$args$n.boot>0){
+            dt.state$estimate <- paste0(dt.state$estimate," [",round(100*dt.state$lower, digits = digits[1]),";",round(100*dt.state$upper, digits = digits[1]),"]")
+        }
+        dtW.state <- data.table::dcast(data = dt.state, value.var = "estimate", formula = scenario+time ~ state)
+        dtW.state[duplicated(dtW.state$scenario), scenario := ""]
+        print(dtW.state, row.names = FALSE)
+    }
+    return(invisible(NULL))
+}
+
+
+
+## * model.tables.riskIDM (documentation)
+##' @title Extract Probabilities From IDM
+##' @description Extract occupancy probabilities, difference, or ratio between probabilities from an illness death model.
+##' @rdname model.tables.riskIDM
+##' 
+##' @param object [riskIDM] output of the \code{riskIDM} function.
+##' @param time [numeric vector] time at which the probabilities should be extracted. Can be \code{"unique"} to extract at jump times (i.e. non-duplicated risk values).
+##' @param indiv [logical] should covariate specific probabilities be extracted?
+##' @param state [character] state relative to which the occupancy probabilities should be extracted.
+##' @param contrast [character vector] optional argument indicating scenario that are to be compared.
+##' @param metric [character] how to compare the probabilities between two scenarios: \code{"difference"} (alternative - reference) or \code{"ratio"} (alternative / reference).
+##' 
+
+## * model.tables.riskIDM (code)
+##' @rdname model.tables.riskIDM
+##' @export
+model.tables.riskIDM <- function(x, time = "unique", indiv = FALSE, state = utils::tail(x$states$name,1),
+                                 contrast = NULL, metric = "difference", ...){
+
+    ## ** normalize arguments
+    dots <- list(...)
+    if(length(dots) > 0) {
+        stop("Unknown argument(s) '", paste(names(dots), collapse = "' '"), "'. \n")
+    }
+
+    x.args <- x$args
+    if(!identical(indiv,FALSE)){
+        if(x.args$indiv==FALSE){
+            stop("Incorrect value for argument \'indiv\': individual occupancy probabilities have not been stored. \n",
+                 "Consider setting the argument \'keep.indiv\' to TRUE when calling riskIDM. \n")
+        }
+        table <- data.table::copy(x$jump.indiv)
+    }else{
+        table <- data.table::copy(x$jump.estimate)
+    }
+    x.state <- x$state
+    if(is.numeric(state)){
+        state <- x.state$name[state]
+    }
+    state <- match.arg(state, x.state$name)
+
+    name.scenario <- x$scenario
+    if(!is.null(contrast)){
+        if(!identical(indiv,FALSE)){
+            stop("Cannot contrast individual occupancy probabilities. \n")
+        }
+        if(identical(contrast,"all")){
+            contrast <- name.scenario
+        }
+        if(length(contrast)<2){
+            stop("Argument \'contrast\' should contain at least two elements, e.g. ",name.scenario[1]," and ",name.scenario[2],". \n")
+        }
+        if(length(contrast)>length(name.scenario)){
+            stop("Argument \'contrast\' should contain at most ",length(name.scenario)," elements. \n")
+        }
+        if(any(duplicated(contrast))){
+            stop("Argument \'contrast\' should not contain duplicated values. \n")
+        }
+        contrast <- match.arg(contrast, name.scenario, several.ok = TRUE)
+    }
+    metric <- match.arg(metric, c("difference","ratio"))
+        
+    ## ** subset
+    ## subset in two steps to avoid confusion between the argument (states) and the column names (since data.table is used)
+    if(is.character(indiv)){
+        index.keep <- intersect(which(table$state %in% state),which(table$signature %in% indiv))
+    }else{
+        index.keep <- which(table$state %in% state)
+    }
+    table <- table[index.keep]
+
+    ## ** extract estimates
+    Utime <- sort(unique(table$time))
+    if(identical(time,"unique")){
+        if(indiv){
+            time <- unname(sort(unique(do.call(c,by(table, interaction(table$scenario,table$state,table$signature), function(iDF){
+                iDF$time[!duplicated(iDF$estimate)]
+            })))))
+        }else{
+            time <- unname(sort(unique(do.call(c,by(table, interaction(table$scenario,table$state), function(iDF){
+                iDF$time[!duplicated(iDF$estimate)]
+            })))))
+        }
+    }
+    if(!is.null(time)){
+        UindexTime <- prodlim::sindex(jump.time = Utime, eval.time = time)
+        Utime.original <- Utime[UindexTime]
+        if(indiv){
+            out <- do.call(rbind,by(table, interaction(table$scenario,table$state,table$signature), function(iDF){
+                iiDF <- iDF[match(Utime.original,iDF$time)]
+                iiDF$time <- time
+                return(iiDF)
+            }))
+        }else{
+            out <- do.call(rbind,by(table, interaction(table$scenario,table$state), function(iDF){
+                iiDF <- iDF[match(Utime.original,iDF$time)]
+                iiDF$time <- time
+                return(iiDF)
+            }))
+        }
+    }else{
+        out <- table
+        time <- Utime
+    }
+    data.table::setcolorder(out, neworder = c("state","scenario","time","index.time"))
+    out$scenario <- factor(out$scenario, levels = x$scenario)
+    data.table::setkeyv(out, cols = c("scenario","time"))
+
+    ## contrast between exposures
+    if(!is.null(contrast)){
+
+        allContrast <- combn(contrast,2)
+        n.contrast <- NCOL(allContrast)
+
+        out2 <- lapply(1:n.contrast, function(iC){ ## iC <- 1
+            iContrast1 <- allContrast[1,iC]
+            iContrast2 <- allContrast[2,iC]
+
+            ## estimate
+            if(metric == "difference"){
+                iOut <- data.table::data.table(state =  state, time = time, alternative = iContrast2, reference = iContrast1,
+                                               estimate = out[out$scenario == iContrast2,.SD$estimate] - out[out$scenario == iContrast1,.SD$estimate]
+                                               )
+            }else if(metric == "ratio"){
+                iOut <- data.table::data.table(state =  state, time = time, alternative = iContrast2, reference = iContrast1,
+                                               estimate = out[out$scenario == iContrast2,.SD$estimate] / out[out$scenario == iContrast1,.SD$estimate]
+                                               )
+                iOut$ratio[out[out$scenario == iContrast2,.SD$estimate]==0] <- 0
+            }
+            ## uncertainty
+            if(x.args$n.boot>0){
+                alpha <- 1-x.args$level
+                iBoot1 <- x$boot[scenario == iContrast1,.SD,.SDcols = c("boot","time",state)]
+                iBoot2 <- x$boot[scenario == iContrast2,.SD,.SDcols = c("boot","time",state)]
+                iIndex.keep1 <- which(iBoot1$time %in% Utime.original)
+                iIndex.keep2 <- which(iBoot2$time %in% Utime.original)
+                
+                if(metric == "difference"){
+                    iBoot <- data.table::data.table(time = time,
+                                        estimate = iBoot2[[state]][iIndex.keep2] - iBoot1[[state]][iIndex.keep1])
+                }else if(metric == "ratio"){
+                    iBoot <- data.table::data.table(time = time,
+                                        estimate = ifelse(iBoot2[[state]][iIndex.keep2]==0,0,iBoot2[[state]][iIndex.keep2] / iBoot1[[state]][iIndex.keep1])
+                                        )
+                }
+                iOut <- merge(x = iOut,
+                              y = iBoot[,.(median = median(.SD$estimate, na.rm = TRUE),
+                                           lower = quantile(.SD$estimate, probs = alpha/2, na.rm = TRUE),
+                                           upper = quantile(.SD$estimate, probs = 1-alpha/2, na.rm = TRUE)),
+                                        by="time"],
+                              by = "time")
+            }
+            return(iOut)
+        })
+        out <- do.call(rbind,out2)
+        data.table::setcolorder(out, neworder = c("state","alternative","reference","time"))
+    }
+
+    ## ** export
+    return(out)
+}
+
+## * confint.riskIDM (code)
+##' @export
+confint.riskIDM <- function(object, ...){
+
+    out <- model.tables(object, ...)
+    out$state <- NULL
+    if("index.time"  %in% names(out)){
+        out$index.time <- NULL
+    }
+    if("median" %in% names(out)){
+        out$median <- NULL
+    }
+    return(out)
+}
+
+## * coef.riskIDM (code)
+##' @export
+coef.riskIDM <- function(object, contrast = NULL, metric = "difference", ...){
+
+    outAll <- model.tables(object, contrast = contrast, metric = metric, ...)
+
+    Utime <- unique(outAll$time)
+    n.time <- length(Utime)
+    if(!is.null(contrast)){
+        if(metric == "difference"){
+            outAll$scenario <- paste0(outAll$alternative,"-",outAll$reference)
+        }else if(metric == "ratio"){
+            outAll$scenario <- paste0(outAll$alternative,"/",outAll$reference)
+        }
+    }
+    Uscenario <- unique(outAll$scenario)
+    n.scenario <- length(Uscenario)
+    out <- matrix(outAll$estimate, nrow = n.time, ncol = n.scenario, byrow = FALSE,
+                  dimnames = list(Utime, Uscenario))
+    return(out)
+}
+
+## * model.frame.riskIDM
+##' @export
+model.frame.riskIDM <- function(formula, ...){
+    formula$model
+}
+
 ## * plot.riskIDM
+##' @export
 plot.riskIDM <- function(x, ...){
     require(ggplot2)
     out <- autoplot.riskIDM(x, ...)
@@ -671,22 +1028,25 @@ plot.riskIDM <- function(x, ...){
     return(invisible(out))
 }
 
+
 ## * autoplot.riskIDM (documentation)
 ##' @title Graphical display for For Illness Death Model
-##' @description Diplay state occupation probability of an Illness Death Model
+##' @description Diplay state occupancy probability of an Illness Death Model
 ##' @rdname autoplot.riskIDM
 ##'
 ##' @param object [riskIDM] output of the \code{riskIDM} function.
-##' @param type [character] type of plot:
-##' occupation probability of a given state under various scenario (\code{"curve"})
-##' or state occupation probability stacked for a specific scenario (\code{"stackplot"}).
-##' @param which the scenario (\code{type="stackplot"}) or state (\code{type="curve"}) for which the occupation probabilities are displayed.
-##' Can also be \code{"all"} to display all possibilites using facets.
-##' Can have an optional argument \code{"indiv"} set to TRUE to display covariate specific risks.
-##' @param ci [logical] should pointwise confidence intervals be displayed. Only available for \code{type="curve"}
-##' when a non-parametric bootstrap has been performed when running  the \code{riskIDM} function.
-##' @param linewidth [numeric, >0] thickness of the line used to display the occupation probabilities.
-##' Only relevant for \code{type="curve"}.
+##' @param by [character] should the occupancy probabilities of all states be displayed on the same graphic, possibly using a different panel for each scenario (\code{"scenario"}).
+##' Or should the occupancy probabilities for all scenarios be displayed on the same graphic, possibly using a different panel for each state (\code{"state"}).
+##' @param scenario [character vector] name of the scenarios to be displayed. Use \code{"all"} to display all scenarios.
+##' @param state [character vector] name of the states to be displayed. Use \code{"all"} to display all states.
+##' @param indiv [logical or character vector] should the occupancy probabilities be displayed separately for each combination of covariates using a different type of line.
+##' Not available for \code{stackplot=TRUE}.
+##' @param ci [logical] should pointwise confidence intervals be displayed.
+##' Not available for \code{stackplot=TRUE} and require a non-parametric bootstrap has been performed when running  the \code{riskIDM} function.
+##' @param stackplot [logical] should the occupancy probability be cumulated over states under a specific scenario?
+##' Only relevant when \code{by} equals \code{"scenario"}.
+##' @param linewidth [numeric, >0] thickness of the line used to display the occupancy probabilities.
+##' Only relevant for \code{type="curve"} and \code{type="stackcurve"}.
 ##' @param ci.alpha [numeric, 0-1] transparency parameter for the pointwise confidence intervals.
 ##' @param breaks [numeric vector, 0-1] labels used for the y-axis
 ##' @param ... not used
@@ -718,163 +1078,224 @@ plot.riskIDM <- function(x, ...){
 ##'                     var.time = c("prtime", "rfstime"))
 ##' 
 ##' #### graphical display ####
-##' plot(e.riskPH, type = "stackplot")
-##' plot(e.riskPH, type = "stackplot", which = "all")
+##' plot(e.riskPH)
+##' plot(e.riskPH, scenario = "all")
+##' plot(e.riskPH, stackplot = FALSE)
+##' plot(e.riskPH2, stackplot = FALSE, scenario = "all")
 ##' 
-##' plot(e.riskPH, type = "curve")
-##' plot(e.riskPH2, type = "curve", ci = TRUE)
-##' plot(e.riskPH2, type = "curve", ci = TRUE, which = "all")
+##' plot(e.riskPH, by = "state")
+##' plot(e.riskPH, by = "state", state = "all")
+##' plot(e.riskPH2, by = "state", state = "all")
 ##'
-##'
+##' plot(e.riskPH, by = "contrast")
+##' 
 ##' #### fit IDM with covariates ####
 ##' e.riskPH3 <- riskIDM(~age, data = ebmt3, PH = FALSE, 
 ##'                      var.id = "id", keep.indiv = TRUE,
 ##'                      var.type = c("prstat", "rfsstat"),
 ##'                      var.time = c("prtime", "rfstime"))
 ##' 
-##' plot(e.riskPH3, type = "curve", ci = TRUE, which = "all", indiv = TRUE)
-##' plot(e.riskPH3, type = "curve", ci = TRUE, which = "all", indiv = FALSE)
+##' plot(e.riskPH3, by = "state", state = "all", indiv = TRUE)
+##' plot(e.riskPH3, by = "state", state = "all", indiv = ">40")
+##' plot(e.riskPH3, by = "state", state = "all", indiv = c(">40","<=20"))
+##' plot(e.riskPH3, by = "state", state = "all", indiv = FALSE)
 
 
 
 ## * autoplot.riskIDM (code)
 ##' @name autoplot.riskIDM
-autoplot.riskIDM <- function(object, type = "stackplot", which = NULL, indiv = FALSE, ci = TRUE,
-                             linewidth = 2, ci.alpha = 0.2, breaks = seq(0,1,by=0.1), ...){
+##' @export
+autoplot.riskIDM <- function(object, by = "scenario", scenario = NULL, state = NULL, indiv = FALSE, ci = NULL,
+                             stackplot = NULL, metric = "difference", linewidth = 2, ci.alpha = 0.2, breaks = NULL, ...){
 
     ## ** normalize arguments
-    type <- match.arg(type, c("stackplot","curve"))
-
+    by <- match.arg(by, c("scenario","state","contrast"))
+    
     dots <- list(...)
     if (length(dots) > 0) {
         stop("Unknown argument(s) '", paste(names(dots), collapse = "' '"), "'. \n")
     }
 
-    if(!identical(indiv,FALSE) & is.null(attr(object,"indiv"))){
-        stop("Incorrect argument \'which\': cannot contain an attribute \"type\" when individual occupancy probabilities have not been stored. \n",
-             "Consider setting the argument \'keep.indiv\' to TRUE when calling riskIDM. \n")
-    }
-    if(!identical(indiv,FALSE) & type == "stackplot"){
-        warning("Argument \'which\' ignore when argument \'type\' equals to \"stackplot\". \n")
-    }
-            
-    ## ** graphical display
-    states <- attr(object, "states")
-    jump.time <- attr(object, "jump.time")
-    tol <- attr(object, "tol")
-    n.boot <- attr(object, "n.boot")
-    if(n.boot==0){
-        ci <- FALSE
-    }
-    
-    if(type == "curve"){
-        ## prepare        
-        if(is.null(which)){
-            state <- utils::tail(states$name,1)
-            label.state2 <- label.state <- utils::tail(states$all,1)
-            label.y <- paste0("Occupancy probability for state \"",label.state,"\"")            
+    n.boot <- object$args$n.boot
+    if(!identical(indiv,FALSE)){
+        if(!is.null(ci) && ci>0){
+            stop("Incorrect argument \'ci\': cannot display uncertainty for individual occupancy probabilities. \n")
         }else{
-            if(identical(which,"all")){
-                which <- states$all
-            }
-            label.state <- match.arg(as.character(which), as.character(states$all), several.ok = TRUE)
-            state <- states$name[label.state == as.character(states$all)]
-            if(is.numeric(states$all)){
-                label.state2 <- paste0("state ", label.state)
-            }else{
-                label.state2 <- label.state
-            }
-            if(length(state)==1){
-                label.y <- paste0("Occupancy probability for state \"",label.state,"\"") 
-            }else{
-                label.y <- "Occupancy probability"
-            }
+            ci <- FALSE
         }
-        ## reshape data to long format
-        if(!identical(indiv,FALSE)){
-            outL <- reshape2::melt(attr(object,"indiv")[,c("signature","time","scenario",state)],
-                                   id.vars = c("signature","time","scenario"),
-                                   value.name = "estimate",
-                                   variable.name = "state")
-            outL$state <- factor(outL$state, levels = state, labels = label.state2)
-            if(is.character(indiv)){
-                outL$signature[outL$signature %in% indiv,]
-            }
-        }else{
-            outL <- reshape2::melt(object[,c("index.time","time","scenario",state)],
-                                   id.vars = c("index.time","time","scenario"),
-                                   value.name = "estimate",
-                                   variable.name = "state")
-            outL$state <- factor(outL$state, levels = state, labels = label.state2)
-            if(ci){
-                outL.ci <- cbind(reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".lower"))],
-                                                id.vars = c("index.time","time","scenario"),
-                                                value.name = "lower", variable.name = "state"),
-                                 upper = reshape2::melt(object[,c("index.time","time","scenario",paste0(state,".upper"))],
-                                                        id.vars = c("index.time","time","scenario"),
-                                                        value.name = "upper", variable.name = "state")$upper)
-                outL.ci$state <- factor(outL.ci$state, levels = paste0(state,".lower"), labels = label.state2)
-            }
+        if(object$args$indiv == FALSE){
+            stop("Incorrect value for argument \'indiv\': individual occupancy probabilities have not been stored. \n",
+                 "Consider setting the argument \'indiv\' to TRUE when calling riskIDM. \n")
         }
-        ## reshape2::dcast(object[object$time>11.9,c("time","survival","scenario")],
-        ##                 formula = scenario ~ time, value.var = "survival")
-        
-        ## graphical display
-        if(!identical(indiv,FALSE)){
-            gg <- ggplot2::ggplot(outL, ggplot2::aes(x = time, linetype = signature, group = interaction(scenario,signature,drop=TRUE)))
-            indiv.levels <- unique(outL$signature)
-            indiv.linetype <- setNames(1 + 1:length(indiv.levels), indiv.levels)
-            gg <- gg + ggplot2::scale_linetype_manual(values = indiv.linetype, breaks = names(indiv.linetype))            
-        }else{
-            gg <- ggplot2::ggplot(outL, ggplot2::aes(x = time, group = scenario))
-            if(n.boot>0 & ci){
-                gg <- gg + ggplot2::geom_ribbon(data = outL.ci, ggplot2::aes(ymin = lower, ymax = upper, fill = scenario), alpha = ci.alpha)
-            }
+        if(!is.null(stackplot) && stackplot == TRUE){
+            warning("Argument \'indiv\' ignored when argument \'stackplot\' is TRUE. \n")
+            indiv <- FALSE
         }
-        gg <- gg + ggplot2::geom_step(linewidth = linewidth, ggplot2::aes(y = estimate, color = scenario))
-        gg <- gg + ggplot2::scale_y_continuous(breaks = breaks, labels=scales::percent)
-        gg <- gg + ggplot2::labs(fill = "Scenario", color = "Scenario", y = label.y)
-        if(length(label.state)>1){
-            gg <- gg + ggplot2::facet_wrap(~state)
+        if(is.character(indiv)){
+            indiv <- match.arg(indiv, unique(object$jump.indiv$signature), several.ok = TRUE)
         }
+    }else if(!is.null(ci) && ci>0 && n.boot>0){
+        stop("Incorrect argument \'ci\': require to have performed non-parametric bootstrap to display uncertainty. \n",
+             "Consider setting the argument \'n.boot\' to a large value (e.g. 10000) when calling riskIDM. \n")
+       
+    }else{
+        ci <- n.boot>0
+    }
+    if(is.null(stackplot)){
+        stackplot <- (by == "scenario")
+    }else if(stackplot && by == "state"){
+        stop("Incorrect value for argument stackplot: should be FALSE when argument \'by\' is \"state\". \n")
+    }
+    object.scenario <- object$scenario
+    if(is.null(scenario)){
+        if(by == "scenario"){scenario <- "observed"}else{scenario <- object.scenario}
+    }else if(identical(scenario,"all")){
+        scenario <- object.scenario
+    }else{
+        scenario <- match.arg(scenario, object.scenario)
+    }
+    object.states <- object$states
+    if(is.null(state)){
+        if(by == "scenario"){state <- object.states$name}else{state <- utils::tail(object.states$name,1)}
+    }else if(identical(state,"all")){
+        state <- object.states$name
+    }else{
+        state <- match.arg(state, object.states$name)
+    }
+    if(is.null(breaks) && by!="contrast"){
+        breaks  <- seq(0,1,0.1)
+    }
 
-    }else if(type == "stackplot"){
-        valid.scenario <- levels(object$scenario)
-        if(is.null(which)){
-            which <- "observed"
-        }else if(identical(which, "all")){
-            which <- valid.scenario
+    ## ** dataset
+    if(!identical(indiv,FALSE)){
+        table.gg <- data.table::copy(object$jump.indiv)
+        if(is.character(indiv)){
+            table.gg <- table.gg[table.gg$signature %in% indiv,]
         }
-        scenario <- match.arg(which, valid.scenario, several.ok = TRUE)
-        if(length(scenario)==1){
-            label.y <- paste0("Occupancy probability for scenario \"",scenario,"\"") 
+        indiv.levels <- unique(table.gg$signature)
+        indiv.linetype <- setNames(1 + 1:length(indiv.levels), indiv.levels)
+    }else if(by == "contrast"){
+        table.gg <- model.tables(object, contrast = scenario, state = state, metric = metric)
+        if(metric == "difference"){
+            table.gg$scenario <- paste0(table.gg$alternative," - ",table.gg$reference)
+        }else if(metric == "ratio"){
+            table.gg$scenario <- paste0(table.gg$alternative," / ",table.gg$reference)
+        }
+        indiv.levels <- NULL
+        indiv.linetype <- NULL
+        scenario <- unique(table.gg$scenario)
+    }else{
+        table.gg <- data.table::copy(object$jump.estimate)
+        indiv.levels <- NULL
+        indiv.linetype <- NULL
+    }
+    ## subset in two steps to avoid confusion between the argument (state,scenario) and the column names (since data.table is used)
+    index.keep <- intersect(which(table.gg$state %in% state),which(table.gg$scenario %in% scenario))
+    table.gg <- table.gg[intersect(index.keep,which(!is.na(table.gg$estimate)))]
+    table.gg$scenario <- factor(table.gg$scenario, scenario)
+
+    if(stackplot){
+        tol <- object$tol
+        if(!identical(indiv,FALSE)){
+            table.gg <- do.call(rbind,by(table.gg,interaction(table.gg$scenario,table.gg$state,table.gg$signature), function(iDF){
+                iDF2 <- iDF[1:(NROW(iDF)-1)]
+                iDF2$time <- iDF$time[2:NROW(iDF)]-tol
+                iOut <- rbind(iDF,iDF2)
+                setkeyv(iOut, c("scenario","state","signature","time"))
+                return(iOut)
+            }))
+        }else{
+            table.gg <- do.call(rbind,by(table.gg,interaction(table.gg$scenario,table.gg$state), function(iDF){
+                iDF2 <- iDF[1:(NROW(iDF)-1)]
+                iDF2$time <- iDF$time[2:NROW(iDF)]-tol
+                iOut <- rbind(iDF,iDF2)
+                setkeyv(iOut, c("scenario","state","time"))
+                return(iOut)
+            }))
+        }
+    }
+    ## ** prepare for graph 
+    Ustate <- unique(table.gg$state)
+    Uscenario <- unique(table.gg$scenario)
+    if(by == "scenario"){
+        name.color <- c("state","State")
+        name.facet <- "scenario"
+        if(length(Uscenario)==1){
+            label.y <- paste0("Occupancy probability for scenario \"",Uscenario,"\"")
+            formula.facet <- NULL
         }else{
             label.y <- "Occupancy probability"
+            formula.facet <- ~scenario
         }
-        out1 <- object[object$scenario %in% scenario,c("index.time","time","scenario",states$name)]
-        out1L <- reshape2::melt(out1, id.vars = c("index.time","time","scenario"))
-        if(is.character(states$all)){
-            out1L$variable <- factor(out1L$variable, levels = rev(c(states$censoring, states$switch, states$outcome)))
+        if(is.numeric(object.states$all)){
+            table.gg$state <- factor(table.gg$state, levels = object.states$name, labels = object.states$all)
+        }
+    }else if(by == "state"){
+        name.color <- c("scenario","Scenario")
+        name.facet <- "state"
+        if(length(Ustate)==1){
+            if(is.numeric(object.states$all)){
+                label.y <- paste0("Occupancy probability for state ",object.states$all[object.states$name==Ustate])
+            }else{
+                label.y <- paste0("Occupancy probability for state \"",Ustate,"\"")
+            }
+            formula.facet <- NULL
         }else{
-            out1L$variable <- factor(out1L$variable,
-                                     levels = rev(states$name),
-                                     labels = rev(states$all))
+            label.y <- "Occupancy probability"
+            formula.facet <- ~state
         }
-        out1L.after <- as.data.frame(out1L)
-        out1L.after$time <- c(jump.time[-1]-tol,tail(jump.time,1)-tol)[out1L.after$index.time]
-
-        gg <- ggplot2::ggplot(rbind(out1L,out1L.after), ggplot2::aes(x = time, y = value, group = variable, fill = variable))
-        gg <- gg + ggplot2::geom_area() + ggplot2::labs(fill = "State", y = label.y)
-        gg <- gg + ggplot2::scale_y_continuous(breaks = breaks, labels=scales::percent)
-        gg <- gg + ggplot2::coord_cartesian(ylim = c(0,1))
-        if(length(scenario)>1){
-            gg <- gg + ggplot2::facet_wrap(~scenario)
+        if(is.numeric(object.states$all)){
+            table.gg$state <- factor(table.gg$state, levels = object.states$name, labels = paste0("state ",object.states$all))
+        }
+    }else if(by == "contrast"){
+        name.color <- c("scenario","Contrast")
+        name.facet <- "state"
+        if(is.numeric(object.states$all)){
+            label.y <- paste0("Occupancy probability for state ",object.states$all[object.states$name==Ustate])
+        }else{
+            label.y <- paste0("Occupancy probability for state \"",Ustate,"\"")
+        }
+        formula.facet <- NULL
+        if(is.numeric(object.states$all)){
+            table.gg$state <- factor(table.gg$state, levels = object.states$name, labels = paste0("state ",object.states$all))
         }
     }
-
-    ## ** export
+    if(stackplot){
+        table.gg$state <- factor(table.gg$state, levels = rev(levels(table.gg$state)))
+    }
+    
+    ## ** graphical display
+    if(!identical(indiv,FALSE)){
+        gg <- ggplot2::ggplot(table.gg, ggplot2::aes(x = time, y = estimate, linetype = signature, group = interaction(.data[[name.color[1]]],signature,drop=TRUE)))
+        gg <- gg + ggplot2::scale_linetype_manual(values = indiv.linetype, breaks = names(indiv.linetype))            
+    }else{
+        gg <- ggplot2::ggplot(table.gg, ggplot2::aes(x = time, y = estimate, group = .data[[name.color[1]]]))
+        if(stackplot == FALSE & n.boot>0 & ci){
+            gg <- gg + ggplot2::geom_ribbon(ggplot2::aes(ymin = lower, ymax = upper, fill = .data[[name.color[1]]]), alpha = ci.alpha)
+            gg <- gg + ggplot2::labs(fill = name.color[2])
+        }
+    }
+    if(stackplot){
+        gg <- gg + ggplot2::geom_area(ggplot2::aes(fill = .data[[name.color[1]]])) 
+        gg <- gg + ggplot2::labs(fill = name.color[2], y = label.y)
+        gg <- gg + ggplot2::coord_cartesian(ylim = c(0,1))
+    }else{
+        gg <- gg + ggplot2::geom_step(linewidth = linewidth, ggplot2::aes(y = estimate, color = .data[[name.color[1]]]))
+        gg <- gg + ggplot2::labs(color = name.color[2], y = label.y)
+    }
+    if(is.null(breaks)){
+        gg <- gg + ggplot2::scale_y_continuous(labels=scales::percent)
+    }else{
+        gg <- gg + ggplot2::scale_y_continuous(breaks = breaks, labels=scales::percent)
+    }
+    if(!is.null(formula.facet)){
+        gg <- gg + ggplot2::facet_wrap(formula.facet)
+    }
     gg <- gg + ggplot2::theme(axis.ticks.length=unit(.25, "cm"),
                               legend.key.width = unit(3,"line"))
+
+
+    ## ** export
     return(gg)
 }
 
