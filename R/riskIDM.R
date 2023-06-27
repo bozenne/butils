@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 17 2023 (11:24) 
 ## Version: 
-## Last-Updated: jun 22 2023 (16:34) 
+## Last-Updated: jun 27 2023 (16:05) 
 ##           By: Brice Ozenne
-##     Update #: 512
+##     Update #: 521
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -64,6 +64,7 @@
 ##' summary(e.riskPH)
 ##' model.tables(e.riskPH)
 ##' confint(e.riskPH, time = 1:10)
+##' confint(e.riskPH, time = 2:11)
 ##' coef(e.riskPH, time = 1:10)
 ##' model.tables(e.riskPH, contrast = "all", time = c(1,2))
 ##' confint(e.riskPH, contrast = "all", time = c(1,2))
@@ -75,7 +76,8 @@
 ##' plot(e.riskPH, by = "contrast")
 ##'
 ##' #### PH with covariates ####
-##' eAdj.riskPH <- riskIDM(~age, data = ebmt3, PH = TRUE,
+##' dt.ebmt3 <- as.data.table(ebmt3)
+##' eAdj.riskPH <- riskIDM(~age, data = dt.ebmt3, PH = TRUE,
 ##'                        var.id = "id", 
 ##'                        var.type = c("prstat", "rfsstat"),
 ##'                        var.time = c("prtime", "rfstime"))
@@ -153,11 +155,13 @@
 ##'                     var.time = c("time.switch","time.event"))
 ##'
 ##' summary(eME.riskPH)
+##' confint(eME.riskPH, contrast = "all")
 ##' plot(eME.riskPH, by = "scenario")
 ##' plot(eME.riskPH, by = "scenario", scenario = "all")
 ##' plot(eME.riskPH, by = "state")
 ##' plot(eME.riskPH, by = "state", state = "all")
 ##' plot(eME.riskPH, by = "contrast", scenario = "all")
+##' plot(eME.riskPH, by = "contrast", scenario = c("observed","no OC, IUD"))
 
 
 ## * riskIDM (code)
@@ -307,14 +311,14 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL,
     ## ** prepare
     ls.formula <- vector(mode = "list", length = n.switch+1)
     for(iSwitch in 1:n.switch){ ## iSwitch <- 1
-        ls.formula[[iSwitch]] <- as.formula(paste0("Surv(time.stop, state.stop.num==",iSwitch+1,") ~ ", strsplit(deparse(formula[[1]]), split = "~")[[1]][2]))
+        ls.formula[[iSwitch]] <- stats::update(formula[[1]], paste0("Surv(time.stop, state.stop.num==",iSwitch+1,") ~ ."))
     }
 
     n.cov <- c(length(all.vars(formula[[1]])),length(all.vars(formula[[2]])))
     if(n.cov[2]==0){
         ls.formula[[n.switch+1]] <- as.formula(paste0("Surv(time.start, time.stop, state.stop.num==",n.switch+2,") ~ ",cov.state))
     }else{
-        ls.formula[[n.switch+1]] <- as.formula(paste0("Surv(time.start, time.stop, state.stop.num==",n.switch+2,") ~ ",cov.state," + ",strsplit(deparse(formula[[2]]), split = "~")[[1]][2]))
+        ls.formula[[n.switch+1]] <- stats::update(formula[[2]], paste0("Surv(time.start, time.stop, state.stop.num==",n.switch+2,") ~ ",cov.state," + ."))
     }
     ## always keep 0, the last observed time for each type of event, and all event times that are not censoring
     
@@ -394,6 +398,7 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL,
             pred01 <- do.call(rbind,
                               lapply(e.switch, function(iModel){predictCox(iModel, newdata = iDataL0.red, times = jump.timeR, type = "hazard")$hazard})
                               )
+            iDataL0.red <- as.data.frame(iDataL0.red) ## ensures that predictCox did not transform it into a data.table
             ID.pred01 <- do.call(rbind,lapply(e.switch, function(iModel){iDataL0.red[var.id]}))
             indexID.pred01 <- by(1:NROW(ID.pred01),ID.pred01,identity)
 
@@ -743,6 +748,7 @@ reshapeIDM <- function(data, var.id, var.time, var.type, var.cov = NULL, start.t
     out$state.stop.num <- as.numeric(factor(out$state.stop, levels = level.all))
     out$state.stop <- factor(out$state.stop, levels = level.all)
     class(out) <- append("dataIDM",class(out))
+    
     return(out)
 }
 
@@ -1152,7 +1158,7 @@ autoplot.riskIDM <- function(object, by = "scenario", scenario = NULL, state = N
     }else if(identical(scenario,"all")){
         scenario <- object.scenario
     }else{
-        scenario <- match.arg(scenario, object.scenario)
+        scenario <- match.arg(scenario, object.scenario, several.ok = TRUE)
     }
     object.states <- object$states
     if(is.null(state)){
