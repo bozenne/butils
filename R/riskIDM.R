@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 17 2023 (11:24) 
 ## Version: 
-## Last-Updated: jul  4 2023 (18:19) 
+## Last-Updated: jul  4 2023 (18:25) 
 ##           By: Brice Ozenne
-##     Update #: 568
+##     Update #: 569
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -26,17 +26,20 @@
 ##' @param PH [logical] should the ratio between the hazard with and without exposure be time independent?
 ##' @param time [numeric vector, >=0] times at which the occupancy probability should be estimated.
 ##' @param intervention [list of matrix] list where each element is a matrix used to deduce the intervention hazards by premultiplying the estimated hazard.
-##' @param n.boot [interger, >=0] When strictly positive a non-parametric bootstrap is performed to quantify the uncertainty of the estimates.
-##' The value then indicates the number of bootstrap samples.
-##' @param level [numeric, 0.1] Confidence level for the confidence interval.
 ##' @param var.id [character] name of the column containing the subject id, i.e. unique identifier for each line.
 ##' @param var.time [character vector of length 2] name of the columns containing the time variables, i.e. time at which each type of event happen (intermediate or absorbing).
 ##' If an intermediate event does not occur (e.g. no switch of treatment) then the time variable should be set to the end of follow-up time.
 ##' @param var.type [character vector of length 2] name of the columns containing event type indicator.
 ##' The first event type indicator can be categorical (multiple intermediate states) but the last one should be binary.
 ##' @param start.type [character] starting state. Deduced from \code{var.type} if left unspecified.
-##' @param keep.indiv [logical] should covariate specific occupancy probabilities be output?
+##' @param n.boot [interger, >=0] When strictly positive a non-parametric bootstrap is performed to quantify the uncertainty of the estimates.
+##' The value then indicates the number of bootstrap samples.
+##' @param type.ci [character] Method used to evaluate confidence intervals from bootstrap samples: under normality assumption (\code{"gaussian"}) or non-parametric (\code{"percentile"}).
+##' The later typically require more bootstrap samples to provide reliable results (in term of Monte Carlo error).
+##' @param level [numeric, 0.1] Confidence level for the confidence interval.
 ##' @param cpus [integer, >0] the number of CPU to use when doing bootstrap resampling. Default value is 1.
+##' @param seed [integer, >0] initialization of the pseudo-random number generator.
+##' @param keep.indiv [logical] should covariate specific occupancy probabilities be output?
 ##' @param trace [logical] should a progress bar be used to display the execution of the resampling procedure?
 
 ## * riskIDM (examples)
