@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: maj 17 2023 (11:24) 
 ## Version: 
-## Last-Updated: jun 27 2023 (16:05) 
+## Last-Updated: jul  4 2023 (18:19) 
 ##           By: Brice Ozenne
-##     Update #: 521
+##     Update #: 568
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -29,8 +29,6 @@
 ##' @param n.boot [interger, >=0] When strictly positive a non-parametric bootstrap is performed to quantify the uncertainty of the estimates.
 ##' The value then indicates the number of bootstrap samples.
 ##' @param level [numeric, 0.1] Confidence level for the confidence interval.
-##' @param cl [interger, >=0] A cluster object created by \code{makeCluster}, or an integer to indicate number of child-processes (integer values are ignored on Windows) for parallel evaluations
-##' Passed to \code{pblapply}. Ignored when \code{trace=FALSE}.
 ##' @param var.id [character] name of the column containing the subject id, i.e. unique identifier for each line.
 ##' @param var.time [character vector of length 2] name of the columns containing the time variables, i.e. time at which each type of event happen (intermediate or absorbing).
 ##' If an intermediate event does not occur (e.g. no switch of treatment) then the time variable should be set to the end of follow-up time.
@@ -38,6 +36,7 @@
 ##' The first event type indicator can be categorical (multiple intermediate states) but the last one should be binary.
 ##' @param start.type [character] starting state. Deduced from \code{var.type} if left unspecified.
 ##' @param keep.indiv [logical] should covariate specific occupancy probabilities be output?
+##' @param cpus [integer, >0] the number of CPU to use when doing bootstrap resampling. Default value is 1.
 ##' @param trace [logical] should a progress bar be used to display the execution of the resampling procedure?
 
 ## * riskIDM (examples)
@@ -58,10 +57,11 @@
 ##'
 ##' #### PH without covariates ####
 ##' e.riskPH <- riskIDM(~1, data = ebmt3, PH = TRUE,
-##'                     var.id = "id", n.boot = 100,
+##'                     var.id = "id", n.boot = 100, seed = 10,
 ##'                     var.type = c("prstat", "rfsstat"),
 ##'                     var.time = c("prtime", "rfstime"))
 ##' summary(e.riskPH)
+##' model.frame(e.riskPH)
 ##' model.tables(e.riskPH)
 ##' confint(e.riskPH, time = 1:10)
 ##' confint(e.riskPH, time = 2:11)
@@ -75,6 +75,12 @@
 ##' plot(e.riskPH, by = "state", state = "all")
 ##' plot(e.riskPH, by = "contrast")
 ##'
+##' ## parallel calculations
+##' e.riskPH2 <- riskIDM(~1, data = ebmt3, PH = TRUE,
+##'                     var.id = "id", n.boot = 100, cpus = 5, seed = 10,
+##'                     var.type = c("prstat", "rfsstat"),
+##'                     var.time = c("prtime", "rfstime"))
+##' 
 ##' #### PH with covariates ####
 ##' dt.ebmt3 <- as.data.table(ebmt3)
 ##' eAdj.riskPH <- riskIDM(~age, data = dt.ebmt3, PH = TRUE,
@@ -85,6 +91,7 @@
 ##' coef(eAdj.riskPH, time = 1:10)
 ##' plot(eAdj.riskPH, by = "scenario")
 ##' plot(eAdj.riskPH, by = "state")
+##' model.frame(eAdj.riskPH)
 ##'
 ##' #### NPH without covariates ####
 ##' e.riskNPH <- riskIDM(~1, data = ebmt3, PH = FALSE,
@@ -92,6 +99,7 @@
 ##'                     var.type = c("prstat", "rfsstat"),
 ##'                     var.time = c("prtime", "rfstime"))
 ##'
+##' model.frame(e.riskNPH)
 ##' plot(e.riskNPH)
 ##' plot(e.riskNPH, by = "state")
 ##' plot(e.riskNPH, by = "contrast")
@@ -155,6 +163,7 @@
 ##'                     var.time = c("time.switch","time.event"))
 ##'
 ##' summary(eME.riskPH)
+##' model.frame(eME.riskPH)
 ##' confint(eME.riskPH, contrast = "all")
 ##' plot(eME.riskPH, by = "scenario")
 ##' plot(eME.riskPH, by = "scenario", scenario = "all")
@@ -162,6 +171,37 @@
 ##' plot(eME.riskPH, by = "state", state = "all")
 ##' plot(eME.riskPH, by = "contrast", scenario = "all")
 ##' plot(eME.riskPH, by = "contrast", scenario = c("observed","no OC, IUD"))
+##' plot(eME.riskPH, by = "contrast", scenario = c("observed","no OC, IUD","IUD instead of OC"))
+##'
+##' #### exposure stratified on time of start ####
+##'
+##' ebmt3$prstat3 <- factor(ebmt3$prstat * as.numeric(cut(ebmt3$prtime,c(0,0.06,0.1,10))))
+##' table(ebmt3$prstat3, useNA = "always")
+##' 
+##' e.riskPH3 <- riskIDM(~1, data = ebmt3, PH = TRUE,
+##'                     var.id = "id", n.boot = 100, seed = 10,
+##'                     var.type = c("prstat3", "rfsstat"),
+##'                     var.time = c("prtime", "rfstime"))
+##' 
+##' model.frame(e.riskPH3)
+##' autoplot(e.riskPH3, by = "scenario") + coord_cartesian(xlim = c(0,0.2))
+##' autoplot(e.riskPH3, stackplot = FALSE, by = "scenario") + coord_cartesian(xlim = c(0,0.2))
+##'
+##'
+##' ebmt3.split <- rbind(data.frame(id = ebmt3$id, exposure = 0, start = 0,
+##'                                  stop = pmin(ebmt3$rfstime, ebmt3$prtime),
+##'                                  event = ebmt3$rfsstat*(ebmt3$prstat==0)),
+##'                      data.frame(id = ebmt3[ebmt3$prstat==1,"id"], exposure = 1,
+##'                                  start = ebmt3[ebmt3$prstat==1,"prtime"],
+##'                                  stop = ebmt3[ebmt3$prstat==1,"rfstime"],
+##'                                  event = ebmt3[ebmt3$prstat==1,"rfsstat"])
+##' )
+##'
+##' model.frame(e.riskPH)
+##' coxph(Surv(start,stop,event)~exposure, data = ebmt3.split)
+##'
+##' model.frame(e.riskPH3)
+##' coxph(Surv(start,stop,event)~exposure, data = ebmt3.split[ebmt3.split$start<=0.06,])
 
 
 ## * riskIDM (code)
@@ -169,7 +209,7 @@
 ##' @export
 riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL,
                     var.id, var.time, var.type, start.type = NULL, 
-                    n.boot = 0, level = 0.95, cl = NULL,
+                    n.boot = 0, type.ci = "gaussian", level = 0.95, cpus = 1, seed = NULL,
                     keep.indiv = FALSE, trace = TRUE){
 
     require(riskRegression)
@@ -307,6 +347,21 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL,
             }
         }
     }
+
+    ## cpus
+    if(identical(cpus,"all")){
+        cpus <- parallel::detectCores()
+    }else{
+        if(length(cpus)!=1){
+            stop("Argument \'cpus\' must have length 1. \n")
+        }
+        if(cpus %in% 1:parallel::detectCores() == FALSE){
+            stop("Argument \'cpus\' must take values between 1 and ",parallel::detectCores(),". \n")
+        }
+    }
+
+    ## type.ci
+    type.ci <- match.arg(type.ci, c("percentile","gaussian"))
     
     ## ** prepare
     ls.formula <- vector(mode = "list", length = n.switch+1)
@@ -352,7 +407,8 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL,
         ## *** fit cox models
         e.switch <- lapply(1:n.switch, function(iSwitch){
             iFF.txt <- paste(deparse(ls.formula[[iSwitch]]), collapse = "") ## handle long formula that would be split on several lines
-            e.outcome <- eval(parse(text=paste0("coxph(",iFF.txt,", data = iDataL0, y=TRUE, x=TRUE)")))
+            iOut <- eval(parse(text=paste0("coxph(",iFF.txt,", data = iDataL0, y=TRUE, x=TRUE)")))
+            return(iOut)
         })
         iFF.txt <- paste(deparse(ls.formula[[n.switch+1]]), collapse = "") ## handle long formula that would be split on several lines
         e.outcome <- eval(parse(text=paste0("coxph(",iFF.txt,", data = iDataL, y=TRUE, x=TRUE)")))
@@ -493,39 +549,101 @@ riskIDM <- function(formula, data, PH, time = NULL, intervention = NULL,
                                            value.name = "estimate",
                                            variable.name = "state")
     }
-    ## ** evaluate uncertainty
+    ## ** evaluate uncertainty    
     if(n.boot>0){
         alpha <- 1-level
-        if(trace){
-            require(pbapply)
-            ls.out <- pbapply::pblapply(1:n.boot, function(iBoot){
-                iRes <- try(warper(iBoot, sep.cov = NULL))
-                if(inherits(iBoot,"try-error")){
-                    return(NULL)
-                }else{
-                    return(cbind(boot = iBoot, iRes))
-                }
-            }, cl = cl)
-        }else{
-            ls.out <- lapply(1:n.boot, function(iBoot){
-                iRes <- try(warper(iBoot, sep.cov = NULL))
-                if(inherits(iBoot,"try-error")){
-                    return(NULL)
-                }else{
-                    return(cbind(boot = iBoot, iRes))
-                }
-            } = NULL)
+        if (!is.null(seed)) {
+            if(!is.null(get0(".Random.seed"))){ ## avoid error when .Random.seed do not exists, e.g. fresh R session with no call to RNG
+                old <- .Random.seed # to save the current seed
+                on.exit(.Random.seed <<- old) # restore the current seed (before the call to the function)
+            }else{
+                on.exit(rm(.Random.seed, envir=.GlobalEnv))
+            }
+            tol.seed <- 10^(floor(log10(.Machine$integer.max))-1)
+            set.seed(seed)
+            seqSeed <- sample.int(tol.seed, n.boot,  replace = FALSE)        
         }
+
+        if(cpus==1){
+            if (trace > 0) {
+                requireNamespace("pbapply")
+                method.loop <- pbapply::pblapply
+            }else{
+                method.loop <- lapply
+            }
+
+            ls.out <- do.call(method.loop,
+                              args = list(X = 1:n.boot,
+                                          FUN = function(iB){
+                                              if(!is.null(seed)){set.seed(seqSeed[iB])}
+                                              iRes <- try(warper(iB, sep.cov = NULL))
+                                              if(inherits(iRes,"try-error")){
+                                                  return(NULL)
+                                              }else if(!is.null(seed)){
+                                                  return(cbind(boot = iB, seed = seqSeed[iB], iRes))
+                                              }else{
+                                                  return(cbind(boot = iB, iRes))
+                                              }
+                                          })
+                              )
+        }else if(cpus>1){
+            cl <- parallel::makeCluster(cpus)
+            ## link to foreach
+            doSNOW::registerDoSNOW(cl)
+            ## export
+            parallel::clusterExport(cl, varlist = c("reshapeIDM",".hazard2risk"), envir = environment())
+            ## seed
+            if (!is.null(seed)) {
+                parallel::clusterExport(cl, varlist = "seqSeed", envir = environment())
+            }         
+            ## export package
+            parallel::clusterCall(cl, fun = function(x){
+                suppressPackageStartupMessages(library(riskRegression, quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE))
+                suppressPackageStartupMessages(library(data.table, quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE))
+                suppressPackageStartupMessages(library(survival, quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE))
+            })
+            ## define progress bar
+            if(trace>0){
+                pb <- utils::txtProgressBar(max = n.boot, style = 3)          
+                progress <- function(n){utils::setTxtProgressBar(pb, n)}
+                opts <- list(progress = progress)
+            }else{
+                opts <- list()
+            }
+            
+            ls.out <- foreach::`%dopar%`(
+                                   foreach::foreach(iB=1:n.boot, .options.snow = opts), {
+                                       if(!is.null(seed)){set.seed(seqSeed[iB])}
+                                       iRes <- try(warper(iB, sep.cov = NULL))
+                                       if(inherits(iRes,"try-error")){
+                                           return(NULL)
+                                       }else if(!is.null(seed)){
+                                           return(cbind(boot = iB, seed = seqSeed[iB], iRes))
+                                       }else{
+                                           return(cbind(boot = iB, iRes))
+                                       }
+                                   })
+            if(trace>0){close(pb)}
+            parallel::stopCluster(cl)
+        }
+
         out$boot <- data.table::as.data.table(do.call(rbind,ls.out)[,c("boot","index.time","time","scenario",states$name)])
 
-        dt.bootmedian <- out$boot[,lapply(.SD, median, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
-        dt.bootlower <- out$boot[,lapply(.SD, quantile, 1-alpha/2, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
-        dt.bootupper <- out$boot[,lapply(.SD, quantile, alpha/2, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
+        if(type.ci == "percentile"){
+            dt.bootlocation <- out$boot[,lapply(.SD, median, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
+            dt.bootlower <- out$boot[,lapply(.SD, quantile, alpha/2, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
+            dt.bootupper <- out$boot[,lapply(.SD, quantile, 1-alpha/2, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
+        }else if(type.ci == "gaussian"){
+            qGauss <- c(qt(alpha/2, df = NROW(data)), qt(1-alpha/2, df = NROW(data)))
+            dt.bootlocation <- out$boot[,lapply(.SD, mean, na.rm = TRUE), by = c("time","scenario"), .SDcols = states$name]
+            dt.bootlower <- out$boot[,lapply(.SD, function(iX){mean(iX, na.rm = TRUE) + qGauss[1]*sd(iX, na.rm = TRUE)}), by = c("time","scenario"), .SDcols = states$name]
+            dt.bootupper <- out$boot[,lapply(.SD, function(iX){mean(iX, na.rm = TRUE) + qGauss[2]*sd(iX, na.rm = TRUE)}), by = c("time","scenario"), .SDcols = states$name]            
+        }
 
-        dt.boot <- data.table::melt(dt.bootmedian,
+        dt.boot <- data.table::melt(dt.bootlocation,
                                     id.vars = c("time","scenario"),
                                     measure.vars = states$name,
-                                    value.name = "median",
+                                    value.name = "boot.estimate",
                                     variable.name = "state")
         dt.boot$lower <- data.table::melt(dt.bootlower,
                                           id.vars = c("time","scenario"),
@@ -1105,8 +1223,6 @@ plot.riskIDM <- function(x, ...){
 ##' plot(e.riskPH3, by = "state", state = "all", indiv = ">40")
 ##' plot(e.riskPH3, by = "state", state = "all", indiv = c(">40","<=20"))
 ##' plot(e.riskPH3, by = "state", state = "all", indiv = FALSE)
-
-
 
 ## * autoplot.riskIDM (code)
 ##' @name autoplot.riskIDM
