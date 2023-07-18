@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 26 2018 (09:13) 
 ## Version: 
-## Last-Updated: sep  7 2021 (11:35) 
+## Last-Updated: jul 18 2023 (14:58) 
 ##           By: Brice Ozenne
-##     Update #: 283
+##     Update #: 287
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -431,16 +431,13 @@ autoplot.breakpoint <- function(object, newdata = NULL, pattern = NULL, plot = T
         if(pattern %in% c("111","11","01")){        
             vcov.tempo <- vcov(out$model)
         }else if(pattern %in% c("101","10")){
-            tryPkg <- requireNamespace("lavaSearch2")
-            if("try-error" %in% class(tryPkg)){
-                stop(tryPkg)
-            }
-            iid.tempo <- lavaSearch2::iid2(out$model, robust = FALSE)
+            iid.robust <- lava::iid(out$model)
+            robust2model <- sqrt(diag(vcov(out$model))/colSums(iid.robust^2))
+            iid.model <- sweep(iid.robust, FUN = "*", STATS = robust2model, MARGIN = 2)
 
-            m.tempo <- cbind(-iid.tempo[,paste0("I(",breakpoint.var," - Us)")])
+            m.tempo <- cbind(-iid.model[,paste0("I(",breakpoint.var," - Us)")])
             colnames(m.tempo) <- "Us"
-            vcov.tempo <- crossprod(cbind(iid.tempo,m.tempo))
-        
+            vcov.tempo <- crossprod(cbind(iid.model,m.tempo))        
         }
     
         ## SE via the influence function
