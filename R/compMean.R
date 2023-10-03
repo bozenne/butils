@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: nov 10 2020 (10:27) 
 ## Version: 
-## Last-Updated: jan  3 2023 (10:33) 
+## Last-Updated: okt  3 2023 (10:32) 
 ##           By: Brice Ozenne
-##     Update #: 23
+##     Update #: 62
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -25,7 +25,9 @@
 ##' @param permutation.type [character] Should the group labels (\code{"group"}) or the outcome labels (\code{"Y"}) be permuted.
 ##' In the latter case, exactly two outcomes should be specified and the function will test whether the group differences are the same for both outcomes.
 ##' @param n.perm [integer, >0] number of permutations.
+##' @param na.rm [logical] Should missing values be ignored when evaluating mean and variance (complete case analysis).
 ##' @param cl [integer, >0] Optional cluster or number of cores used to run the permutations in parallel.
+##' No available for Windows OS.
 ##' @param trace [logical] Should a progress bar be displayed to follow the permutations.
 ##'
 ##' @details Several adjustment for multiple comparisons are available via the print function \itemize{
@@ -45,115 +47,119 @@
 #' n <- 100
 #'
 #' #### 1- H0 under the global null ####
-#' dt <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "D1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "W1"))
+#' dtH0 <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "D1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "W1"))
 #'
-#' dt.mean <- dt[,.(meanY1 = mean(Y1)),by=c("group","time")]
-#' dt.mean[group=="T", diff(meanY1)] - dt.mean[group=="C", diff(meanY1)]
+#' dtH0.mean <- dtH0[,.(meanY1 = mean(Y1)),by=c("group","time")]
+#' dtH0.mean[group=="T", diff(meanY1)] - dtH0.mean[group=="C", diff(meanY1)]
 #' 
-#' res1 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), group = dt$group, time = dt$time,
-#'                 permutation.type = "group")
+#' res1 <- compMean(Y = cbind(Y1 = dtH0$Y1, Y2 = dtH0$Y2),
+#'                  group = dtH0$group, time = dtH0$time, permutation.type = "group")
 #' print(res1)
 #' print(res1, method = "max")
 #' print(res1, method = "holm")
-#' summary(lm(Y1~time*group, data = dt))$coef
-#' summary(lm(Y2~time*group, data = dt))$coef
+#' summary(lm(Y1~time*group, data = dtH0))$coef
+#' summary(lm(Y2~time*group, data = dtH0))$coef
 #' 
-#' res11 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), group = dt$group, time = dt$time,
-#'                 permutation.type = "Y")
+#' res11 <- compMean(Y = cbind(Y1 = dtH0$Y1, Y2 = dtH0$Y2),
+#'                   group = dtH0$group, time = dtH0$time, permutation.type = "Y")
 #' print(res11)
-#' summary(lm(I(Y2-Y1)~group*time, data = dt))$coef
+#' dtWH0 <- melt(dtH0, id.vars = c("group","time"), value.name = "Y")
+#' summary(lm(Y~variable*group*time, data = dtWH0))$coef
 #'
 #' #### 2- H1 under the alternative for the group effect ####
-#' dt <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "D1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
-#'             data.table(Y1 = rnorm(n)+0.5, Y2 = rnorm(n)+0.5, group = "T", time = "W1"))
+#' dtH1 <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "D1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
+#'               data.table(Y1 = rnorm(n)+0.5, Y2 = rnorm(n)+0.5, group = "T", time = "W1"))
 #'
-#' dt.mean <- dt[,.(meanY1 = mean(Y1)),by=c("group","time")]
-#' dt.mean[group=="T", diff(meanY1)] - dt.mean[group=="C", diff(meanY1)]
+#' dtH1.mean <- dtH1[,.(meanY1 = mean(Y1)),by=c("group","time")]
+#' dtH1.mean[group=="T", diff(meanY1)] - dtH1.mean[group=="C", diff(meanY1)]
 #'
 #' set.seed(10)
-#' res2 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), group = dt$group, time = dt$time,
-#'                  permutation.type = "group")
+#' res2 <- compMean(Y = cbind(Y1 = dtH1$Y1, Y2 = dtH1$Y2),
+#'                  group = dtH1$group, time = dtH1$time, permutation.type = "group")
 #' print(res2, method = "max")
-#' summary(lm(Y1~time*group, data = dt))$coef
-#' summary(lm(Y2~time*group, data = dt))$coef
+#' summary(lm(Y1~time*group, data = dtH1))$coef
+#' summary(lm(Y2~time*group, data = dtH1))$coef
 #' 
-#' res22 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), group = dt$group, time = dt$time,
-#'                 permutation.type = "Y")
+#' res22 <- compMean(Y = cbind(Y1 = dtH1$Y1, Y2 = dtH1$Y2),
+#'                   group = dtH1$group, time = dtH1$time, permutation.type = "Y")
 #' print(res22, method = "max")
-#' summary(lm(I(Y2-Y1)~group*time, data = dt))$coef
+#' dtWH1 <- melt(dtH1, id.vars = c("group","time"), value.name = "Y")
+#' summary(lm(Y~variable*group*time, data = dtWH1))$coef
 #' 
 #' #### 3- H1 under the alternative for the marker effect ####
-#' dt <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "D1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
-#'             data.table(Y1 = rnorm(n) + 0.5, Y2 = rnorm(n) + 1, group = "T", time = "W1"))
+#' dtH2 <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T", time = "D1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
+#'               data.table(Y1 = rnorm(n) + 0.5, Y2 = rnorm(n) + 1, group = "T", time = "W1"))
 #' 
-#' res3 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), group = dt$group, time = dt$time,
-#'                 permutation.type = "group")
+#' res3 <- compMean(Y = cbind(Y1 = dtH2$Y1, Y2 = dtH2$Y2),
+#'                  group = dtH2$group, time = dtH2$time, permutation.type = "group")
 #' print(res3, method = "max")
-#' summary(lm(Y1~time*group, data = dt))$coef
-#' summary(lm(Y2~time*group, data = dt))$coef
+#' summary(lm(Y1~time*group, data = dtH2))$coef
+#' summary(lm(Y2~time*group, data = dtH2))$coef
 #' 
-#' res33 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), group = dt$group, time = dt$time,
-#'                  permutation.type = "Y", n.perm = 1e4, cl = 3)
+#' res33 <- compMean(Y = cbind(Y1 = dtH2$Y1, Y2 = dtH2$Y2),
+#'                   group = dtH2$group, time = dtH2$time, permutation.type = "Y")
 #' print(res33)
-#' summary(lm(I(Y2-Y1)~group*time, data = dt))
+#' dtWH2 <- melt(dtH2, id.vars = c("group","time"), value.name = "Y")
+#' summary(lm(Y~variable*group*time, data = dtWH2))$coef
 #'
 #' #### 4- Without time ####
 #' n <- 500
 #' set.seed(10)
-#' dt <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), Y3 = rnorm(n), group = "C"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), Y3 = rnorm(n), group = "T"))
-#' res4 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2, Y3 = dt$Y3), group = dt$group,
-#'                 permutation.type = "group", n.perm = 1e4, cl = 3, trace = TRUE)
+#' dtNT <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), Y3 = rnorm(n), group = "C"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), Y3 = rnorm(n), group = "T"))
+#' res4 <- compMean(Y = cbind(Y1 = dtNT$Y1, Y2 = dtNT$Y2, Y3 = dtNT$Y3),
+#'                  group = dtNT$group, permutation.type = "group", n.perm = 1e4)
 #' print(res4, method = "max")
 #' print(res4, method = "max-step-down")
 #' 
-#' res44 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), group = dt$group,
-#'                 permutation.type = "Y", n.perm = 1e3, trace = TRUE)
+#' res44 <- compMean(Y = cbind(Y1 = dtNT$Y1, Y2 = dtNT$Y2),
+#'                   group = dtNT$group, permutation.type = "Y")
 #' res44
 #' 
 #' ## comparison to multtest (BiocManager::install("multtest"))
 #' library(multtest)
-#' mt.maxT(X = t(cbind(Y1 = dt$Y1, Y2 = dt$Y2, Y3 = dt$Y3)), classlabel = as.numeric(as.factor(dt$group))-1)
+#' mt.maxT(X = t(cbind(Y1 = dtNT$Y1, Y2 = dtNT$Y2, Y3 = dtNT$Y3)),
+#'         classlabel = as.numeric(as.factor(dtNT$group))-1)
 #' 
 #' ## comparison to multcomp
 #' library(multcomp)
-#' dt$group <- as.factor(dt$group)
-#' lll <- mmm(Y1 = lm(Y1 ~ group, data = dt),
-#'           Y2 = lm(Y2 ~ group, data = dt),
-#'           Y3 = lm(Y3 ~ group, data = dt))
+#' dtNT$group <- as.factor(dtNT$group)
+#' lll <- mmm(Y1 = lm(Y1 ~ group, data = dtNT),
+#'           Y2 = lm(Y2 ~ group, data = dtNT),
+#'           Y3 = lm(Y3 ~ group, data = dtNT))
 #' summary(glht(lll, linfct = mlf(mcp(group = "Dunnett"))))
 #' 
 #' #### 5- With more than two groups ####
 #' n <- 500
 #' set.seed(10)
-#' dt <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
-#'             data.table(Y1 = rnorm(n)+0.1, Y2 = rnorm(n), group = "T1", time = "D1"),
-#'             data.table(Y1 = rnorm(n)+0.2, Y2 = rnorm(n), group = "T2", time = "D1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T1", time = "W1"),
-#'             data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T2", time = "W1"))
-#' dtD1 <- dt[time=="D1"]
+#' dtMG <- rbind(data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "D1"),
+#'               data.table(Y1 = rnorm(n)+0.1, Y2 = rnorm(n), group = "T1", time = "D1"),
+#'               data.table(Y1 = rnorm(n)+0.2, Y2 = rnorm(n), group = "T2", time = "D1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "C", time = "W1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T1", time = "W1"),
+#'               data.table(Y1 = rnorm(n), Y2 = rnorm(n), group = "T2", time = "W1"))
+#' dtMGD1 <- dtMG[time=="D1"]
 #' 
-#' res5 <- compMean(Y = cbind(Y1 = dtD1$Y1, Y2 = dtD1$Y2), group = dtD1$group,
-#'                 permutation.type = "group", n.perm = 1e3, trace = TRUE)
+#' res5 <- compMean(Y = cbind(Y1 = dtMGD1$Y1, Y2 = dtMGD1$Y2),
+#'                  group = dtMGD1$group, permutation.type = "group")
 #' print(res5)
 #'
-#' summary(lm(Y1~group, data = dtD1))
-#' summary(lm(Y2~group, data = dtD1))
+#' summary(lm(Y1~group, data = dtMGD1))
+#' summary(lm(Y2~group, data = dtMGD1))
 #' 
-#' res55 <- compMean(Y = cbind(Y1 = dt$Y1, Y2 = dt$Y2), time = dt$time, group = dt$group,
-#'                   permutation.type = "group", n.perm = 1e3, trace = TRUE)
+#' res55 <- compMean(Y = cbind(Y1 = dtMG$Y1, Y2 = dtMG$Y2),
+#'                   time = dtMG$time, group = dtMG$group, permutation.type = "group")
 #' print(res55)
 #'
-#' summary(lm(Y1~group*time, data = dt))
-#' summary(lm(Y2~group*time, data = dt))
+#' summary(lm(Y1~group*time, data = dtMG))
+#' summary(lm(Y2~group*time, data = dtMG))
 #'
  
 
@@ -164,6 +170,7 @@ compMean <- function(Y,
                      time = NULL,
                      permutation.type = "group",
                      n.perm = 1e3,
+                     na.rm = FALSE,
                      cl = NULL,
                      trace = TRUE){ 
     ## require(gtools)
@@ -223,31 +230,28 @@ compMean <- function(Y,
     Ugroup <- unique(group)
     if(!is.null(time)){
         Utime <- unique(time)
-        index.time1 <- which(time==time[1])
-        index.time2 <- which(time==time[2])
-        n.time1 <- sum(time==time[1])
-        n.time2 <- sum(time==time[2])
+        index.time1 <- which(time==Utime[1])
+        index.time2 <- which(time==Utime[2])
+        n.time1 <- sum(time==Utime[1])
+        n.time2 <- sum(time==Utime[2])
         grid <- cbind(expand.grid(
             strata = Name,
             time = c("T1","T2","T12"),
             group = Ugroup[-1]
-        ), estimate = NA, sd = NA, statistic = NA)
+        ), estimate = NA, se = NA, statistic = NA)
         grid$collapse <- paste(grid$strata,grid$time,grid$group,sep=".")
         UgroupTime <- expand.grid(Ugroup, Utime)
 
         calcDiff <- function(Y, group, time, type){
-            
+
             ls.Y <- lapply(1:NROW(UgroupTime), function(iRow){ ## iRow <- 1
-                if(permutation.type == "group"){
-                    return(Y[(group==UgroupTime[iRow,1])*(time==UgroupTime[iRow,2])==1,,drop=FALSE])
-                }else if(permutation.type == "Y"){
-                    return(Y[(group==UgroupTime[iRow,1])*(time==UgroupTime[iRow,2])==1,2,drop=FALSE]-Y[(group==UgroupTime[iRow,1])*(time==UgroupTime[iRow,2])==1,1,drop=FALSE])
-                }
+                return(Y[(group==UgroupTime[iRow,1])*(time==UgroupTime[iRow,2])==1,,drop=FALSE])
             })
             names(ls.Y) <- interaction(UgroupTime[,1],UgroupTime[,2])
             
             out <- grid
-            for(iG in 2:G){ ## iG <- 1
+
+            for(iG in 2:G){ ## iG <- 2
 
                     for(iP in 1:P){ ## iP <- 1
 
@@ -257,21 +261,54 @@ compMean <- function(Y,
                         iPos.T12 <- which(out$collapse == paste0(Name[iP],".T12.",Ugroup[iG]))
 
                         ## outcome
-                        iYref <- cbind(ls.Y[[paste(Ugroup[1],Utime[1],sep=".")]][,iP],ls.Y[[paste(Ugroup[1],Utime[2],sep=".")]][,iP])
-                        iYcomp <- cbind(ls.Y[[paste(Ugroup[iG],Utime[1],sep=".")]][,iP],ls.Y[[paste(Ugroup[iG],Utime[2],sep=".")]][,iP])
-
+                        if(permutation.type=="group"){
+                            iYref <- list(ls.Y[[paste(Ugroup[1],Utime[1],sep=".")]][,iP],ls.Y[[paste(Ugroup[1],Utime[2],sep=".")]][,iP])
+                            iYcomp <- list(ls.Y[[paste(Ugroup[iG],Utime[1],sep=".")]][,iP],ls.Y[[paste(Ugroup[iG],Utime[2],sep=".")]][,iP])
+                            if(na.rm){
+                                n.iYref <- lapply(iYref,function(x){sum(!is.na(x))})
+                                n.iYcomp <- lapply(iYcomp,function(x){sum(!is.na(x))})
+                            }else{
+                                n.iYref <- lapply(iYref,length)
+                                n.iYcomp <- lapply(iYcomp,length)
+                            }
+                        }else{
+                            iYref <- list(ls.Y[[paste(Ugroup[1],Utime[1],sep=".")]],ls.Y[[paste(Ugroup[1],Utime[2],sep=".")]])
+                            iYcomp <- list(ls.Y[[paste(Ugroup[iG],Utime[1],sep=".")]],ls.Y[[paste(Ugroup[iG],Utime[2],sep=".")]])
+                            if(na.rm){
+                                n.iYref <- lapply(iYref,function(x){colSums(!is.na(x))})
+                                n.iYcomp <- lapply(iYcomp,function(x){colSums(!is.na(x))})
+                            }else{
+                                n.iYref <- lapply(iYref,function(x){rep(NROW(x),2)})
+                                n.iYcomp <- lapply(iYref,function(x){rep(NROW(x),2)})
+                            }
+                        }
+                        
                         ## Welch t-test
-                        out[iPos.T1,"estimate"] <- mean(iYcomp[,1]) - mean(iYref[,1])
-                        out[iPos.T1,"sd"] <- sqrt(var(iYcomp[,1])/NROW(iYcomp) + var(iYref[,1])/NROW(iYref))
-                        out[iPos.T1,"statistic"] <- out[iPos.T1,"estimate"]/out[iPos.T1,"sd"]
+                        if(permutation.type=="group"){
+                            out[iPos.T1,"estimate"] <- mean(iYcomp[[1]], na.rm = na.rm) - mean(iYref[[1]], na.rm = na.rm)
+                            out[iPos.T1,"se"] <- sqrt(var(iYcomp[[1]], na.rm = na.rm)/n.iYcomp[[1]] + var(iYref[[1]], na.rm = na.rm)/n.iYref[[1]])
+                        }else if(permutation.type=="Y"){
+                            out[iPos.T1,"estimate"] <- diff(colMeans(iYcomp[[1]]), na.rm = na.rm) - diff(colMeans(iYref[[1]]), na.rm = na.rm)
+                            term1.T1 <- var(iYcomp[[1]][,1], na.rm = na.rm)/n.iYcomp[[1]][1] + var(iYcomp[[1]][,2], na.rm = na.rm)/n.iYcomp[[1]][2]
+                            term2.T1 <- var(iYref[[1]][,1], na.rm = na.rm)/n.iYref[[1]][1] + var(iYref[[1]][,2], na.rm = na.rm)/n.iYref[[1]][2]
+                            out[iPos.T1,"se"] <- sqrt(term1.T1 + term2.T1)
+                        }
+                        out[iPos.T1,"statistic"] <- out[iPos.T1,"estimate"]/out[iPos.T1,"se"]
                     
-                        out[iPos.T2,"estimate"] <- mean(iYcomp[,2]) - mean(iYref[,2])
-                        out[iPos.T2,"sd"] <- sqrt(var(iYcomp[,2])/NROW(iYcomp) + var(iYref[,2])/NROW(iYref))
-                        out[iPos.T2,"statistic"] <- out[iPos.T2,"estimate"]/out[iPos.T2,"sd"]
-                    
+                        if(permutation.type=="group"){
+                            out[iPos.T2,"estimate"] <- mean(iYcomp[[2]], na.rm = na.rm) - mean(iYref[[2]], na.rm = na.rm)
+                            out[iPos.T2,"se"] <- sqrt(var(iYcomp[[2]], na.rm = na.rm)/n.iYcomp[[2]] + var(iYref[[2]], na.rm = na.rm)/n.iYref[[2]])
+                        }else if(permutation.type=="Y"){
+                            out[iPos.T2,"estimate"] <- diff(colMeans(iYcomp[[2]], na.rm = na.rm)) - diff(colMeans(iYref[[2]], na.rm = na.rm))
+                            term1.T2 <- var(iYcomp[[2]][,1], na.rm = na.rm)/n.iYcomp[[2]][1] + var(iYcomp[[2]][,2], na.rm = na.rm)/n.iYcomp[[2]][2]
+                            term2.T2 <- var(iYref[[2]][,1], na.rm = na.rm)/n.iYref[[2]][1] + var(iYref[[2]][,2], na.rm = na.rm)/n.iYref[[2]][2]
+                            out[iPos.T2,"se"] <- sqrt(term1.T2 + term2.T2)
+                        }
+                        out[iPos.T2,"statistic"] <- out[iPos.T2,"estimate"]/out[iPos.T2,"se"]
+
                         out[iPos.T12,"estimate"] <- out[iPos.T2,"estimate"] - out[iPos.T1,"estimate"]
-                        out[iPos.T12,"sd"] <- sqrt(out[iPos.T1,"sd"]^2 + out[iPos.T2,"sd"]^2)
-                        out[iPos.T12,"statistic"] <- out[iPos.T12,"estimate"]/out[iPos.T12,"sd"]
+                        out[iPos.T12,"se"] <- sqrt(out[iPos.T1,"se"]^2 + out[iPos.T2,"se"]^2)
+                        out[iPos.T12,"statistic"] <- out[iPos.T12,"estimate"]/out[iPos.T12,"se"]
                     }
             }
             return(out)
@@ -281,7 +318,7 @@ compMean <- function(Y,
         grid <- cbind(expand.grid(
             strata = Name,
             group = Ugroup[-1]
-        ), estimate = NA, sd = NA, statistic = NA)
+        ), estimate = NA, se = NA, statistic = NA)
         grid$collapse <- paste(grid$strata,grid$group,sep=".")
         calcDiff <- function(Y, group, type, ...){
             ls.Y <- lapply(Ugroup, function(iG){
@@ -307,8 +344,8 @@ compMean <- function(Y,
 
                     ## Welch t-test
                     out[iPos,"estimate"] <- mean(iYcomp) - mean(iYref)
-                    out[iPos,"sd"] <- sqrt(var(iYcomp)/length(iYcomp) + var(iYref)/length(iYref))
-                    out[iPos,"statistic"] <- out[iPos,"estimate"]/out[iPos,"sd"]
+                    out[iPos,"se"] <- sqrt(var(iYcomp)/length(iYcomp) + var(iYref)/length(iYref))
+                    out[iPos,"statistic"] <- out[iPos,"estimate"]/out[iPos,"se"]
                     
                 }
             }
@@ -324,7 +361,7 @@ compMean <- function(Y,
                 permutation.type = permutation.type,
                 n.perm = n.perm)
     ## class(out$estimate)
-    
+
     ## ** run permutation
 
     fct.apply <- switch(as.character(trace),
@@ -334,13 +371,13 @@ compMean <- function(Y,
         if(permutation.type == "group"){
             if(!is.null(time)){
                 newgroup <- rep(NA, length = n)
-                newgroup[index.time1] <- group[time==Utime[1]][sample.int(n.time1)]
-                newgroup[index.time2] <- group[time==Utime[2]][sample.int(n.time2)]
+                newgroup[index.time1] <- sample(group[time==Utime[1]], size = n.time1, replace = FALSE)
+                newgroup[index.time2] <- sample(group[time==Utime[2]], size = n.time2, replace = FALSE)
             }else{
-                newgroup <- group[sample.int(n)]
+                newgroup <- sample(group, size = n, replace = FALSE)
             }
             iOut <- calcDiff(Y = Y, group = newgroup, time = time)
-            return(cbind(out$estimate, perm = iPerm, perm.estimate = iOut$estimate, perm.sd = iOut$sd, perm.statistic = iOut$statistic))
+            return(cbind(out$estimate, perm = iPerm, perm.estimate = iOut$estimate, perm.se = iOut$se, perm.statistic = iOut$statistic))
         }else if(permutation.type == "Y"){
             newY <- Y
             indexExchange <- rbinom(n, size = 1, prob = 0.5)
@@ -348,7 +385,7 @@ compMean <- function(Y,
             newY[indexExchange==1,2] <- Y[indexExchange==1,1]
             iOut <- calcDiff(Y = newY, group = group, time = time, type = permutation.type)
             
-            return(cbind(out$estimate, perm = iPerm, perm.estimate = iOut$estimate, perm.sd = iOut$sd, perm.statistic = iOut$statistic))
+            return(cbind(out$estimate, perm = iPerm, perm.estimate = iOut$estimate, perm.se = iOut$se, perm.statistic = iOut$statistic))
         }
     }, cl = cl))
     
@@ -395,6 +432,7 @@ compMean <- function(Y,
 }
 
 ## * print.permTest
+##' @export
 print.permTest <- function(x, method = "max-step-down", setkeyv = NULL, ...){
     time <- x$time
     ref <- x$group[1]
@@ -462,11 +500,11 @@ print.permTest <- function(x, method = "max-step-down", setkeyv = NULL, ...){
     cat("\n")
 
     if(!is.null(time)){
-        table <- cbind(x$estimate[,c("strata","group","time","estimate","sd")],
+        table <- cbind(x$estimate[,c("strata","group","time","estimate","se")],
                        p.value = x$p.value$statistic)
         names(table)[names(table)=="group"] <- "alternative"
     }else{
-        table <- cbind(x$estimate[,c("strata","group","estimate","sd")],
+        table <- cbind(x$estimate[,c("strata","group","estimate","se")],
                        p.value = x$p.value$statistic)
         names(table)[names(table)=="group"] <- "alternative"
     }

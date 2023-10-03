@@ -7,7 +7,9 @@
 multcomp2table(
   object,
   link,
-  transform = function(x) {     x },
+  transform = function(x) {
+     x
+ },
   seed = NULL,
   method.glht = "glht",
   conf.level = 0.95,

@@ -7,11 +7,11 @@
 pairedCompMean(
   data,
   col.treatment,
-  col.factor,
+  col.strata,
   col.value,
   col.cluster,
-  n.perm = 1000,
-  method.adj = "step-down",
+  n.perm = 10000,
+  method.adj = "single-step",
   seed = NULL,
   trace = TRUE
 )
@@ -21,23 +21,23 @@ pairedCompMean(
 
 \item{col.treatment}{[character] column in the dataset indicating the treatment variable, that should be permuted within-individuals.}
 
-\item{col.factor}{[character] column in the dataset indicating the factor variable, to stratify the comparison on.}
+\item{col.strata}{[character] column in the dataset indicating the factor variable, to stratify the comparison on.}
 
 \item{col.value}{[character] column in the dataset indicating the value of the measurement.}
 
+\item{col.cluster}{[character] column in the dataset indicating the cluster level (e.g. patient identity).}
+
 \item{n.perm}{[numeric] number of permutation to be performed.}
+
+\item{method.adj}{[character] either \code{"single-step"} or \code{"step-down"} max adjustment.
+Both order the hypothesis to test based on the evidence shown by the data but the latter provides extra statistical power for rejecting the 2nd to last hypotheses.}
 
 \item{seed}{[integer,>0] set initial state of the random number generation (passed to \code{set.seed}).}
 
 \item{trace}{[logical] should a progress bar be display displaying the execution of the permutations.}
-
-\item{col.id}{[character] column in the dataset indicating the patient identity.}
 }
 \description{
 Permutation test for comparing mean between within cluster with efficient adjustment for multiple comparisons
-}
-\details{
-Single step max test adjustment is performed to adjust for multiple comparisons. It account for correlation between test statistics.
 }
 \examples{
 library(mvtnorm)
@@ -75,7 +75,7 @@ perm.t.test(dfW$score5_P,dfW$score5_B,paired = TRUE)
 }
 
 resPerm <- pairedCompMean(dfL[dfL$treatment \%in\% c("P","B"),], n.perm = 1e3,
-               col.treatment = "treatment", col.factor = "score", col.value = "value", col.cluster = "id",
+               col.treatment = "treatment", col.strata = "score", col.value = "value", col.cluster = "id",
                seed = NULL)
 resPerm
 

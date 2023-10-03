@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: apr 15 2018 (16:52) 
 ## Version: 
-## Last-Updated: aug 15 2018 (14:45) 
+## Last-Updated: jul 31 2023 (09:25) 
 ##           By: Brice Ozenne
-##     Update #: 112
+##     Update #: 115
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -122,6 +122,8 @@ object2script.matrix <- function(object, digits = NULL, print = TRUE, final.spac
         type <- "row"
     }else if(!is.null(object.colnames)){
         type <- "col"
+    }else if(NROW(object)==1){
+        type <- "row"
     }else{
         type <- "col"
     }
